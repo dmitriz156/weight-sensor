@@ -2,27 +2,7 @@
 #include "stm32f1xx_hal.h"
 
 
-typedef enum
-{
-	USB_STAT_BOOT=0,			// start bootloader? 								Buttons: NO-YES
-	USB_STAT_NO_USB,			// no USB-flash drive. 							Buttons: OK
-	USB_STAT_NO_FILE,			// correct file is not found. 			Buttons: OK
-	USB_STAT_SELECT_USB_MODE,       // select USB mode Mass Storage Class or USB HOST
-	USB_STAT_HOLD_FILE,			// hold file uploading in MSC mod
-	USB_STAT_INVALID_FILE,		// worning massage about the invalid uploaded file
-	USB_STAT_UPDATE,			// Update firmware?									Buttons: NO-YES
-	USB_STAT_VALID,
-	USB_STAT_PROC_ERASE,	// processing. Sector erasing.			LIST PAGE
-	USB_STAT_PROC_LOAD,		// processing. Sector writing.			LIST PAGE
-	USB_STAT_PROC_VERIF,	// processing. Sector verification	LIST PAGE
-	USB_STAT_UPDATE_OK,		// Firmware is updated successfully	Buttons: OK
-	USB_STAT_UPDATE_FAIL,	// Firmware updating failed.Repeat?	Buttons: NO-YES
-	USB_STAT_TRN_FAIL,		// Turnstile is not available				No buttons
-	USB_STAT_PCBERR,			// PCB code is failed
-	USB_STAT_FILESEL,			// selecting file list
-	USB_STAT_NUM,
-	USB_STAT_TIMEOUT
-} USBSTAT;
+// !!! After adding new page in MENUPAGE list -> set page parameters in DispInit()
 
 
 // !!! This file is common for two projects:
@@ -299,7 +279,6 @@ typedef enum
 	}DISP_PMS2_MAIN;	
 
 extern DispUartTypeDef DispUart;
-//extern MenuTypeDef Menu;
 
 void DispInit(void);
 void DispTask(void);

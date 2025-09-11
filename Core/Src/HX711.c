@@ -203,6 +203,10 @@ void HX711GetDataTask(void)
 	}
 
 	if(weight[sens_channel].kg < 0) { weight[sens_channel].kg = 0.001f; }
+	if(weight[sens_channel].kg > weight[sens_channel].max_kg) {
+		weight[sens_channel].max_kg = weight[sens_channel].kg;
+		max_weight_rst_counter = MAX_WEIGHT_RESET_TIME_S;
+	}
 
 	if(sens_channel < (NUM_OF_WEIGHT_SENSOR - 1)) {
 		sens_channel ++;

@@ -181,8 +181,7 @@ char *FloatToString(float value) {
 
 void MenuChangeLine(void)
 {
-  if (buttons.UP_state == BTN_PRESS) {
-	  buttons.UP_state = BTN_IDLE;
+  if (btn.UP_state == BTN_PRESS) {
     if (Menu.lineSel) {
       Menu.lineSel--;
     } else {
@@ -191,8 +190,7 @@ void MenuChangeLine(void)
       }
     }
   }
-  if (buttons.DOWN_state == BTN_PRESS) {
-	  buttons.DOWN_state = BTN_IDLE;
+  if (btn.DOWN_state == BTN_PRESS) {
     if (Menu.lineSel < (DISP_LIST_LINE_MAX - 1)) {
       Menu.lineSel++;
     } else {
@@ -207,9 +205,6 @@ void MenuChangeLine(void)
 
 void DispInit(void)
 {
-		char String_L32_For_Disp_Init[32];	
-		uint8_t Counter_For_Disp_Init;
-
 		memset((void*)&DispUart,0x00,sizeof(DispUart));
 		
 		// prepare number of packet for each type of display pages
@@ -219,19 +214,12 @@ void DispInit(void)
 		DispUart.txPackNum[DISP_PAGE_EMPTY]	= DISP_PAGE_EMPTY_PACK_NUM;
 		DispUart.txPackNum[DISP_PAGE_UNDEF]	= DISP_PAGE_UNDEF_PACK_NUM;
 		
-		DispUart.pauseTmr=1;		// start of pause
+		DispUart.pauseTmr = 1;		// start of pause
 		
 		memset((void*)&Menu,0x00,sizeof(Menu));
-		Menu.startTmr=DISP_START_TMR;
-							
-		//strcpy(SwCurrName,	DispIntToStr( 123, 0, 0 )); //*(__IO uint16_t*) 0x0800C400, 0)
 
-		for ( Counter_For_Disp_Init = 0; Counter_For_Disp_Init<32; Counter_For_Disp_Init++ )
-		{
-				String_L32_For_Disp_Init[ Counter_For_Disp_Init ] = 123;//*(__IO uint8_t*) (0x0800C402 + Counter_For_Disp_Init);//0x08008402
-		}
-
-		strcpy(SwCurrName,	String_L32_For_Disp_Init );
+		Menu.pageIndx = MENU_PAGE_HELLO;
+		Menu.startTmr = DISP_START_TMR;
 											
 }
 
@@ -261,9 +249,11 @@ void DispTask(void)
 	char str3[DISP_LISTPARAM_LEN];
 	char str4[DISP_LISTPARAM_LEN];
 	uint16_t len;
-	
+
 	if(DispUart.pauseTmr)
 	{
+		MenuChangeLine();
+
 		DispUart.pauseTmr=0;
 		DispUart.shiftTmr++;
 		if(DispUart.shiftTmr>=DISP_SHIFT_TMR)
@@ -273,112 +263,66 @@ void DispTask(void)
 			DispUart.shiftChar1++;
 		}
 		else;
-		
-		if(Menu.startTmr)
-		{
-			Menu.pageIndx  	= MENU_PAGE_HELLO;
-			Menu.sysMsg		= MENU_SM_NO;
-		}
-		else
-		{
-			Menu.pageIndx 	= MENU_PAGE_MEASURE;
+
+		switch(Menu.pageIndx){
+		case MENU_PAGE_HELLO:
+			if(Menu.startTmr) {
+				Menu.pageIndx   = MENU_PAGE_HELLO;
+				Menu.sysMsg		= MENU_SM_NO;
+			} else {
+				Menu.pageIndx 	= MENU_PAGE_MEASURE;
+				Menu.sysMsg 	= MENU_SM_NO;
+				Menu.lineNum 	= MEASURE_ITEM_NUM;
+				Menu.linePos	= 0;
+				Menu.lineSel    = 0;
+			}
+			break;
+		case MENU_PAGE_MEASURE:
 			Menu.sysMsg 	= MENU_SM_NO;
 			Menu.lineNum 	= MEASURE_ITEM_NUM;
-			//Menu.linePos 	= 0;
-
-//			switch(USB_Status_For_Display)
-//			{
-//				case USB_STAT_BOOT:					// start bootloader? 								buttons: NO-YES
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_BOOT;
-//					break;
-//				case USB_STAT_NO_USB:				// no USB-flash drive. 							buttons: OK
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_NO_USB;
-//					break;
-//				case USB_STAT_SELECT_USB_MODE:					// select USB mod? 								buttons: HOST-FLASH
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_SELECT_USB_MODE;
-//					break;
-//				case USB_STAT_HOLD_FILE:					// select USB mod? 								buttons: HOST-FLASH
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_HOLD_FILE;
-//					break;
-//				case USB_STAT_NO_FILE:			// correct file is not found. 			buttons: OK
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_NO_FILE;
-//					break;
-//				case USB_STAT_UPDATE:					// file is found. Update firmware?	buttons: NO-YES
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_UPDATE;
-//					break;
-//				case USB_STAT_PROC_ERASE:		// processing. Sector erasing.			LIST PAGE
-//					Menu.pageIndx=MENU_PAGE_PROC;
-//					Menu.sysMsg=MENU_SM_NO;
-//					Menu.lineNum=MENU_PROC_NUM;
-//					Menu.linePos=0;
-//					break;
-//				case USB_STAT_PROC_LOAD:		// processing. Sector writing.			LIST PAGE
-//					Menu.pageIndx=MENU_PAGE_PROC;
-//					Menu.sysMsg=MENU_SM_NO;
-//					Menu.lineNum=MENU_PROC_NUM;
-//					Menu.linePos=0;
-//					break;
-//				case USB_STAT_PROC_VERIF:		// processing. Sector verification	LIST PAGE
-//					Menu.pageIndx=MENU_PAGE_PROC;
-//					Menu.sysMsg=MENU_SM_NO;
-//					Menu.lineNum=MENU_PROC_NUM;
-//					Menu.linePos=0;
-//					Menu.lineSel=USB_Status_For_Display-USB_STAT_PROC_ERASE;
-//					break;
-//				case USB_STAT_FILESEL:
-//					Menu.pageIndx=MENU_PAGE_FILE;
-//					Menu.sysMsg=MENU_SM_NO;
-//					Menu.lineNum=DispFileNum;
-//					if((DispFilePos>=Menu.linePos)&&(DispFilePos<(Menu.linePos+DISP_LIST_LINE_MAX)))
-//					{
-//						Menu.lineSel=DispFilePos-Menu.linePos;
-//					}
-//					else if(DispFilePos<Menu.linePos)
-//					{
-//						Menu.linePos=DispFilePos;
-//						Menu.lineSel=0;
-//					}
-//					else // Menu.lineSel>=(Menu.linePos+DISP_LIST_LINE_MAX)
-//					{
-//						Menu.linePos+=(DispFilePos-(Menu.linePos+DISP_LIST_LINE_MAX)+1);
-//						Menu.lineSel=4;
-//					}
-//					break;
-//				case USB_STAT_UPDATE_OK:		// Firmware is updated successfully	buttons: OK
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_UPDATE_OK;
-//					break;
-//				case USB_STAT_UPDATE_FAIL:	// Firmware updating failed.Repeat?	buttons: NO-YES
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_UPDATE_FAIL;
-//					break;
-//				case USB_STAT_TRN_FAIL:			// Turnstile is not available				No buttons
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_TRN_FAIL;
-//					break;
-//
-//				case USB_STAT_PCBERR:
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_PCBERR;
-//					break;
-//
-//				case USB_STAT_TIMEOUT:
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_TIMOUT_ERROR;
-//					break;
-//
-//				default:
-//					Menu.pageIndx=MENU_PAGE_EMPTY;
-//					Menu.sysMsg=MENU_SM_INTERR;
-//					break;
-//			}
+			if(btn.LEFT_state == BTN_LONG_PRESS) {
+				Menu.pageIndx   = MENU_PAGE_MODE;
+				Menu.lineNum    = MENU_MOD_NUM;
+				Menu.linePos    = 0;
+				Menu.lineSel    = mod_config;
+			}
+			break;
+		case MENU_PAGE_MODE:
+			if(btn.LEFT_state == BTN_LONG_PRESS) {
+				if(mod_config_prev != mod_config){
+					Menu.pageIndx   = MENU_PAGE_EMPTY;
+					Menu.sysMsg 	= MENU_SM_SAVE_MODE;
+				} else {
+					Menu.pageIndx   = MENU_PAGE_MEASURE;
+					Menu.sysMsg 	= MENU_SM_NO;
+					Menu.lineNum 	= MEASURE_ITEM_NUM;
+					Menu.linePos	= 0;
+					Menu.lineSel    = 0;
+				}
+			}
+			break;
+		case MENU_PAGE_EMPTY:
+			if(btn.DOWN_state == BTN_PRESS) {
+				mod_flash_write_flag = 1;
+				Menu.pageIndx   = MENU_PAGE_MEASURE;
+				Menu.sysMsg 	= MENU_SM_NO;
+				Menu.lineNum 	= MEASURE_ITEM_NUM;
+			}
+			if(btn.UP_state == BTN_PRESS) {
+				mod_flash_write_flag = 0;
+				Menu.pageIndx   = MENU_PAGE_MEASURE;
+				Menu.sysMsg 	= MENU_SM_NO;
+				Menu.lineNum 	= MEASURE_ITEM_NUM;
+			}
+			break;
+		default:
+			Menu.pageIndx=MENU_PAGE_EMPTY;
+			Menu.sysMsg=MENU_SM_INTERR;
+			break;
 		}
+		ButtonsReset();
+		//button long press reset here
+		ButtonsResetLong();
 		
 // --- next packet		
 		DispUart.txPackPnt++;
@@ -409,74 +353,45 @@ void DispTask(void)
 		if(DispUart.txPackPnt==DISP_PACK_SYS_MGS)	
 		{
 			// code(index) of system message
-//			switch(Menu.sysMsg)
-//			{
-//				// !!! WARNING !!!
-//				// DO NOT EXCEED 12 SYMBOLS FOR EACH STRING
-//				case MENU_SM_BOOT:					// start bootloader? 								buttons: NO-YES
+			switch(Menu.sysMsg)
+			{
+				// !!! WARNING !!!
+				// DO NOT EXCEED 12 SYMBOLS FOR EACH STRING
+			case MENU_SM_SAVE_MODE:
+				MenuSysMsgFill(DISP_SYS_MSG_QUE, "CHANGE ALARM","MODE?","",0,0);//btn: NO-YES
+				break;
+
+//				case MENU_SM_BOOT:					// start bootloader? 								btn: NO-YES
 //					MenuSysMsgFill(DISP_SYS_MSG_QUE, "START","BOOTLOADER","RBv.1.2 ?",0,0);
 //					break;
-//				case MENU_SM_NO_USB:				// no USB-flash drive. 							buttons: OK
-//					MenuSysMsgFill(DISP_SYS_MSG_WRN_OK,	"USB-FLASH","IS NOT","CONNECTED!",0,0);
-//					break;
-//				case MENU_SM_NO_FILE:				// correct file is not found. 			buttons: OK
-//					MenuSysMsgFill(DISP_SYS_MSG_WRN_OK, "BIN-FILES","ARE NOT","FOUND!",0,0);
-//					break;
-//				case MENU_SM_UPDATE:				// Update firmware?									buttons: NO-YES
-//					len=strlen(SwCurrName);
-//					if(len<=DISP_SYS_MSG_STR_LEN)
-//						DispUart.shiftChar0=0;
-//					else if(DispUart.shiftChar0>(len-DISP_SYS_MSG_STR_LEN))
-//						DispUart.shiftChar0=0;
-//					else;
-//					strncpy(str0,&SwCurrName[DispUart.shiftChar0],DISP_SYS_MSG_STR_LEN);
-//
-//					len=strlen(SwNewName);
-//					if(len<=DISP_SYS_MSG_STR_LEN)
-//						DispUart.shiftChar1=0;
-//					else if(DispUart.shiftChar1>(len-DISP_SYS_MSG_STR_LEN))
-//						DispUart.shiftChar1=0;
-//					else;
-//					strncpy(str1,&SwNewName[DispUart.shiftChar1],DISP_SYS_MSG_STR_LEN);
-//
-//					MenuSysMsgFill(DISP_SYS_MSG_QUE,"CURRENT FW:",str0,"NEW FW:",str1,"UPLOAD?");
-//					break;
-//				case MENU_SM_UPDATE_OK:			// Firmware is updated successfully	buttons: OK
-//					MenuSysMsgFill(DISP_SYS_MSG_BIRD_OK,"FIRMWARE","UPLOAD","SUCCESSFULLY",0,0);
-//					break;
-//				case MENU_SM_UPDATE_FAIL:		// Firmware updating failed.Repeat?	buttons: NO-YES
-//					MenuSysMsgFill(DISP_SYS_MSG_WRN_NY,"FIRMWARE","UPLOAD","FAILED!","REPEAT","UPLOADING?");
-//					break;
-//				case MENU_SM_TRN_FAIL:			// Turnstile is not available				No buttons
-//					MenuSysMsgFill(DISP_SYS_MSG_WRN,"FIRMWARE","ERROR!","TURNSTILE","BLOCKED!",0);
-//					break;
-//				case MENU_SM_INTERR:				// internal error of programm
-//					MenuSysMsgFill(DISP_SYS_MSG_WRN,"INTERNAL","ERROR!","RESET","CONTROLLER!",0);
-//					break;
-//
-//				case MENU_SM_PCBERR:			// PCB code is failed
-//					MenuSysMsgFill(DISP_SYS_MSG_WRN_OK,"NEW FIRMWARE","IS NOT","SUITABLE","FOR PCB429!",0);
-//					break;
-//				// case MENU_SM_SELECT_USB_MODE:
-//				// 	MenuSysMsgFill(DISP_SYS_MSG_SETT, "ENABLE USB","FLASH DEVICE", "MODE?",0,0);
-//				// 	break;
-//				// case MENU_SM_HOLD_FILE:
-//				// 	MenuSysMsgFill(DISP_SYS_MSG_INFO_BACK, "CONECT TO PC","AND UPLOAD", "FILE .bin",0,0);
-//				// 	break;
-//
-//
-//				case MENU_SM_TIMOUT_ERROR:			// Timeout Error
-//					MenuSysMsgFill(DISP_SYS_MSG_WRN_OK,"An Error has","occurred.","Please try","Update Again",0);
-//					break;
-//
-//
-//
-//				case MENU_SM_NO:		// no message -> do nothing
-//					break;
-//				default:						// undefined message
-//					MenuSysMsgFill(DISP_SYS_MSG_WRN,"SYSTEM","MESSAGE","IS NOT DEF.!","CHECK","CODE!");
-//					break;
-//			}
+				case MENU_SM_NO_USB:				// no USB-flash drive. 							btn: OK
+					MenuSysMsgFill(DISP_SYS_MSG_WRN_OK,	"USB-FLASH","IS NOT","CONNECTED!",0,0);
+					break;
+				case MENU_SM_UPDATE:				// Update firmware?									btn: NO-YES
+					len=strlen(SwCurrName);
+					if(len<=DISP_SYS_MSG_STR_LEN)
+						DispUart.shiftChar0=0;
+					else if(DispUart.shiftChar0>(len-DISP_SYS_MSG_STR_LEN))
+						DispUart.shiftChar0=0;
+					else;
+					strncpy(str0,&SwCurrName[DispUart.shiftChar0],DISP_SYS_MSG_STR_LEN);
+
+					len=strlen(SwNewName);
+					if(len<=DISP_SYS_MSG_STR_LEN)
+						DispUart.shiftChar1=0;
+					else if(DispUart.shiftChar1>(len-DISP_SYS_MSG_STR_LEN))
+						DispUart.shiftChar1=0;
+					else;
+					strncpy(str1,&SwNewName[DispUart.shiftChar1],DISP_SYS_MSG_STR_LEN);
+
+					MenuSysMsgFill(DISP_SYS_MSG_QUE,"CURRENT FW:",str0,"NEW FW:",str1,"UPLOAD?");
+					break;
+				case MENU_SM_NO:		// no message -> do nothing
+					break;
+				default:						// undefined message
+					MenuSysMsgFill(DISP_SYS_MSG_WRN,"SYSTEM","MESSAGE","IS NOT DEF.!","CHECK","CODE!");
+					break;
+			}
 		}
 		else;
 		
@@ -586,16 +501,60 @@ void DispTask(void)
 				}					
 				break;
 			
-			default:
+			case MENU_PAGE_MODE:
+				switch(DispUart.txPackPnt)
+				{
+				// DISP_PACKTYPE_DATA_0 - common data
+				case DISP_PACK_DATA_0:
+					SetListSelLine(Menu.lineSel);
+					SetListValueEdit(Menu.valueEdit);
+					SetListValueExist(DISP_LIST_VALUE_NO);
+					SetListSymbMode(DISP_LIST_SYMB_L);
+					SetListLineShow();
+					break;
+
+				case DISP_PACK_STR_0:
+					// status of loading
+					SetListName("SELECT MODE");
+					//					DispUart.txBuff[DISP_PHD0_TMR]=(Menu.startTmr);
+					//					DispUart.txBuff[DISP_PHD0_TMRMAX]=(DISP_START_TMR);
+					break;
+				case DISP_PACK_STR_1:
+				case DISP_PACK_STR_2:
+				case DISP_PACK_STR_3:
+				case DISP_PACK_STR_4:
+				case DISP_PACK_STR_5:
+					if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
+					{
+						SetListParam(MenuModName[GetListPos(DISP_PACK_STR_1)]);
+						SetListSymbL(DISP_LISTMSG_SYMB_ARROW);
+					}
+					if (mod_flash_read_flag == 1) {
+						switch(Menu.lineSel) {
+						case MENU_ALARM_ST_ALONE:
+							mod_config = ALARM_ST_ALONE;
+							break;
+						case MENU_ALARM_SYNCHRO:
+							mod_config = ALARM_SYNCHRO;
+							break;
+						}
+					}
+					break;
+				default:
+					break;
+				}
 				break;
+				break;
+
+
+				default:
+					break;
 		}
 		
 		if(DispUart.txPackPnt==DISP_PACK_DATA_0)
 			DispUart.txBuff[DISP_PMD0_UARTTOUT]=DispTout;		// seconds	
 		else;
 
-		//HAL_UART_Transmit_DMA(&huart2, DispUart.txBuff, DISP_TX_BUFF);
-		//DMA1_Stream6->CR |= ((uint32_t)0x00000001);	
 		
 		if(Menu.startTmr)
 			Menu.startTmr--;

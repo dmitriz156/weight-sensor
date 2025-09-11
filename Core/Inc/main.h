@@ -47,14 +47,26 @@ typedef unsigned short int 	u16;
 typedef unsigned char 		u8;
 
 typedef enum {
+	ALARM_ST_ALONE = 0,
+	ALARM_SYNCHRO  = 1,
+} sensors_mod_t;
+
+typedef enum {
 	BTN_IDLE = 0,
 	BTN_PRESS,
 	BTN_LONG_PRESS
 } btn_state_t;
 
+typedef enum {
+	BTN_UP = 0,
+	BTN_DOWN,
+	BTN_L,
+	BTN_R
+}cur_btn_state_t;
+
 typedef struct
 {
-  bool DOWN_flag ;
+  bool DOWN_flag;
   bool UP_flag;
   bool RIGHT_flag;
   bool LEFT_flag;
@@ -64,13 +76,20 @@ typedef struct
   btn_state_t RIGHT_state;
   btn_state_t LEFT_state;
 
+  uint8_t D_debounce_cnt;
+  uint8_t U_debounce_cnt;
+  uint8_t R_debounce_cnt;
+  uint8_t L_debounce_cnt;
+
   uint16_t D_long_press_cnt;
   uint16_t U_long_press_cnt;
   uint16_t R_long_press_cnt;
   uint16_t L_long_press_cnt;
 
-} button_t;
+  cur_btn_state_t cur_state;
 
+} button_t;
+#define DEBOUNCE_TIME_MS		60
 
 /* USER CODE END ET */
 
@@ -81,7 +100,8 @@ typedef struct
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define NUM_OF_WEIGHT_SENSOR    2
+#define NUM_OF_WEIGHT_SENSOR    			2
+#define FLASH_ADDR   						((uint32_t)0x08010000)//page 64
 
 #define BUZZER_ACTIV_WEIGHT_KG				10 // weight limit in KG
 #define HX711_GAIN_PULSES 					1 // for example: 1 = 128x, 2 = 64x, 3 = 32x
@@ -95,7 +115,7 @@ typedef struct
 //#define MAX_NORMALIZE_UNACTIVE_TIME_MS		300
 
 
-#define HX711_DATA_RATE_TIME_MS				100 // 10 SPS (from HX711 datasheet)
+#define HX711_DATA_RATE_TIME_MS				110 // 10 SPS (from HX711 datasheet)
 #define DISPLAY_OUT_INTERVAL			    100
 
 
@@ -122,7 +142,12 @@ typedef struct
 #define LED_BLUE(state)   		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//LED OPERATE
 
 extern bool ready_to_read;
-extern button_t buttons;
+extern sensors_mod_t mod_config;
+extern sensors_mod_t mod_config_prev;
+extern bool mod_flash_read_flag;
+extern bool mod_flash_write_flag;
+
+extern button_t btn;
 extern char SwNewName[];
 extern char SwCurrName[];
 
@@ -133,6 +158,10 @@ extern char SwCurrName[];
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+extern void ButtonsResetLong(void);
+extern void ButtonsReset(void);
+extern void Flash_WriteByte(uint32_t addr, uint8_t data);
+extern uint8_t Flash_ReadByte(uint32_t addr);
 
 /* USER CODE END EFP */
 

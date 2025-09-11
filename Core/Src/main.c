@@ -52,11 +52,15 @@ DMA_HandleTypeDef hdma_usart3_tx;
 /* USER CODE BEGIN PV */
 
 bool ready_to_read = 0;
+extern MenuTypeDef Menu;
 extern weight_t weight [NUM_OF_WEIGHT_SENSOR];
 
 uint16_t UART_TX_counter = 0;
-button_t buttons = {0,0,0,0,0,0,0,0};
-
+button_t btn = {0};
+sensors_mod_t mod_config = ALARM_ST_ALONE;
+sensors_mod_t mod_config_prev = ALARM_ST_ALONE;
+bool mod_flash_read_flag = 0;
+bool mod_flash_write_flag = 0;
 uint16_t one_sec_counter = 0;
 
 char SwNewName[32];
@@ -72,6 +76,14 @@ static void MX_USART3_UART_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
+void Flash_ErasePage(uint32_t addr);
+void Flash_WriteByte(uint32_t addr, uint8_t data);
+uint8_t Flash_ReadByte(uint32_t addr);
+void ConfigReadWrite(void);
+
+void OutHandler(void);
+void ButtonsReset(void);
+void ButtonsResetLong(void);
 void ButtonHandler(void);
 
 /* USER CODE END PFP */
@@ -130,6 +142,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+	 ConfigReadWrite();
+
 	  for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
 		  if (weight[i].offsett_status == false) {
 			  ready_to_read = 0;
@@ -144,8 +158,8 @@ int main(void)
 
 	  HX711GetDataTask();
 	  ButtonHandler();
-	  MenuChangeLine();
 	  DispTask();
+	  OutHandler();
   }
   /* USER CODE END 3 */
 }
@@ -341,48 +355,198 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void Flash_ErasePage(uint32_t addr)
+{
+    FLASH_EraseInitTypeDef EraseInitStruct;
+    uint32_t PageError = 0;
+
+    EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
+    EraseInitStruct.PageAddress = addr;
+    EraseInitStruct.NbPages     = 1;
+
+    HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
+}
+
+void Flash_WriteByte(uint32_t addr, uint8_t data)
+{
+    HAL_FLASH_Unlock();
+
+    Flash_ErasePage(addr);
+
+    // Flash в F1 пишеться тільки halfword (16 біт)
+    uint16_t halfword = (uint16_t)data;
+
+    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr, halfword);
+
+    HAL_FLASH_Lock();
+}
+
+uint8_t Flash_ReadByte(uint32_t addr)
+{
+    uint16_t halfword = *(__IO uint16_t*)addr;
+    return (uint8_t)(halfword & 0xFF);
+}
+
+void ConfigReadWrite(void)
+{
+	if (mod_flash_write_flag && Menu.pageIndx != MENU_PAGE_MODE && Menu.sysMsg == MENU_SM_NO) {
+		Flash_WriteByte(FLASH_ADDR, (uint8_t)mod_config);
+		mod_config_prev = mod_config;
+		mod_flash_write_flag = 0;
+	}
+	if (mod_flash_read_flag == 0) {
+		uint8_t mod_temp = Flash_ReadByte(FLASH_ADDR);
+		if (mod_temp <= ALARM_SYNCHRO) {
+			mod_config = (sensors_mod_t)mod_temp;
+		} else {
+			mod_config = ALARM_ST_ALONE;
+		}
+		mod_config_prev = mod_config;
+		mod_flash_read_flag = 1;
+	}
+}
+
+void OutHandler(void)
+{
+	// BUZZER activate condition start
+	if(STATUS_IN() == 0){
+		alarm_status = 1;
+	} else {
+		alarm_status = 0;
+	}
+	//----
+	if (mod_config == ALARM_ST_ALONE)
+	{
+		//split alarm mode
+		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
+			if (weight[i].signal_state) {
+				buzzer_flag = 1;
+				break;
+			} else {
+				buzzer_flag = 0;
+			}
+		}
+		if(buzzer_flag) {
+			if (alarm_status == 0) { STATUS_OUT(0); }
+		} else {
+			STATUS_OUT(1);
+		}
+	}
+	else if (mod_config == ALARM_SYNCHRO)
+	{
+		//synchronized alarm mode
+		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
+			if(weight[i].signal_state) {
+				STATUS_OUT(0);
+				break;
+			} else {
+				STATUS_OUT(1);
+			}
+		}
+		if(alarm_status) {
+			buzzer_flag = 1;
+		} else {
+			buzzer_flag = 0;
+		}
+	}
+	if(buzzer_flag) {
+		buzzer_counter = (uint16_t)(ONE_SEC * BUZZER_ACTIVE_TIME_S);
+	}
+	//----
+	// BUZZER activate condition end
+}
+
+void ButtonsReset(void)
+{
+	if (btn.DOWN_state  == BTN_PRESS) btn.DOWN_state  = BTN_IDLE;
+	if (btn.UP_state    == BTN_PRESS) btn.UP_state    = BTN_IDLE;
+	if (btn.RIGHT_state == BTN_PRESS) btn.RIGHT_state = BTN_IDLE;
+	if (btn.LEFT_state  == BTN_PRESS) btn.LEFT_state  = BTN_IDLE;
+}
+void ButtonsResetLong(void)
+{
+	if (btn.DOWN_state  == BTN_LONG_PRESS) btn.DOWN_state  = BTN_IDLE;
+	if (btn.UP_state    == BTN_LONG_PRESS) btn.UP_state    = BTN_IDLE;
+	if (btn.RIGHT_state == BTN_LONG_PRESS) btn.RIGHT_state = BTN_IDLE;
+	if (btn.LEFT_state  == BTN_LONG_PRESS) btn.LEFT_state  = BTN_IDLE;
+}
 
 void ButtonHandler(void)
 {
-	//button 1
-	if(BTN_R_READ() == 0 && buttons.RIGHT_flag == 0) {
-		buttons.RIGHT_flag = 1;
-		buttons.RIGHT_state = 1;
-		buttons.R_long_press_cnt = BTN_LONG_PRESS_TIME_MS;
-	}
-	if(BTN_R_READ() == 1) {
-		buttons.RIGHT_flag = 0;
-		buttons.R_long_press_cnt = 0;
-	}
-	//button 4
-	if(BTN_L_READ() == 0 && buttons.LEFT_flag == 0) {
-		buttons.LEFT_flag = 1;
-		buttons.LEFT_state = 1;
-		buttons.L_long_press_cnt = BTN_LONG_PRESS_TIME_MS;
-	}
-	if(BTN_L_READ() == 1) {
-		buttons.LEFT_flag = 0;
-		buttons.L_long_press_cnt = 0;
-	}
 	//button 3
-	if(BTN_UP_READ() == 0 && buttons.UP_flag == 0) {
-		buttons.UP_flag = 1;
-		buttons.UP_state = 1;
-		buttons.U_long_press_cnt = BTN_LONG_PRESS_TIME_MS;
+	if(BTN_UP_READ() == 0 && btn.UP_flag == 0) {
+		btn.UP_flag = 1;
+		btn.U_debounce_cnt = DEBOUNCE_TIME_MS;
 	}
-	if(BTN_UP_READ() == 1) {
-		buttons.UP_flag = 0;
-		buttons.U_long_press_cnt = 0;
+	if(btn.U_debounce_cnt == 1) {
+		if(BTN_UP_READ() == 0) {
+			btn.U_long_press_cnt = BTN_LONG_PRESS_TIME_MS;
+		}
+		btn.U_debounce_cnt = 0;
 	}
+	if(BTN_UP_READ() == 1 && btn.U_debounce_cnt == 0) {
+		if(btn.U_long_press_cnt > 1) {
+			btn.UP_state = BTN_PRESS;
+			btn.U_long_press_cnt = 0;
+		}
+		btn.UP_flag = 0;
+	}
+
 	//button 2
-	if(BTN_DOWN_READ() == 0 && buttons.DOWN_flag == 0) {
-		buttons.DOWN_flag = 1;
-		buttons.DOWN_state = 1;
-		buttons.D_long_press_cnt = BTN_LONG_PRESS_TIME_MS;
+	if(BTN_DOWN_READ() == 0 && btn.DOWN_flag == 0) {
+		btn.DOWN_flag = 1;
+		btn.D_debounce_cnt = DEBOUNCE_TIME_MS;
 	}
-	if(BTN_DOWN_READ() == 1) {
-		buttons.DOWN_flag = 0;
-		buttons.D_long_press_cnt = 0;
+	if(btn.D_debounce_cnt == 1) {
+		if(BTN_DOWN_READ() == 0) {
+			btn.D_long_press_cnt = BTN_LONG_PRESS_TIME_MS;
+		}
+		btn.D_debounce_cnt = 0;
+	}
+	if(BTN_DOWN_READ() == 1 && btn.D_debounce_cnt == 0) {
+		if(btn.D_long_press_cnt > 1) {
+			btn.DOWN_state = BTN_PRESS;
+			btn.D_long_press_cnt = 0;
+		}
+		btn.DOWN_flag = 0;
+	}
+
+	//button 1
+	if(BTN_R_READ() == 0 && btn.RIGHT_flag == 0) {
+		btn.RIGHT_flag = 1;
+		btn.R_debounce_cnt = DEBOUNCE_TIME_MS;
+	}
+	if(btn.R_debounce_cnt == 1) {
+		if(BTN_R_READ() == 0) {
+			btn.R_long_press_cnt = BTN_LONG_PRESS_TIME_MS;
+		}
+		btn.R_debounce_cnt = 0;
+	}
+	if(BTN_R_READ() == 1 && btn.R_debounce_cnt == 0) {
+		if(btn.R_long_press_cnt > 1) {
+			btn.RIGHT_state = BTN_PRESS;
+			btn.R_long_press_cnt = 0;
+		}
+		btn.RIGHT_flag = 0;
+	}
+
+	//button 4
+	if(BTN_L_READ() == 0 && btn.LEFT_flag == 0) {
+		btn.LEFT_flag = 1;
+		btn.L_debounce_cnt = DEBOUNCE_TIME_MS;
+	}
+	if(btn.L_debounce_cnt == 1) {
+		if(BTN_L_READ() == 0) {
+			btn.L_long_press_cnt = BTN_LONG_PRESS_TIME_MS;
+		}
+		btn.L_debounce_cnt = 0;
+	}
+	if(BTN_L_READ() == 1 && btn.L_debounce_cnt == 0) {
+		if(btn.L_long_press_cnt > 1) {
+			btn.LEFT_state = BTN_PRESS;
+			btn.L_long_press_cnt = 0;
+		}
+		btn.LEFT_flag = 0;
 	}
 
 }
@@ -394,7 +558,6 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 		UART_TX_counter = 5;
 		DispUart.packTxCnt++;		// go to next packet
 		DispUart.pauseTmr = 1;		// start timeout
-		//HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
 	}
 }
 
@@ -411,21 +574,38 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
 		}
 
-		if (buttons.R_long_press_cnt) {
-			if (buttons.R_long_press_cnt == 1) { buttons.RIGHT_state = BTN_LONG_PRESS; }
-			buttons.R_long_press_cnt --;
+		if(btn.R_debounce_cnt > 1) {
+			btn.R_debounce_cnt --;
 		}
-		if (buttons.L_long_press_cnt) {
-			if (buttons.L_long_press_cnt == 1) { buttons.LEFT_state = BTN_LONG_PRESS; }
-			buttons.L_long_press_cnt --;
+		if(btn.L_debounce_cnt > 1) {
+			btn.L_debounce_cnt --;
 		}
-		if (buttons.U_long_press_cnt) {
-			if (buttons.U_long_press_cnt == 1) { buttons.UP_state = BTN_LONG_PRESS; }
-			buttons.U_long_press_cnt --;
+		if(btn.U_debounce_cnt > 1) {
+			btn.U_debounce_cnt --;
 		}
-		if (buttons.D_long_press_cnt) {
-			if (buttons.D_long_press_cnt == 1) { buttons.DOWN_state = BTN_LONG_PRESS; }
-			buttons.D_long_press_cnt --;
+		if(btn.D_debounce_cnt > 1) {
+			btn.D_debounce_cnt --;
+		}
+
+		if (btn.U_long_press_cnt) {
+			if (btn.U_long_press_cnt == 1) {
+				btn.UP_state = BTN_LONG_PRESS; }
+			btn.U_long_press_cnt --;
+		}
+		if (btn.D_long_press_cnt) {
+			if (btn.D_long_press_cnt == 1) {
+				btn.DOWN_state = BTN_LONG_PRESS; }
+			btn.D_long_press_cnt --;
+		}
+		if (btn.R_long_press_cnt) {
+			if (btn.R_long_press_cnt == 1) {
+				btn.RIGHT_state = BTN_LONG_PRESS; }
+			btn.R_long_press_cnt --;
+		}
+		if (btn.L_long_press_cnt) {
+			if (btn.L_long_press_cnt == 1) {
+				btn.LEFT_state = BTN_LONG_PRESS; }
+			btn.L_long_press_cnt --;
 		}
 
 

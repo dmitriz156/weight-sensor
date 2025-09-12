@@ -117,166 +117,215 @@ typedef enum
 }DISPPACKTYPE;
 
 // --- DISP_PACKTYPE_SYS_MESSAGE - common packet for all page
-	#define DISP_SYS_MSG_STR_LEN			12
-	typedef enum
-	{
-		DISP_SYS_MSG_TYPE=DISP_REG_CMN_NUM,
-		DISP_SYS_MSG_STR0,
-		DISP_SYS_MSG_STR1=DISP_SYS_MSG_STR0+DISP_SYS_MSG_STR_LEN,
-		DISP_SYS_MSG_STR2=DISP_SYS_MSG_STR1+DISP_SYS_MSG_STR_LEN,
-		DISP_SYS_MSG_STR3=DISP_SYS_MSG_STR2+DISP_SYS_MSG_STR_LEN,
-		DISP_SYS_MSG_STR4=DISP_SYS_MSG_STR3+DISP_SYS_MSG_STR_LEN,
-	}DISP_SYSMSG;
+#define DISP_SYS_MSG_STR_LEN			12
+typedef enum
+{
+	DISP_SYS_MSG_TYPE=DISP_REG_CMN_NUM,
+	DISP_SYS_MSG_STR0,
+	DISP_SYS_MSG_STR1=DISP_SYS_MSG_STR0+DISP_SYS_MSG_STR_LEN,
+	DISP_SYS_MSG_STR2=DISP_SYS_MSG_STR1+DISP_SYS_MSG_STR_LEN,
+	DISP_SYS_MSG_STR3=DISP_SYS_MSG_STR2+DISP_SYS_MSG_STR_LEN,
+	DISP_SYS_MSG_STR4=DISP_SYS_MSG_STR3+DISP_SYS_MSG_STR_LEN,
+}DISP_SYSMSG;
 
 // --- LIST MESSAGE - common packet for all page
-	#define DISP_LIST_LINE_MAX			5		// maximum value of lines (string) per page
-	// allowed length of string
-	#define DISP_LISTPARAM_LEN			32		// allowed length of parameter name
-	#define DISP_LISTVALUE_LEN			16		// allowed length of parameter value
-	#define DISP_LIST_TTL_LEN_VIS		20		// visible length of list name (in case of NoValueExist)
-	#define DISP_LISTPARAM_LEN_VIS	14		// visible length of parameter name (in case of ValueExist)
-	#define DISP_LISTVALUE_LEN_VIS	6			// visible length of parameter value (in case of ValueExist)
-	
-	// DISP_PACKTYPE_DATA_0 - common data
-	#define DISP_LIST_VALUE_NO			0		// list without values
-	#define DISP_LIST_VALUE_YES			1		// list with values
-	#define DISP_LIST_SYMB_NO			0		// no symbol
-	#define DISP_LIST_SYMB_L			1		// symbol stays left of parameter name
-	#define DISP_LIST_SYMB_R			2		// symbol stays right of parameter name
-	#define DISP_LIST_SYMB_LR			3
-	#define DISP_LIST_LINE_HIDE			1
-	#define DISP_LIST_LINE_SHOW			0
-	#define DISP_LIST_GEAR_HIDE			0
-	#define DISP_LIST_GEAR_SHOW			1
-	typedef enum
-	{
-		DISP_PLD0_SELLINE=DISP_REG_CMN_NUM,		// selected line in the list
-		DISP_PLD0_VALUE_EDIT,									// is parameter under edit?
-		DISP_PLD0_VALUE_EXIST,								// is parameter exist?
-		DISP_PLD0_SYMB_MODE,									// symbol position
-		DISP_PLD0_LINE_HIDE,									// hide line
-		DISP_PLD0_GEAR_SHOW,									// gear - settings symbol
-	}DISP_PLD0_MODE;		
-	// typ of symbols
-	typedef enum
-	{	
-		DISP_LISTMSG_SYMB_NO=0,
-		DISP_LISTMSG_SYMB_LOCK,
-		DISP_LISTMSG_SYMB_ARROW,
-		DISP_LISTMSG_SYMB_CHECK_BIRD,
-		DISP_LISTMSG_SYMB_CHECK_FILL,
-		DISP_LISTMSG_SYMB_UNCHECK,
-		DISP_LISTMSG_SYMB_FAIL,
-		DISP_LISTMSG_SYMB_RUN,
-		DISP_LISTMSG_SYMB_INFO,
-		DISP_LISTMSG_SYMB_QUE,
-		DISP_LISTMSG_SYMB_SYNC,		
-	}DISP_LISTSYMB;
-	// registers for list message
-	// DISP_PACKTYPE_STR_0		- name of list (upper bar)
-	// DISP_PACKTYPE_STR_1		- list string 0
-	// ......
-	// DISP_PACKTYPE_STR_5		- list string 4
-	typedef enum
-	{
-		DISP_LISTMSG_SYMB_L=DISP_REG_CMN_NUM,													// 
-		DISP_LISTMSG_SYMB_R,
-		DISP_LISTMSG_STR0,																						// parameter name
-		DISP_LISTMSG_STR1=DISP_LISTMSG_STR0+DISP_LISTPARAM_LEN,	// parameter value
-	}DISP_LISTMSG;
-	#define ListValueExist			Uart.rxOledData0[DISP_PLD0_VALUE_EXIST]
-	#define	ListValueEdit				Uart.rxOledData0[DISP_PLD0_VALUE_EDIT]
-	#define ListLine						Uart.rxOledData0[DISP_PLD0_SELLINE]
-	#define ListSymbExist				Uart.rxOledData0[DISP_PLD0_SYMB_MODE]
-	#define ListLineHide				Uart.rxOledData0[DISP_PLD0_LINE_HIDE]
-	#define ListGearShow				Uart.rxOledData0[DISP_PLD0_GEAR_SHOW]
-	
+#define DISP_LIST_LINE_MAX			5		// maximum value of lines (string) per page
+// allowed length of string
+#define DISP_LISTPARAM_LEN			32		// allowed length of parameter name
+#define DISP_LISTVALUE_LEN			16		// allowed length of parameter value
+#define DISP_LIST_TTL_LEN_VIS		20		// visible length of list name (in case of NoValueExist)
+#define DISP_LISTPARAM_LEN_VIS	14		// visible length of parameter name (in case of ValueExist)
+#define DISP_LISTVALUE_LEN_VIS	6			// visible length of parameter value (in case of ValueExist)
+
+// DISP_PACKTYPE_DATA_0 - common data
+#define DISP_LIST_VALUE_NO			0		// list without values
+#define DISP_LIST_VALUE_YES			1		// list with values
+#define DISP_LIST_SYMB_NO			0		// no symbol
+#define DISP_LIST_SYMB_L			1		// symbol stays left of parameter name
+#define DISP_LIST_SYMB_R			2		// symbol stays right of parameter name
+#define DISP_LIST_SYMB_LR			3
+#define DISP_LIST_LINE_HIDE			1
+#define DISP_LIST_LINE_SHOW			0
+#define DISP_LIST_GEAR_HIDE			0
+#define DISP_LIST_GEAR_SHOW			1
+
+// maximal limit for settings
+#define SETT_LIM_MIN      	0
+#define SETT_LIM_MAX      	65535
+#define SETT_PROT         	0  // setting is protected -> it is impossible to change it
+#define SETT_NOT_USED     	SETT_LIM_MIN
+
+#define CONVERT_VALUE_TO_COEFFICIENT(v) ((v) <= 100 ? -((float)(100 - (v)) / 100.0f) : ((float)((v) - 100) / 100.0f))
+#define CONVERT_COEFFICIENT_TO_VALUE(v) ((v) < 0 ? (100 - (int)(-((v) * 100.0f))) : (100 + (int)((v) * 100.0f)))
+
+typedef enum
+{
+	DISP_PLD0_SELLINE=DISP_REG_CMN_NUM,		// selected line in the list
+	DISP_PLD0_VALUE_EDIT,									// is parameter under edit?
+	DISP_PLD0_VALUE_EXIST,								// is parameter exist?
+	DISP_PLD0_SYMB_MODE,									// symbol position
+	DISP_PLD0_LINE_HIDE,									// hide line
+	DISP_PLD0_GEAR_SHOW,									// gear - settings symbol
+}DISP_PLD0_MODE;
+// typ of symbols
+typedef enum
+{
+	DISP_LISTMSG_SYMB_NO=0,
+	DISP_LISTMSG_SYMB_LOCK,
+	DISP_LISTMSG_SYMB_ARROW,
+	DISP_LISTMSG_SYMB_CHECK_BIRD,
+	DISP_LISTMSG_SYMB_CHECK_FILL,
+	DISP_LISTMSG_SYMB_UNCHECK,
+	DISP_LISTMSG_SYMB_FAIL,
+	DISP_LISTMSG_SYMB_RUN,
+	DISP_LISTMSG_SYMB_INFO,
+	DISP_LISTMSG_SYMB_QUE,
+	DISP_LISTMSG_SYMB_SYNC,
+}DISP_LISTSYMB;
+// registers for list message
+// DISP_PACKTYPE_STR_0		- name of list (upper bar)
+// DISP_PACKTYPE_STR_1		- list string 0
+// ......
+// DISP_PACKTYPE_STR_5		- list string 4
+typedef enum
+{
+	DISP_LISTMSG_SYMB_L=DISP_REG_CMN_NUM,													//
+	DISP_LISTMSG_SYMB_R,
+	DISP_LISTMSG_STR0,																						// parameter name
+	DISP_LISTMSG_STR1=DISP_LISTMSG_STR0+DISP_LISTPARAM_LEN,	// parameter value
+}DISP_LISTMSG;
+#define ListValueExist				Uart.rxOledData0[DISP_PLD0_VALUE_EXIST]
+#define	ListValueEdit				Uart.rxOledData0[DISP_PLD0_VALUE_EDIT]
+#define ListLine					Uart.rxOledData0[DISP_PLD0_SELLINE]
+#define ListSymbExist				Uart.rxOledData0[DISP_PLD0_SYMB_MODE]
+#define ListLineHide				Uart.rxOledData0[DISP_PLD0_LINE_HIDE]
+#define ListGearShow				Uart.rxOledData0[DISP_PLD0_GEAR_SHOW]
+
 // --- DISP_PAGE_HELLO registers
-	// Used only DISP_PACKTYPE_DATA_0
-	typedef enum
-	{
-		DISP_PHD0_TMR=DISP_REG_CMN_NUM,		// init timer
-		DISP_PHD0_TMRMAX,							// init timer max
-	}DISP_RP_HELLO;
+// Used only DISP_PACKTYPE_DATA_0
+typedef enum
+{
+	DISP_PHD0_TMR=DISP_REG_CMN_NUM,		// init timer
+	DISP_PHD0_TMRMAX,							// init timer max
+}DISP_RP_HELLO;
 
 // --- DISP_PAGE_MAIN registers
-	// DISP_PACKTYPE_DATA_0
-	typedef enum
-	{
-		DISP_PMD0_COMM=DISP_REG_CMN_NUM,	// command of movement
-		DISP_PMD0_POSCURR,								// current position 
-		DISP_PMD0_POSMIN,
-		DISP_PMD0_POSMAX,
-		DISP_PMD0_POSMIDDLE,
-		DISP_PMD0_POS_FLAG,								// flag near position indication
-		// additional parameter
-		DISP_PMD0_AP_EN,			// enabled
-		DISP_PMD0_AP_POS,			// progress bar position
-		DISP_PMD0_AP_MAX,			// progress bar max value
-		DISP_PMD0_AP_OL,			// overload
-		// display contrast
-		DISP_PMD0_CONTRAST,
-		// cotroller in BootMode
-		DISP_PMD0_UARTTOUT,		// sec, !!! for all Pages
-	}DISP_PMD0_MAIN;
-	#define AdParamEn							Uart.rxOledData0[DISP_PMD0_AP_EN]
-	#define AdParamPos						Uart.rxOledData0[DISP_PMD0_AP_POS]
-	#define AdParamMax						Uart.rxOledData0[DISP_PMD0_AP_MAX]
-	#define AdParamOL							Uart.rxOledData0[DISP_PMD0_AP_OL]
-	#define DispContrast					Uart.rxOledData0[DISP_PMD0_CONTRAST]
-	#define DispUartTout					Uart.rxOledData0[DISP_PMD0_UARTTOUT]		
-		#define DIST_UART_TOUT_MAX	60		//sec
-	
-	// DISP_PMD0_COMM
-		// command bellow corresponde to GATECOMM
-	#define DISP_PMD0_COMM_NO					0
-	#define DISP_PMD0_COMM_MIDDLE			1		// gate is move in the middle of range
-	#define DISP_PMD0_COMM_MIN				2		// gate is move in the min position
-	#define DISP_PMD0_COMM_MAX				3		// gate is move in the max position
-	// DISP_PMD0_POS_FLAG
-	#define DISP_PMD0_POS_FLAG_NO			0		// no additional indication near current position window
-	#define DISP_PMD0_POS_FLAG_CCW		1		// move forward
-	#define DISP_PMD0_POS_FLAG_CW 		2		// move backward
+// DISP_PACKTYPE_DATA_0
+typedef enum
+{
+	DISP_PMD0_COMM=DISP_REG_CMN_NUM,	// command of movement
+	DISP_PMD0_POSCURR,								// current position
+	DISP_PMD0_POSMIN,
+	DISP_PMD0_POSMAX,
+	DISP_PMD0_POSMIDDLE,
+	DISP_PMD0_POS_FLAG,								// flag near position indication
+	// additional parameter
+	DISP_PMD0_AP_EN,			// enabled
+	DISP_PMD0_AP_POS,			// progress bar position
+	DISP_PMD0_AP_MAX,			// progress bar max value
+	DISP_PMD0_AP_OL,			// overload
 	// display contrast
-	#define DISP_PMD0_CONTRAST_LOW	5		
-	#define DISP_PMD0_CONTRAST_HIGH		0xFF		
-	
-	#define DISP_PMS0_BTN_LEN			5		// length of buttons text
-	#define DISP_PMS0_BTN_NUM			5
-	#define DISP_PMS0_APN_LEN			15	// additinal parameter name length
-	#define DISP_PMS0_APD_LEN			8		// additinal parameter data length
+	DISP_PMD0_CONTRAST,
+	// cotroller in BootMode
+	DISP_PMD0_UARTTOUT,		// sec, !!! for all Pages
+}DISP_PMD0_MAIN;
 
-	// DISP_PACKTYPE_STR_0
-	typedef enum
+typedef enum {
+  SETT_CONV_NO = 0,      // no conversion for parameter
+  SETT_CONV_DIV_10,      // divide by 10
+  SETT_CONV_DIV_100,     // divide by 100
+  SETT_CONV_DIV_1000,    // divide by 1000
+  SETT_CONV_DIV_10000,   // divide by 10000
+  SETT_CONV_DIV_100000,  // divide by 100000
+  SETT_CONV_POS_MIRR,    // convert like position parameters (*10/2) with negative mirror over Zero
+  SETT_CONV_POS,         // convert like position parameters (*10/2)
+  SETT_CONV_BITMAP,      // convert like bitmap (according to textValue)
+  SETT_CONV_COEFFICIENT  // convert value range from [0; 100] => [-1; 0] U [100; 200] => [0; 1]
+} SETTCONV;
+#define SETT_TEXT_NO    0xFFFF
+
+#define AdParamEn						Uart.rxOledData0[DISP_PMD0_AP_EN]
+#define AdParamPos						Uart.rxOledData0[DISP_PMD0_AP_POS]
+#define AdParamMax						Uart.rxOledData0[DISP_PMD0_AP_MAX]
+#define AdParamOL						Uart.rxOledData0[DISP_PMD0_AP_OL]
+#define DispContrast					Uart.rxOledData0[DISP_PMD0_CONTRAST]
+#define DispUartTout					Uart.rxOledData0[DISP_PMD0_UARTTOUT]
+#define DIST_UART_TOUT_MAX				60		//sec
+
+// DISP_PMD0_COMM
+// command bellow corresponde to GATECOMM
+#define DISP_PMD0_COMM_NO					0
+#define DISP_PMD0_COMM_MIDDLE			1		// gate is move in the middle of range
+#define DISP_PMD0_COMM_MIN				2		// gate is move in the min position
+#define DISP_PMD0_COMM_MAX				3		// gate is move in the max position
+// DISP_PMD0_POS_FLAG
+#define DISP_PMD0_POS_FLAG_NO			0		// no additional indication near current position window
+#define DISP_PMD0_POS_FLAG_CCW		1		// move forward
+#define DISP_PMD0_POS_FLAG_CW 		2		// move backward
+// display contrast
+#define DISP_PMD0_CONTRAST_LOW		5
+#define DISP_PMD0_CONTRAST_HIGH		0xFF
+
+#define DISP_PMS0_BTN_LEN			5		// length of buttons text
+#define DISP_PMS0_BTN_NUM			5
+#define DISP_PMS0_APN_LEN			15	// additinal parameter name length
+#define DISP_PMS0_APD_LEN			8		// additinal parameter data length
+
+#define CONVERT_VALUE_TO_COEFFICIENT(v) ((v) <= 100 ? -((float)(100 - (v)) / 100.0f) : ((float)((v) - 100) / 100.0f))
+#define CONVERT_COEFFICIENT_TO_VALUE(v) ((v) < 0 ? (100 - (int)(-((v) * 100.0f))) : (100 + (int)((v) * 100.0f)))
+
+// DISP_PACKTYPE_STR_0
+typedef enum
+{
+	DISP_PMS0_BTN1=DISP_REG_CMN_NUM,
+	DISP_PMS0_BTN2=DISP_PMS0_BTN1+DISP_PMS0_BTN_LEN,
+	DISP_PMS0_BTN3=DISP_PMS0_BTN2+DISP_PMS0_BTN_LEN,
+	DISP_PMS0_BTN4=DISP_PMS0_BTN3+DISP_PMS0_BTN_LEN,
+	DISP_PMS0_BTN5=DISP_PMS0_BTN4+DISP_PMS0_BTN_LEN
+}DISP_PMS0_MAIN;
+#define DISP_PMS0_AP_NAME 	DISP_PMS0_BTN1
+#define DISP_PMS0_AP_DATA 	(DISP_PMS0_AP_NAME+DISP_PMS0_APN_LEN)
+
+#define DISP_PMS1_POS_LEN					8		// length of position buttons
+// DISP_PACKTYPE_STR_1
+typedef enum
+{
+	DISP_PMS1_POS_CURR=DISP_REG_CMN_NUM,
+	DISP_PMS1_POS_A=DISP_PMS1_POS_CURR+DISP_PMS1_POS_LEN,
+	DISP_PMS1_POS_B=DISP_PMS1_POS_A+DISP_PMS1_POS_LEN,
+	DISP_PMS1_POS_C=DISP_PMS1_POS_B+DISP_PMS1_POS_LEN,
+	DISP_PMS1_NAME_A=DISP_PMS1_POS_C+DISP_PMS1_POS_LEN,
+	DISP_PMS1_NAME_B=DISP_PMS1_NAME_A+DISP_PMS1_POS_LEN,
+	DISP_PMS1_NAME_C=DISP_PMS1_NAME_B+DISP_PMS1_POS_LEN
+}DISP_PMS1_MAIN;
+// DISP_PACKTYPE_STR_2
+typedef enum
+{
+	DISP_PMS2_ABOVE=DISP_REG_CMN_NUM,
+	DISP_PMS2_BELOW_L=DISP_PMS2_ABOVE+DISP_LIST_TTL_LEN_VIS,
+	DISP_PMS2_BELOW_R=DISP_PMS2_BELOW_L+DISP_LIST_TTL_LEN_VIS/2+1,
+}DISP_PMS2_MAIN;
+
+typedef struct
+{
+	u16 def;    // define value -> copy from Preset[]
+	u16 min;    // minimum value of setting parameter
+	u16 max;    // maximum value of setting parameter
+	u16 step;   // step of changing value of setting parameter
+	u16 pText;  // index to string value of parameters
+
+	struct
 	{
-		DISP_PMS0_BTN1=DISP_REG_CMN_NUM,
-		DISP_PMS0_BTN2=DISP_PMS0_BTN1+DISP_PMS0_BTN_LEN,
-		DISP_PMS0_BTN3=DISP_PMS0_BTN2+DISP_PMS0_BTN_LEN,
-		DISP_PMS0_BTN4=DISP_PMS0_BTN3+DISP_PMS0_BTN_LEN,
-		DISP_PMS0_BTN5=DISP_PMS0_BTN4+DISP_PMS0_BTN_LEN
-	}DISP_PMS0_MAIN;
-	#define DISP_PMS0_AP_NAME 	DISP_PMS0_BTN1
-	#define DISP_PMS0_AP_DATA 	(DISP_PMS0_AP_NAME+DISP_PMS0_APN_LEN)
-	
-	#define DISP_PMS1_POS_LEN					8		// length of position buttons
-	// DISP_PACKTYPE_STR_1
-	typedef enum
-	{
-		DISP_PMS1_POS_CURR=DISP_REG_CMN_NUM,
-		DISP_PMS1_POS_A=DISP_PMS1_POS_CURR+DISP_PMS1_POS_LEN,
-		DISP_PMS1_POS_B=DISP_PMS1_POS_A+DISP_PMS1_POS_LEN,
-		DISP_PMS1_POS_C=DISP_PMS1_POS_B+DISP_PMS1_POS_LEN,
-		DISP_PMS1_NAME_A=DISP_PMS1_POS_C+DISP_PMS1_POS_LEN,
-		DISP_PMS1_NAME_B=DISP_PMS1_NAME_A+DISP_PMS1_POS_LEN,
-		DISP_PMS1_NAME_C=DISP_PMS1_NAME_B+DISP_PMS1_POS_LEN
-	}DISP_PMS1_MAIN;
-	// DISP_PACKTYPE_STR_2
-	typedef enum
-	{
-		DISP_PMS2_ABOVE=DISP_REG_CMN_NUM,
-		DISP_PMS2_BELOW_L=DISP_PMS2_ABOVE+DISP_LIST_TTL_LEN_VIS,
-		DISP_PMS2_BELOW_R=DISP_PMS2_BELOW_L+DISP_LIST_TTL_LEN_VIS/2+1,
-	}DISP_PMS2_MAIN;	
+		u8 bErrMin: 1;  // parameter falls out over Min limit
+		u8 bErrMax: 1;  // parameter falls out over Max limit
+		u8 bProt: 1;    // current parameter is protected
+		u8 bChng: 1;    // current parameter was changed
+		u8 bAvail: 1;   // settings is available for current type(model) of turnstile
+	} flag;
+
+	// for menu
+	u8 conv;  // additional conversion for settings parameter (using for menu displaying)
+} SettParamDef;
 
 extern DispUartTypeDef DispUart;
 

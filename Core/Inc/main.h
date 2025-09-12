@@ -51,6 +51,18 @@ typedef enum {
 	ALARM_SYNCHRO  = 1,
 } sensors_mod_t;
 
+typedef struct {
+	sensors_mod_t mod_config;
+	sensors_mod_t mod_config_prev;
+
+	uint8_t alarm_treshold_kg;
+	uint8_t alarm_treshold_kg_prev;
+
+	bool flash_read_flag;
+	bool flash_write_flag;
+} save_flash_t;
+
+
 typedef enum {
 	BTN_IDLE = 0,
 	BTN_PRESS,
@@ -103,7 +115,7 @@ typedef struct
 #define NUM_OF_WEIGHT_SENSOR    			2
 #define FLASH_ADDR   						((uint32_t)0x08010000)//page 64
 
-#define BUZZER_ACTIV_WEIGHT_KG				10 // weight limit in KG
+//#define BUZZER_ACTIV_WEIGHT_KG				5 // weight limit in KG
 #define HX711_GAIN_PULSES 					1 // for example: 1 = 128x, 2 = 64x, 3 = 32x
 #define KG_DIV								45000.0f
 #define BUZZER_ACTIVE_TIME_S				3.0f
@@ -142,10 +154,7 @@ typedef struct
 #define LED_BLUE(state)   		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//LED OPERATE
 
 extern bool ready_to_read;
-extern sensors_mod_t mod_config;
-extern sensors_mod_t mod_config_prev;
-extern bool mod_flash_read_flag;
-extern bool mod_flash_write_flag;
+extern save_flash_t settings;
 
 extern button_t btn;
 extern char SwNewName[];

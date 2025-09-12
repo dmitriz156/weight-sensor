@@ -54,14 +54,14 @@ DMA_HandleTypeDef hdma_usart3_tx;
 bool ready_to_read = 0;
 extern MenuTypeDef Menu;
 extern weight_t weight [NUM_OF_WEIGHT_SENSOR];
-
+save_flash_t settings = {0};
 uint16_t UART_TX_counter = 0;
 button_t btn = {0};
-sensors_mod_t mod_config = ALARM_ST_ALONE;
-sensors_mod_t mod_config_prev = ALARM_ST_ALONE;
-bool mod_flash_read_flag = 0;
-bool mod_flash_write_flag = 0;
+
 uint16_t one_sec_counter = 0;
+
+SettParamDef SettParam[MEASURE_ITEM_NUM];  // min,max,def,step of parameters
+uint16_t *pSettReg[MEASURE_ITEM_NUM];  // pointer to settings value
 
 char SwNewName[32];
 char SwCurrName[32];
@@ -320,8 +320,8 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : STATUS_LED_Pin OUT_1_Pin OUT_2_Pin PA15 */
-  GPIO_InitStruct.Pin = STATUS_LED_Pin|OUT_1_Pin|OUT_2_Pin|GPIO_PIN_15;
+  /*Configure GPIO pins : STATUS_LED_Pin PA15 */
+  GPIO_InitStruct.Pin = STATUS_LED_Pin|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -333,12 +333,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BTN_R_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BTN_L_Pin BTN_UP_Pin BTN_DOWN_Pin PB3
-                           PB5 PB8 PB9 */
-  GPIO_InitStruct.Pin = BTN_L_Pin|BTN_UP_Pin|BTN_DOWN_Pin|GPIO_PIN_3
-                          |GPIO_PIN_5|GPIO_PIN_8|GPIO_PIN_9;
+  /*Configure GPIO pins : OUT_1_Pin OUT_2_Pin */
+  GPIO_InitStruct.Pin = OUT_1_Pin|OUT_2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BTN_L_Pin BTN_UP_Pin BTN_DOWN_Pin PB8
+                           PB9 */
+  GPIO_InitStruct.Pin = BTN_L_Pin|BTN_UP_Pin|BTN_DOWN_Pin|GPIO_PIN_8
+                          |GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB3 PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB4 */
@@ -389,20 +402,20 @@ uint8_t Flash_ReadByte(uint32_t addr)
 
 void ConfigReadWrite(void)
 {
-	if (mod_flash_write_flag && Menu.pageIndx != MENU_PAGE_MODE && Menu.sysMsg == MENU_SM_NO) {
-		Flash_WriteByte(FLASH_ADDR, (uint8_t)mod_config);
-		mod_config_prev = mod_config;
-		mod_flash_write_flag = 0;
+	if (settings.flash_write_flag && Menu.pageIndx != MENU_PAGE_MODE && Menu.sysMsg == MENU_SM_NO) {
+		Flash_WriteByte(FLASH_ADDR, (uint8_t)settings.mod_config);
+		settings.mod_config_prev = settings.mod_config;
+		settings.flash_write_flag = 0;
 	}
-	if (mod_flash_read_flag == 0) {
+	if (settings.flash_read_flag == 0) {
 		uint8_t mod_temp = Flash_ReadByte(FLASH_ADDR);
 		if (mod_temp <= ALARM_SYNCHRO) {
-			mod_config = (sensors_mod_t)mod_temp;
+			settings.mod_config = (sensors_mod_t)mod_temp;
 		} else {
-			mod_config = ALARM_ST_ALONE;
+			settings.mod_config = ALARM_ST_ALONE;
 		}
-		mod_config_prev = mod_config;
-		mod_flash_read_flag = 1;
+		settings.mod_config_prev = settings.mod_config;
+		settings.flash_read_flag = 1;
 	}
 }
 
@@ -415,7 +428,7 @@ void OutHandler(void)
 		alarm_status = 0;
 	}
 	//----
-	if (mod_config == ALARM_ST_ALONE)
+	if (settings.mod_config == ALARM_ST_ALONE)
 	{
 		//split alarm mode
 		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
@@ -427,20 +440,20 @@ void OutHandler(void)
 			}
 		}
 		if(buzzer_flag) {
-			if (alarm_status == 0) { STATUS_OUT(0); }
+			if (alarm_status == 0) { STATUS_OUT(1); }
 		} else {
-			STATUS_OUT(1);
+			STATUS_OUT(0);
 		}
 	}
-	else if (mod_config == ALARM_SYNCHRO)
+	else if (settings.mod_config == ALARM_SYNCHRO)
 	{
 		//synchronized alarm mode
 		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
 			if(weight[i].signal_state) {
-				STATUS_OUT(0);
+				STATUS_OUT(1);
 				break;
 			} else {
-				STATUS_OUT(1);
+				STATUS_OUT(0);
 			}
 		}
 		if(alarm_status) {
@@ -627,7 +640,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		{
 			if(weight[i].read_cnt){ weight[i].read_cnt --; }
 
-			if(weight[i].kg > BUZZER_ACTIV_WEIGHT_KG)
+			if(weight[i].kg > settings.alarm_treshold_kg)
 			{
 				if(weight[i].active_state_cnt) {
 					weight[i].active_state_cnt --;
@@ -646,10 +659,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if(buzzer_counter) {
 			buzzer_counter--;
 			BUZZER_OUT(1);
-			LED_BLUE(0);
+			LED_BLUE(1);
 		} else {
 			BUZZER_OUT(0);
-			LED_BLUE(1);
+			LED_BLUE(0);
 		}
 	}
 }

@@ -58,6 +58,7 @@ extern bool buzzer_flag;
 extern uint16_t buzzer_counter;
 
 extern UART_HandleTypeDef huart3;
+extern weight_t weight[];
 
 GPIO_PinState HX711_DOUT_READ(uint8_t channel);
 

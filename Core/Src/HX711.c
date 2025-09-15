@@ -1,8 +1,6 @@
 
 #include "HX711.h"
 #include "main.h"
-#include <stdint.h>
-#include <stdbool.h>
 #include "kalman.h"
 
 weight_t weight[NUM_OF_WEIGHT_SENSOR];

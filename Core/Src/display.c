@@ -1,8 +1,6 @@
-#include "main.h"
 
 #include "display.h"
-#include "menu.h"
-
+#include "main.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -10,7 +8,7 @@
 
 extern TIM_HandleTypeDef htim3;
 extern UART_HandleTypeDef huart3;
-extern weight_t weight [NUM_OF_WEIGHT_SENSOR];
+//extern weight_t weight [NUM_OF_WEIGHT_SENSOR];
 
 extern SettParamDef SettParam[];
 extern uint16_t *pSettReg[];  // pointer to settings value
@@ -172,40 +170,6 @@ struct
 //  return &strSett[0];
 //}
 
-/**
- * @brief  Set name of parameters. It is displayed on the screen and transmitted to BldcContol application
- *
- * @param indx     index in Settings buffer. Use SETREGINDX enum
- * @param pnt	     pointer to variable that need to be assign to settings buffer (if pnt==NULL it means that only min,max and step are changed)
- * @param min	     allowed range of variable (use for adjusting)
- * @param max      allowed range of variable (use for adjusting)
- * @param step     step of adjusting. If step=0 -> it is protected settings (P), otherwise -> adjustable settings (A)
- * @param indxText index of text description of value
- * @param conv     additional conversion for settings parameter (using for menu displaying) - use SETTCONV enumeration
- */
-void SettSetParam(u16 indx, u16 *pnt, u16 min, u16 max, u16 step, u16 indxText, u8 conv)
-{
-  if (indx < MEASURE_ITEM_NUM) {
-    if (pnt != NULL) {
-      pSettReg[indx] = pnt;
-    }
-
-    if (indxText != NULL) {
-      SettParam[indx].pText = indxText;
-    }
-
-    SettParam[indx].min = min;
-    SettParam[indx].max = max;
-    if (step == SETT_PROT) {
-      SettParam[indx].step       = 1;
-      SettParam[indx].flag.bProt = 1;
-    } else {
-      SettParam[indx].step       = step;
-      SettParam[indx].flag.bProt = 0;
-    }
-    SettParam[indx].conv = conv;
-  }
-}
 
 
 /**
@@ -389,10 +353,10 @@ void MenuSysMsgFill(uint8_t type, char* str0, char* str1, char* str2, char* str3
 	if(str4)	strncpy((void*)&DispUart.txBuff[DISP_SYS_MSG_STR4],str4,DISP_SYS_MSG_STR_LEN);							
 }
 
-void SettInit(void){
-	SettSetParam(SETT_SYNCHRO_MODE, &settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, measure_name[SETT_SYNCHRO_MODE], SETT_CONV_NO);
-	SettSetParam(SETT_THRESHOLD_WEIGHT, &settings.alarm_treshold_kg, 1, 30, 1, measure_name[SETT_THRESHOLD_WEIGHT], SETT_CONV_NO);
-}
+// void SettInit(void){
+// 	SettSetParam(SETT_SYNCHRO_MODE, &settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, measure_name[SETT_SYNCHRO_MODE], SETT_CONV_NO);
+// 	SettSetParam(SETT_THRESHOLD_WEIGHT, &settings.alarm_treshold_kg, 1, 30, 1, measure_name[SETT_THRESHOLD_WEIGHT], SETT_CONV_NO);
+// }
 
 
 void DispTask(void)
@@ -409,14 +373,6 @@ void DispTask(void)
 		MenuChangeLine();
 
 		DispUart.pauseTmr=0;
-		DispUart.shiftTmr++;
-		if(DispUart.shiftTmr>=DISP_SHIFT_TMR)
-		{
-			DispUart.shiftTmr=0;
-			DispUart.shiftChar0++;
-			DispUart.shiftChar1++;
-		}
-		else;
 
 		switch(Menu.pageIndx){
 		case MENU_PAGE_HELLO:

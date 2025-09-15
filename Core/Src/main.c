@@ -21,10 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "display.h"
-#include "menu.h"
-#include "HX711.h"
-#include "kalman.h"
+
 
 /* USER CODE END Includes */
 
@@ -53,6 +50,7 @@ DMA_HandleTypeDef hdma_usart3_tx;
 
 bool ready_to_read = 0;
 extern MenuTypeDef Menu;
+extern DispUartTypeDef DispUart;
 extern weight_t weight [NUM_OF_WEIGHT_SENSOR];
 save_flash_t settings = {0};
 uint16_t UART_TX_counter = 0;
@@ -60,8 +58,8 @@ button_t btn = {0};
 
 uint16_t one_sec_counter = 0;
 
-SettParamDef SettParam[MEASURE_ITEM_NUM];  // min,max,def,step of parameters
-uint16_t *pSettReg[MEASURE_ITEM_NUM];  // pointer to settings value
+//SettParamDef SettParam[MEASURE_ITEM_NUM];  // min,max,def,step of parameters
+//uint16_t *pSettReg[MEASURE_ITEM_NUM];  // pointer to settings value
 
 char SwNewName[32];
 char SwCurrName[32];

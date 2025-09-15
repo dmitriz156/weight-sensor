@@ -32,19 +32,29 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
+#include <stdint.h>
+
+#include "typedef.h"
+//#include "kalman.h"
 #include "HX711.h"
+#include "menu.h"
+#include "setting.h"
+#include "display.h"
+#include "menu_text.h"
+
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-typedef signed int 			s32;
-typedef signed short int 	s16;
-typedef signed char 		s8;
-
-typedef unsigned int 		u32;
-typedef unsigned short int 	u16;
-typedef unsigned char 		u8;
+//typedef signed int 			s32;
+//typedef signed short int 	s16;
+//typedef signed char 		s8;
+//
+//typedef unsigned int 		u32;
+//typedef unsigned short int 	u16;
+//typedef unsigned char 		u8;
 
 typedef enum {
 	ALARM_ST_ALONE = 0,

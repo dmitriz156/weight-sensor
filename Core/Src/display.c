@@ -95,6 +95,12 @@ char str_item_value[32];
 DispUartTypeDef DispUart;
 MenuTypeDef Menu;
 
+char dStr0[DISP_LISTPARAM_LEN];
+char dStr1[DISP_LISTPARAM_LEN];
+char dStr2[DISP_LISTPARAM_LEN];
+char dStr3[DISP_LISTPARAM_LEN];
+char dStr4[DISP_LISTPARAM_LEN];
+
 const uint8_t measure_item [] = {
 		MEASURE_KG_S1,
 		MEASURE_KG_MAX_S1,
@@ -107,7 +113,15 @@ const uint8_t measure_item [] = {
 		SETT_SYNCHRO_MODE,
 		SETT_THRESHOLD_WEIGHT,
 		MEASURE_ITEM_NUM
-	};
+};
+
+struct
+{
+	char str[DISP_SYS_MSG_STR_LEN * 5];  // 5 - number of strings
+	char *pnt[5];
+	u8 type;                             // type of message
+	u8 tmr;
+} MenuFreeSysMsg;
 
 
 //char *DispSettParamToStr(u8 type, u8 indx)
@@ -285,46 +299,76 @@ char *FloatToString(float value, u8 decimals, const char *suffix)
 
 void MenuChangeLine(void)
 {
-  if (btn.UP_state == BTN_PRESS) {
-    if (Menu.lineSel) {
-      Menu.lineSel--;
-    } else {
-      if (Menu.linePos) {
-        Menu.linePos--;
-      }
-    }
-  }
-  if (btn.DOWN_state == BTN_PRESS) {
-    if (Menu.lineSel < (DISP_LIST_LINE_MAX - 1)) {
-      Menu.lineSel++;
-    } else {
-      Menu.linePos++;
-    }
+	if (btn.UP_state == BTN_PRESS) {
+		if (Menu.lineSel) {
+			Menu.lineSel--;
+		} else {
+			if (Menu.linePos) {
+				Menu.linePos--;
+			}
+		}
+	}
+	if (btn.DOWN_state == BTN_PRESS) {
+		if (Menu.lineSel < (DISP_LIST_LINE_MAX - 1)) {
+			Menu.lineSel++;
+		} else {
+			Menu.linePos++;
+		}
 
-    if ((Menu.lineSel + Menu.linePos) >= Menu.lineNum && Menu.lineSel) {
-      Menu.lineSel--;
-    }
-  }
+		if ((Menu.lineSel + Menu.linePos) >= Menu.lineNum && Menu.lineSel) {
+			Menu.lineSel--;
+		}
+	}
 }
+// for internal access
+void MenuMakeSysMsg(MENUSM type, u16 tmr)
+{
+	Menu.sysMsg    = type;
+	Menu.sysMsgTmr = tmr;
+}
+
+void MenuMakeFreeSysMsg(u8 type, char *str0, char *str1, char *str2, char *str3, char *str4, u16 tmr)
+{
+	Menu.sysMsg         = MENU_SM_FREE;
+	Menu.sysMsgTmr      = tmr;
+	MenuFreeSysMsg.type = type;
+	memset((void *)&MenuFreeSysMsg.str, 0x00, sizeof(MenuFreeSysMsg.str));
+	if (str0) strncpy(MenuFreeSysMsg.pnt[0], str0, DISP_SYS_MSG_STR_LEN);
+	if (str1) strncpy(MenuFreeSysMsg.pnt[1], str1, DISP_SYS_MSG_STR_LEN);
+	if (str2) strncpy(MenuFreeSysMsg.pnt[2], str2, DISP_SYS_MSG_STR_LEN);
+	if (str3) strncpy(MenuFreeSysMsg.pnt[3], str3, DISP_SYS_MSG_STR_LEN);
+	if (str4) strncpy(MenuFreeSysMsg.pnt[4], str4, DISP_SYS_MSG_STR_LEN);
+}
+
+void MenuDelSysMsg(void)
+{
+	Menu.sysMsg    = MENU_SM_NO;
+	Menu.sysMsgTmr = 0;
+	if (Menu.flag.bExtEvent) {
+		Menu.flag.bExtEvent                   = 0;
+		Menu.extEvent[Menu.extEventPnt].event = MENU_EVENT_NO;
+	}
+}
+
 
 void DispInit(void)
 {
-		memset((void*)&DispUart,0x00,sizeof(DispUart));
-		
-		// prepare number of packet for each type of display pages
-		DispUart.txPackNum[DISP_PAGE_HELLO]	= DISP_PAGE_HELLO_PACK_NUM;
-		DispUart.txPackNum[DISP_PAGE_MAIN]	= DISP_PAGE_MAIN_PACK_NUM;
-		DispUart.txPackNum[DISP_PAGE_LIST]	= DISP_PAGE_LIST_PACK_NUM;
-		DispUart.txPackNum[DISP_PAGE_EMPTY]	= DISP_PAGE_EMPTY_PACK_NUM;
-		DispUart.txPackNum[DISP_PAGE_UNDEF]	= DISP_PAGE_UNDEF_PACK_NUM;
-		
-		DispUart.pauseTmr = 1;		// start of pause
-		
-		memset((void*)&Menu,0x00,sizeof(Menu));
+	memset((void*)&DispUart,0x00,sizeof(DispUart));
 
-		Menu.pageIndx = MENU_PAGE_HELLO;
-		Menu.startTmr = DISP_START_TMR;
-											
+	// prepare number of packet for each type of display pages
+	DispUart.txPackNum[DISP_PAGE_HELLO]	= DISP_PAGE_HELLO_PACK_NUM;
+	DispUart.txPackNum[DISP_PAGE_MAIN]	= DISP_PAGE_MAIN_PACK_NUM;
+	DispUart.txPackNum[DISP_PAGE_LIST]	= DISP_PAGE_LIST_PACK_NUM;
+	DispUart.txPackNum[DISP_PAGE_EMPTY]	= DISP_PAGE_EMPTY_PACK_NUM;
+	DispUart.txPackNum[DISP_PAGE_UNDEF]	= DISP_PAGE_UNDEF_PACK_NUM;
+
+	DispUart.pauseTmr = 1;		// start of pause
+
+	memset((void*)&Menu,0x00,sizeof(Menu));
+
+	Menu.pageIndx = MENU_PAGE_HELLO;
+	Menu.startTmr = DISP_START_TMR;
+
 }
 
 
@@ -395,14 +439,22 @@ void DispTask(void)
 				Menu.linePos    = 0;
 				Menu.lineSel    = settings.mod_config;
 			}
-			if(btn.RIGHT_state == BTN_LONG_PRESS) {
-				Menu.sysMsg		= MENU_SM_SETT_WIND;
+			if(btn.RIGHT_state == BTN_PRESS ) {
 				Menu.valueEdit = 1;
+				MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);
 			}
-			if(btn.LEFT_state == BTN_LONG_PRESS) {
+
+			if(btn.LEFT_state == BTN_PRESS) {
 				Menu.sysMsg		= MENU_SM_NO;
 				Menu.valueEdit = 0;
 			}
+
+			if(Menu.valueEdit == 1){
+				if(btn.UP_state == BTN_PRESS) settings.mod_config ++;
+				if(btn.DOWN_state == BTN_PRESS) settings.mod_config --;
+				Menu.valueEdit = 0;
+			}
+
 			break;
 		case MENU_PAGE_MODE:
 			if(btn.LEFT_state == BTN_LONG_PRESS) {
@@ -477,7 +529,26 @@ void DispTask(void)
 			case MENU_SM_SAVE_MODE:
 				MenuSysMsgFill(DISP_SYS_MSG_QUE, "CHANGE ALARM","MODE?","",0,0);//btn: NO-YES
 				break;
+			case MENU_SM_SETT_WIND:
+				// middle line
+				strcpy(dStr1, MenuModName[settings.mod_config]);
 
+				// first line
+				if (MenuModName[settings.mod_config] == MenuModName[MENU_ALARM_ST_ALONE]) {  // first value in
+					strcpy(dStr0, "-");
+				} else {
+					strcpy(dStr0, MenuModName[settings.mod_config - 1]);
+				}
+
+				// last line
+				if (MenuModName[settings.mod_config] == MenuModName[MENU_MOD_NUM]) {
+					strcpy(dStr2, "-");
+				} else {
+					strcpy(dStr0, MenuModName[settings.mod_config + 1]);
+				}
+
+				MenuSysMsgFill(DISP_SYS_MSG_SETT, "]", dStr0, dStr1, dStr2, "[");
+				break;
 			case MENU_SM_NO:		// no message -> do nothing
 				break;
 			default:				// undefined message

@@ -2,6 +2,8 @@
 
 #define DISP_START_TMR			150	// ms
 
+#define MENU_EVENT_BUFF      8    // length of menu event buffer
+
 typedef enum
 {
 	MENU_PAGE_HELLO = 0,			// greating page
@@ -16,7 +18,7 @@ typedef enum
 typedef enum
 {
 	MENU_SM_NO=0,
-	MENU_SM_SAVE_MODE,		//MENU_SM_FREE,  // free type of message -> create immediately in ButtonPress event ->
+	MENU_SM_FREE,  // free type of message -> create immediately in ButtonPress event ->
 	// It is convenient for unique messages normally: ONE unique ButtonEvent = ONE unique message
 	// Messages that are shown bellow are preCreated in ButtonPress event, but thea are filled in DispTask.
 	// Type of messages for this using:
@@ -24,7 +26,7 @@ typedef enum
 	// - message with question
 	// - info message
 	// for MENU_PAGE_MAIN
-	MENU_SM_MSG_SETT_DEF,      // settings are defaulted
+	MENU_SM_SAVE_MODE,		//MENU_SM_MSG_SETT_DEF,      // settings are defaulted
 	MENU_SM_MSG_NEW_ERR,       // new error appearance
 	// for MENU_PAGE_MODE
 	MENU_SM_MSG_GSNOCALIBR,    // " There is no calibration"
@@ -84,18 +86,113 @@ typedef enum
 	MENU_SM_MSG_TEST_FIN,        // finish of TEST1000
 } MENUSM;
 
+typedef enum {
+	MENU_EVENT_NO = 0,
+	MENU_EVENT_CAL_FAILCNT,     // increase fail count and repeat calibration
+	MENU_EVENT_CAL_FIN_OK,      // calibration is finished successfully
+	MENU_EVENT_CAL_FIN_FAIL,    // failed finish of calibration
+	MENU_EVENT_GS_CAL_OK,       // GS calibration is finished successfully
+	MENU_EVENT_GS_CAL_FAIL,     // GS calibration is finished successfully
+	MENU_EVENT_AREA_SRCH_OK,    // working area searching is successful
+	MENU_EVENT_AREA_SRCH_FAIL,  // working area searching is Failed
+	MENU_EVENT_DIAG_FIN_NORM,   // normal finish of diagnostic
+	MENU_EVENT_DIAG_FIN_ERR,    // finished by external error
+	MENU_EVENT_DIAG_FIN_EXT,    // finished by external stop
+	MENU_EVENT_SETT_SAVE_OK,    // settings is saved successfully
+	MENU_EVENT_SETT_SAVE_FAIL,  // fail to save settings
+	MENU_EVENT_CANSHARE_FAIL,   // error of display sharing
+	MENU_EVENT_TEST_FIN,        // finishing of TEST-1000
+} MENUEVENT;                  // event of external layer
+
+void MenuMakeNewEvent(MENUEVENT ev, u16 arg);
+
 typedef struct
 {
-	uint16_t startTmr;
-	MENUPAGE pageIndx;				// index of current page of menu
+	u16 startTmr;
+
+	MENUPAGE pageIndx;  // index of current page of menu
 	MENUPAGE pageIndxNew;
-	MENUSM sysMsg;					// system message
-									// list parameters (current list parameters)
-	uint8_t linePos;				// start position of visible part of list in common list
-	uint8_t lineSel;				// selected line in visible part of list (0...DISP_LIST_LINE_MAX)
-	uint8_t lineNum;				// number of available lines in list
-	uint16_t lineData;
-	uint16_t valueEdit;  			// value under editing
+	u16 toutMainPage;   // timer of return to main page
+	// list parameters (current list parameters)
+	u8 linePos;    // start position of visible part of list in common list
+	u8 lineSel;    // selected line in visible part of list (0...DISP_LIST_LINE_MAX)
+	u8 lineNum;    // number of available lines in list
+	u16 lineData;
+	u8 valueEdit;  // value under editing
+
+	// footprints of menu layers
+	struct
+	{
+		MENUPAGE pageIndx;
+		u8 listPos;
+		u8 linePos;
+		u8 lineSel;
+	} pageSeq[MENU_PAGE_NUM];
+
+	u8 pageSeqPos;
+	// page list content
+	u8 pageListNum[MENU_PAGE_NUM];
+
+	struct
+	{
+		// safety button emulation
+		u8 bSft: 1;
+		u8 bLongU: 1;
+		u8 bLongD: 1;
+		u8 bLongL: 1;
+		u8 bLongR: 1;
+		u8 bBlinkSlow: 1;
+		u8 bBlinkFast: 1;
+		u8 bExtEvent: 1;
+		u8 bSkipInitPage: 1;
+	} flag;
+
+	// long push holding timer
+	u16 tmrLongHold;
+	u16 toutSlowState;
+	// prevoios value of parameter (for MENU_SM_SETT_WIND, for String parameters)
+	//GATEMODE gateMode;  // ... of gate
+	u16 paramDummy;
+	u16 paramRealIndx;
+	u16 paramPrev;
+	// string shifting (for info message)
+	u16 strPos;
+	u16 strLen;
+	// blink timer
+	u16 blinkTmrSlow;
+	u16 blinkTmrFast;
+	// system message
+	MENUSM sysMsg;
+	u8 sysMsgTmr;
+	// external event
+	u8 extEventPnt;
+	u8 extEventCnt;
+
+	  struct
+	  {
+	    MENUEVENT event;
+	    u16 arg;
+	  } extEvent[MENU_EVENT_BUFF];
+
+	//  // additional parameter
+	//  MENUAP addParam;
+	//  u16 addParamData;
+	//  u8 addParamTout;
+	//  u8 addParamPos;
+	//  u8 addParamMax;
+	//  u8 addParamOL;
+	//  // error message display
+	//  u16 errMap[BLDC_ERR_GR_NUM];
+	//  // gate control command (via display buttons)
+	//  GATECOMM gateCtrlComm;
+	// contrast control
+	u8 contrast;
+	// pos for display indication
+	u16 posDispMin;
+	u16 posDispMax;
+	u16 posDispMdl;
+	u16 posDispOffset;
+	u16 posDispNegPnt;
 } MenuTypeDef;
 
 

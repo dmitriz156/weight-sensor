@@ -65,8 +65,8 @@ typedef struct {
 	sensors_mod_t mod_config;
 	sensors_mod_t mod_config_prev;
 
-	uint8_t alarm_treshold_kg;
-	uint8_t alarm_treshold_kg_prev;
+	uint16_t alarm_treshold_kg;
+	uint16_t alarm_treshold_kg_prev;
 
 	bool flash_read_flag;
 	bool flash_write_flag;

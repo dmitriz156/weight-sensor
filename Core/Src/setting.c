@@ -160,24 +160,21 @@ void SettInit(void)
   }
 
 
-  SettSetParam(SETT_M_KG_S1,       &weight[0].kg, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_KG_S1,			&weight[0].kg, 0, 1, 1, SETT_TEXT_KG_S1, SETT_CONV_NO);
+  SettSetParam(SETT_M_KG_MAX_S1,		&weight[0].max_kg, 0, 1, 1, SETT_TEXT_KG_MAX_S1, SETT_CONV_NO);
+  SettSetParam(SETT_M_KG_S2,			&weight[1].kg, 0, 1, 1, SETT_TEXT_KG_S2, SETT_CONV_NO);
+  SettSetParam(SETT_M_KG_MAX_S2,		&weight[1].max_kg, 0, 1, 1, SETT_TEXT_KG_MAX_S2, SETT_CONV_NO);
+  SettSetParam(SETT_M_RAW_S1,			&weight[0].raw_data, 0, 1, 1, SETT_TEXT_RAW_S1, SETT_CONV_NO);
+  SettSetParam(SETT_M_OFFSETT_S1,	    &weight[0].raw_zero_offset, 0, 1, 1, SETT_TEXT_OFFSETT_S1, SETT_CONV_NO);
+  SettSetParam(SETT_M_RAW_S2,			&weight[1].raw_data, 0, 1, 1, SETT_TEXT_RAW_S2, SETT_CONV_NO);
+  SettSetParam(SETT_M_OFFSETT_S2,	    &weight[1].raw_zero_offset, 0, 1, 1, SETT_TEXT_OFFSETT_S2, SETT_CONV_NO);
+
+  SettSetParam(SETT_M_SYNCHRO_MODE,		&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_SYNCHRO_MODE, SETT_CONV_NO);
+  SettSetParam(SETT_M_THRESHOLD_WEIGHT, &settings.alarm_treshold_kg, 0, 1, 1, SETT_TEXT_THRESHOLD_WEIGHT, SETT_CONV_NO);
 
   // --- UNIT-1. General settings
 //  SettSetParam(SETT_RB_TYPE,                &road_blocker.RB_type, SETT_LIM_MIN, RB_TYPE_NUM - 1, 1, SETT_TEXT_RB_TYPE, SETT_CONV_NO);
 //  SettSetParam(SETT_RB_MODEL,               &road_blocker.RB_model, SETT_LIM_MIN, INT_HPU_NUM + EXT_HPU_NUM + MOBILE_RB_NUM, 1, SETT_TEXT_RB_MDL, SETT_CONV_NO);
-//
-//  SettSetParam(SETT_GEN_NUM_BLOCKERS,       &road_blocker.num_of_blocker, SETT_RB_LIM_MIN, SETT_RB_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-//  SettSetParam(SETT_GEN_RISING_TIME,        &road_blocker.rising_time, SETT_RB_LIM_MIN, SETT_RB_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-//  SettSetParam(SETT_GEN_LOWERING_TIME,      &road_blocker.lowering_time, SETT_RB_LIM_MIN, SETT_RB_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-//  SettSetParam(SETT_GEN_CTRL_INP_T,         &road_blocker.ctrl_inp_type, SETT_LIM_MIN, 1, 1, SETT_TEXT_PARAM_NO, SETT_CONV_NO);
-//  SettSetParam(SETT_GEN_SAFE_SIGN_INP_T,    &road_blocker.sfty_sig_inp_type, SETT_LIM_MIN, 1, 1, SETT_TEXT_PARAM_NO, SETT_CONV_NO);
-//  SettSetParam(SETT_GEN_SAFE_SIGN_REACTION, &road_blocker.sfty_sig_reaction, SETT_LIM_MIN, 1, 1, SETT_TEXT_GEN_SFTY_REAC_STOP, SETT_CONV_NO);
-//  SettSetParam(SETT_GEN_RC_UNIT,            &road_blocker.remote_ctrl_unit, SETT_LIM_MIN, 1, 1, SETT_TEXT_RC_UNIT_RS485, SETT_CONV_NO);
-//  SettSetParam(SETT_GEN_COM_CTRL_SET,       &road_blocker.common_ctrl_blockers, SETT_LIM_MIN, 1, 1, SETT_TEXT_CTRL_SET_SEPAR, SETT_CONV_NO);
-//  SettSetParam(SETT_GEN_SAFE_SIGN_EFO,      &road_blocker.sfty_sig_EFO_mod, SETT_LIM_MIN, 1, 1, SETT_TEXT_OFF, SETT_CONV_NO);
-//  // --- UNIT-2. Angle sensors
-//  SettSetParam(SETT_ANG_SENS_CHNG_ADDR,     &road_blocker.angle_sensor.change_addr, SETT_RB_LIM_MIN, 4, 1, SETT_TEXT_NO, SETT_CONV_NO);
-//  SettSetParam(SETT_ANG_IMPACT_SENS,        &road_blocker.angle_sensor.stop_on_impact, SETT_LIM_MIN, 1, 1, SETT_TEXT_OFF, SETT_CONV_NO);
 
   /*
   cntBlockExit = FLACH_SETT_BLOCK_NUM * 2;

@@ -33,10 +33,16 @@ const char *MenuTextBlock[] = {
 
     // --- UNIT-1. Gate settings
     // common gate settings
-    "Road blocker type",
-    "Road blocker model"
-
-
+	"S1 WEIGHT:",
+	"S1 MAX:",
+	"S2 WEIGHT:",
+	"S2 MAX:",
+	"S1 RAW:",
+	"OFFSET:",
+	"S2 RAW:",
+	"OFFSET:",
+	"SYNCHRO MODE:",
+	"TRESHOLD:"
 };
 
 // --- BLDCCTRL names

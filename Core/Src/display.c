@@ -26,15 +26,15 @@ char str_item_value[32];
 #define DISP_PAUSE_TMR		25	// ms
 #define DISP_SHIFT_TMR		80	
 
-#define BtnAny()               (((btn == DISP_BTN_L) || (btn == DISP_BTN_R) || (btn == DISP_BTN_UP) || (btn == DISP_BTN_DN)) && (mode == DISP_BTN_SHRT))
+#define BtnAny()               ((btn.UP_state == BTN_PRESS) || (btn.DOWN_state == BTN_PRESS) || (btn.RIGHT_state == BTN_PRESS) || (btn.LEFT_state == BTN_PRESS))//(((btn == DISP_BTN_L) || (btn == DISP_BTN_R) || (btn == DISP_BTN_UP) || (btn == DISP_BTN_DN)) && (mode == DISP_BTN_SHRT))
 #define BtnBack()              ((btn == DISP_BTN_L) && (mode == DISP_BTN_SHRT))
 #define BtnNext()              ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
 #define BtnSelect()            ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
 #define BtnLogInfo()           ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
 #define BtnClearErr()          ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
 #define BtnOk()                ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
-#define BtnUp()                ((btn == DISP_BTN_UP) && (mode == DISP_BTN_SHRT))
-#define BtnDown()              ((btn == DISP_BTN_DN) && (mode == DISP_BTN_SHRT))
+#define BtnUp()                (btn.UP_state == BTN_PRESS)//((btn == DISP_BTN_UP) && (mode == DISP_BTN_SHRT))
+#define BtnDown()              (btn.DOWN_state == BTN_PRESS)//((btn == DISP_BTN_DN) && (mode == DISP_BTN_SHRT))
 #define BtnLeft()              ((btn == DISP_BTN_L) && (mode == DISP_BTN_SHRT))
 #define BtnRight()             ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
 #define BtnQueNo()             ((btn == DISP_BTN_UP) && (mode == DISP_BTN_SHRT))
@@ -359,21 +359,33 @@ void MenuSysMsgFill(uint8_t type, char* str0, char* str1, char* str2, char* str3
 // }
 
 
-void DispTask(void)
+void DispPushBtn(void)
 {
-	char str0[DISP_LISTPARAM_LEN];
-	char str1[DISP_LISTPARAM_LEN];
-	char str2[DISP_LISTPARAM_LEN];
-	char str3[DISP_LISTPARAM_LEN];
-	char str4[DISP_LISTPARAM_LEN];
-	uint16_t len;
+	MenuChangeLine();
 
-	if(DispUart.pauseTmr)
+	if (Menu.sysMsg)  // there is active message
 	{
-		MenuChangeLine();
+		switch(Menu.sysMsg) {
+		case MENU_SM_SETT_WIND:
+			if (BtnDown()) {
+				SettRegChange(SETT_M_SYNCHRO_MODE, SETT_REG_UP);
+			} else if (BtnUp()) {
+				SettRegChange(SETT_M_SYNCHRO_MODE, SETT_REG_DN);
+			}
 
-		DispUart.pauseTmr=0;
-
+			if(btn.LEFT_state == BTN_PRESS) {
+				Menu.sysMsg	   = MENU_SM_NO;
+				Menu.valueEdit = 0;
+			}
+			break;
+		// other messages
+		default:                          // not determined message
+			if (BtnAny()) MenuDelSysMsg();  // just in case
+			break;
+		}
+	}
+	else // there is no active message
+	{
 		switch(Menu.pageIndx){
 		case MENU_PAGE_HELLO:
 			if(Menu.startTmr) {
@@ -400,17 +412,11 @@ void DispTask(void)
 				MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);
 			}
 
-			if(btn.LEFT_state == BTN_PRESS) {
-				Menu.sysMsg		= MENU_SM_NO;
-				Menu.valueEdit = 0;
-			}
-
-			if(Menu.valueEdit == 1){
-				if(btn.UP_state == BTN_PRESS) settings.mod_config ++;
-				if(btn.DOWN_state == BTN_PRESS) settings.mod_config --;
-				Menu.valueEdit = 0;
-			}
-
+//			if(Menu.valueEdit == 1){
+//				if(btn.UP_state == BTN_PRESS) settings.mod_config ++;
+//				if(btn.DOWN_state == BTN_PRESS) settings.mod_config --;
+//				Menu.valueEdit = 0;
+//			}
 			break;
 		case MENU_PAGE_MODE:
 			if(btn.LEFT_state == BTN_LONG_PRESS) {
@@ -445,10 +451,27 @@ void DispTask(void)
 			Menu.sysMsg   = MENU_SM_MSG_NEW_ERR;
 			break;
 		}
-		ButtonsReset();
-		//button long press reset here
-		ButtonsResetLong();
-		
+	}
+
+	ButtonsReset();
+	//button long press reset here
+	ButtonsResetLong();
+
+}
+
+void DispTask(void)
+{
+	char str0[DISP_LISTPARAM_LEN];
+	char str1[DISP_LISTPARAM_LEN];
+	char str2[DISP_LISTPARAM_LEN];
+	char str3[DISP_LISTPARAM_LEN];
+	char str4[DISP_LISTPARAM_LEN];
+	uint16_t len;
+
+	if(DispUart.pauseTmr)
+	{
+		DispUart.pauseTmr=0;
+
 // --- next packet		
 		DispUart.txPackPnt++;
 		if(DispUart.txPackPnt>=DispUart.txPackNum[DispUart.pageIndex])
@@ -490,14 +513,13 @@ void DispTask(void)
 				strcpy(dStr1, MenuModName[settings.mod_config]);
 
 				// first line
-				if (MenuModName[settings.mod_config] == MenuModName[MENU_ALARM_ST_ALONE]) {  // first value in
+				if (MenuModName[settings.mod_config] == MENU_ALARM_ST_ALONE) {  // first value in
 					strcpy(dStr0, "-");
 				} else {
 					strcpy(dStr0, MenuModName[settings.mod_config - 1]);
 				}
-
 				// last line
-				if (MenuModName[settings.mod_config] == MenuModName[MENU_MOD_NUM]) {
+				if (MenuModName[settings.mod_config] == MENU_ALARM_SYNCHRO) {
 					strcpy(dStr2, "-");
 				} else {
 					strcpy(dStr0, MenuModName[settings.mod_config + 1]);
@@ -688,7 +710,7 @@ void DispTask(void)
 		
 		if(Menu.startTmr)
 			Menu.startTmr--;
-		else;		
+		else;
 	}
 	else;
 }

@@ -286,6 +286,7 @@ typedef enum {
 
 
 void DispInit(void);
+void DispPushBtn(void);
 void DispTask(void);
 void DispTmr1ms(void);
 void DispTmr1sec(void);

@@ -751,6 +751,20 @@ void SettTask(void) {}
  * Call it after total change of settings
  * @param none
  */
+void SettRfrParam(void)
+{
+  u8 cnt;
+
+  cnt = 0;
+  // set all settings as available for edit
+  while (cnt < SETT_BUFF_LEN) {
+    SettSetAvail(cnt);
+    cnt++;
+  }
+
+  // refresh settings about usage of feedback pin
+  //GateLockSettRfr();
+}
 
 
 /**

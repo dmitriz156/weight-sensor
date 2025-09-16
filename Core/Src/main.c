@@ -156,6 +156,7 @@ int main(void)
 
 	  HX711GetDataTask();
 	  ButtonHandler();
+	  DispPushBtn();
 	  DispTask();
 	  OutHandler();
   }

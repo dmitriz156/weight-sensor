@@ -27,9 +27,9 @@ char str_item_value[32];
 #define DISP_SHIFT_TMR		80	
 
 #define BtnAny()               ((btn.UP_state == BTN_PRESS) || (btn.DOWN_state == BTN_PRESS) || (btn.RIGHT_state == BTN_PRESS) || (btn.LEFT_state == BTN_PRESS))//(((btn == DISP_BTN_L) || (btn == DISP_BTN_R) || (btn == DISP_BTN_UP) || (btn == DISP_BTN_DN)) && (mode == DISP_BTN_SHRT))
-#define BtnBack()              ((btn == DISP_BTN_L) && (mode == DISP_BTN_SHRT))
+#define BtnBack()              (btn.LEFT_state == BTN_PRESS)//((btn == DISP_BTN_L) && (mode == DISP_BTN_SHRT))
 #define BtnNext()              ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
-#define BtnSelect()            ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
+#define BtnSelect()            (btn.RIGHT_state == BTN_PRESS)//((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
 #define BtnLogInfo()           ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
 #define BtnClearErr()          ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
 #define BtnOk()                ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
@@ -361,24 +361,40 @@ void MenuSysMsgFill(uint8_t type, char* str0, char* str1, char* str2, char* str3
 
 void DispPushBtn(void)
 {
-	MenuChangeLine();
+	u16 indx, bit;
 
 	if (Menu.sysMsg)  // there is active message
 	{
 		switch(Menu.sysMsg) {
 		case MENU_SM_SETT_WIND:
-			if (BtnDown()) {
-				SettRegChange(SETT_M_SYNCHRO_MODE, SETT_REG_UP);
-			} else if (BtnUp()) {
-				SettRegChange(SETT_M_SYNCHRO_MODE, SETT_REG_DN);
+			if (Menu.valueEdit) {
+				if (BtnSelect()) {
+					Menu.valueEdit = 0;
+
+					switch (Menu.paramRealIndx) {
+
+					case SETT_M_SYNCHRO_MODE:
+						settings.mod_config = Menu.paramDummy;
+						break;
+					default:
+						SettSetData(Menu.paramRealIndx, Menu.paramDummy);
+						MenuDelSysMsg();
+						break;
+					}
+				} else if (BtnBack()) {
+					MenuDelSysMsg();
+					Menu.valueEdit = 0;
+				} else if (BtnDown()) {
+					SettRegChange(SETT_DUMMY, SETT_REG_UP);
+				} else if (BtnUp()) {
+					SettRegChange(SETT_DUMMY, SETT_REG_DN);
+				}
+			} else {  // NO, something wrong. We not suppose be here
+				MenuDelSysMsg();
 			}
 
-			if(btn.LEFT_state == BTN_PRESS) {
-				Menu.sysMsg	   = MENU_SM_NO;
-				Menu.valueEdit = 0;
-			}
 			break;
-		// other messages
+			// other messages
 		default:                          // not determined message
 			if (BtnAny()) MenuDelSysMsg();  // just in case
 			break;
@@ -386,6 +402,8 @@ void DispPushBtn(void)
 	}
 	else // there is no active message
 	{
+		MenuChangeLine();
+
 		switch(Menu.pageIndx){
 		case MENU_PAGE_HELLO:
 			if(Menu.startTmr) {
@@ -400,24 +418,36 @@ void DispPushBtn(void)
 			}
 			break;
 		case MENU_PAGE_MEASURE:
-			Menu.lineNum 	= MEASURE_ITEM_NUM;
-			if(btn.LEFT_state == BTN_LONG_PRESS) {
-				Menu.pageIndx   = MENU_PAGE_MODE;
-				Menu.lineNum    = MENU_MOD_NUM;
-				Menu.linePos    = 0;
-				Menu.lineSel    = settings.mod_config;
-			}
-			if(btn.RIGHT_state == BTN_PRESS ) {
-				Menu.valueEdit = 1;
-				MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);
+
+			if (!Menu.valueEdit) {
+				Menu.lineNum 	= MEASURE_ITEM_NUM;
+				if(btn.LEFT_state == BTN_LONG_PRESS) {
+					Menu.pageIndx   = MENU_PAGE_MODE;
+					Menu.lineNum    = MENU_MOD_NUM;
+					Menu.linePos    = 0;
+					Menu.lineSel    = settings.mod_config;
+				}
+				if(btn.RIGHT_state == BTN_PRESS ) {
+					indx = Menu.linePos + Menu.lineSel + SETT_DUMMY + 1;  // param index
+					if(Menu.linePos + Menu.lineSel == SETT_SYNCHRO_MODE) {
+						Menu.valueEdit = 1;
+					}
+					MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);									// open additional window for setting
+					Menu.paramRealIndx = indx;												// save index of real parameters (for future processing)
+					SettCopyToDummy(indx);													// copy real param. to Dummy
+				}
+			} else {
+				if (BtnBack()) {
+					Menu.valueEdit = 0;
+				} else if (BtnDown()) {
+					SettRegChange(SettUnit.unitIndx[GetPrevListPos()] + Menu.linePos + Menu.lineSel, SETT_REG_UP);
+				} else if (BtnUp()) {
+					SettRegChange(SettUnit.unitIndx[GetPrevListPos()] + Menu.linePos + Menu.lineSel, SETT_REG_DN);
+				}
 			}
 
-//			if(Menu.valueEdit == 1){
-//				if(btn.UP_state == BTN_PRESS) settings.mod_config ++;
-//				if(btn.DOWN_state == BTN_PRESS) settings.mod_config --;
-//				Menu.valueEdit = 0;
-//			}
 			break;
+
 		case MENU_PAGE_MODE:
 			if(btn.LEFT_state == BTN_LONG_PRESS) {
 				if(settings.mod_config_prev != settings.mod_config){
@@ -456,7 +486,6 @@ void DispPushBtn(void)
 	ButtonsReset();
 	//button long press reset here
 	ButtonsResetLong();
-
 }
 
 void DispTask(void)
@@ -471,6 +500,8 @@ void DispTask(void)
 	if(DispUart.pauseTmr)
 	{
 		DispUart.pauseTmr=0;
+
+		DispPushBtn();
 
 // --- next packet		
 		DispUart.txPackPnt++;
@@ -509,20 +540,23 @@ void DispTask(void)
 				MenuSysMsgFill(DISP_SYS_MSG_QUE, "CHANGE ALARM","MODE?","",0,0);//btn: NO-YES
 				break;
 			case MENU_SM_SETT_WIND:
+				// allowed to change only Dummy parameters
+
 				// middle line
-				strcpy(dStr1, MenuModName[settings.mod_config]);
+				strcpy(dStr1, SettGetTextVal(SettParam[SETT_DUMMY].pText + SettGetData(SETT_DUMMY)));
 
 				// first line
-				if (MenuModName[settings.mod_config] == MENU_ALARM_ST_ALONE) {  // first value in
+				if (SettGetData(SETT_DUMMY) == SettParam[SETT_DUMMY].min) {  // first value in
 					strcpy(dStr0, "-");
 				} else {
-					strcpy(dStr0, MenuModName[settings.mod_config - 1]);
+					strcpy(dStr0, SettGetTextVal(SettParam[SETT_DUMMY].pText + SettGetData(SETT_DUMMY) - 1));
 				}
+
 				// last line
-				if (MenuModName[settings.mod_config] == MENU_ALARM_SYNCHRO) {
+				if (SettGetData(SETT_DUMMY) == SettParam[SETT_DUMMY].max) {
 					strcpy(dStr2, "-");
 				} else {
-					strcpy(dStr0, MenuModName[settings.mod_config + 1]);
+					strcpy(dStr2, SettGetTextVal(SettParam[SETT_DUMMY].pText + SettGetData(SETT_DUMMY) + 1));
 				}
 
 				MenuSysMsgFill(DISP_SYS_MSG_SETT, "]", dStr0, dStr1, dStr2, "[");
@@ -571,11 +605,6 @@ void DispTask(void)
 
 // --- MENU_PAGE_MEASURE
 			case MENU_PAGE_MEASURE:
-				if(GetListPos(DISP_PACK_STR_1) >= SETT_SYNCHRO_MODE) {
-					Menu.valueEdit = 1;
-				} else {
-					Menu.valueEdit = 0;
-				}
 				switch(DispUart.txPackPnt)
 				{
 					// DISP_PACKTYPE_DATA_0 - common data

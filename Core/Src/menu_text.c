@@ -13,23 +13,23 @@ const char *MenuTextBlock[] = {
     "Sys1",  //"SettWeight",
     "SettNum",
     "UnitNum",
-    "Unit0",
-    "Unit1",
-    "Unit2",
-    "Unit3",
-    "Unit4",
-    "Unit5",
-    "Unit6",
-    "Unit7",
+//    "Unit0",
+//    "Unit1",
+//    "Unit2",
+//    "Unit3",
+//    "Unit4",
+//    "Unit5",
+//    "Unit6",
+//    "Unit7",
     //"Unit8",
 
     "SysTemp",
     // config words -> they CAN be changed via special Display menu
-    "Cnfg0",
-    "Cnfg1",
-    "Cnfg2",
-    "Cnfg3",
-    "SettGroup",
+//    "Cnfg0",
+//    "Cnfg1",
+//    "Cnfg2",
+//    "Cnfg3",
+//    "SettGroup",
 
     // --- UNIT-1. Gate settings
     // common gate settings
@@ -42,7 +42,10 @@ const char *MenuTextBlock[] = {
 	"S2 RAW:",
 	"OFFSET:",
 	"SYNCHRO MODE:",
-	"TRESHOLD:"
+	"TRESHOLD:",
+
+	"OFF",
+	"ON"
 };
 
 // --- BLDCCTRL names

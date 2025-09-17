@@ -5,7 +5,7 @@
 
 
 // total number of supported road blocker (sum all models together)
-#define RB_MDL_TTL_NUM  MEASURE_ITEM_NUM
+#define RB_MDL_TTL_NUM  SETT_BUFF_LEN
 
 typedef enum {
   INTERNAL_HPU,
@@ -595,24 +595,23 @@ typedef enum {
   SETT_WEIGHT_INDX,   // P - weight of settings block
   SETT_SETT_NUM_INDX,
   SETT_UNIT_NUM_INDX,
-  SETT_UNIT0_INDX,  // Internal parameters
-  SETT_UNIT1_INDX,  // Gate parameters
-  SETT_UNIT2_INDX,  // Lock parameters
-  SETT_UNIT3_INDX,  // Current consumption
-  SETT_UNIT4_INDX,  // Motor settings
-  SETT_UNIT5_INDX,  // Interfaces
-  SETT_UNIT6_INDX,  
-  SETT_UNIT7_INDX,
-  //SETT_UNIT8_INDX,  // Calibration -10
+//  SETT_UNIT0_INDX,  // Internal parameters
+//  SETT_UNIT1_INDX,  // Gate parameters
+//  SETT_UNIT2_INDX,  // Lock parameters
+//  SETT_UNIT3_INDX,  // Current consumption
+//  SETT_UNIT4_INDX,  // Motor settings
+//  SETT_UNIT5_INDX,  // Interfaces
+//  SETT_UNIT6_INDX,
+//  SETT_UNIT7_INDX,
 
   SETT_DUMMY,       // P - dummy parameters. Contains temporary value for Menu parameters changing
                     // config words -> they CAN be changed via special Display menu
-  SETT_CNFG0,       // P - config word #0
-  SETT_CNFG1,       // P - config word #1
-  SETT_CNFG2,       // P - config word #2
-  SETT_CNFG3,       // P - config word #3
-                    // group of turnstile settings
-  SETT_GATE_GR,     // P - gate settings group
+//  SETT_CNFG0,       // P - config word #0
+//  SETT_CNFG1,       // P - config word #1
+//  SETT_CNFG2,       // P - config word #2
+//  SETT_CNFG3,       // P - config word #3
+//                    // group of turnstile settings
+//  SETT_GATE_GR,     // P - gate settings group
 
                     // --- UNIT-1. SETTINGS and MEASUREMENTS ITEMS
   SETT_M_KG_S1,
@@ -661,157 +660,8 @@ typedef enum {
 // List of texted value
 // Strings are placed in MenuTextBlock[]
 typedef enum {
-  SETT_TEXT_UNIT    = SETT_BUFF_LEN,
-  SETT_TEXT_UNIT_LB = SETT_TEXT_UNIT + SETT_UNIT_MAX - 1,
 
-  // GroupErr bits description
-  SETT_TEXT_ERR_A,
-  SETT_TEXT_ERR_A_LB = SETT_TEXT_ERR_A + SETT_MAPBIT_LEN - 1,
-  SETT_TEXT_ERR_B,
-  SETT_TEXT_ERR_B_LB = SETT_TEXT_ERR_B + SETT_MAPBIT_LEN - 1,
-
-  SETT_TEXT_ERR_C,
-  SETT_TEXT_ERR_C_LB = SETT_TEXT_ERR_C + SETT_MAPBIT_LEN - 1,
-  SETT_TEXT_ERR_D,
-  SETT_TEXT_ERR_D_LB = SETT_TEXT_ERR_D + SETT_MAPBIT_LEN - 1,
-  SETT_TEXT_ERR_E,
-  SETT_TEXT_ERR_E_LB = SETT_TEXT_ERR_E + SETT_MAPBIT_LEN - 1,
-  SETT_TEXT_ERR_F,
-  SETT_TEXT_ERR_F_LB = SETT_TEXT_ERR_F + SETT_MAPBIT_LEN - 1,
-  SETT_TEXT_ERR_G,
-  SETT_TEXT_ERR_G_LB = SETT_TEXT_ERR_G + SETT_MAPBIT_LEN - 1,
-
-  /*SETT_TEXT_ERR_J,
-  SETT_TEXT_ERR_J_LB=SETT_TEXT_ERR_J+SETT_MAPBIT_LEN-1,*/
-  SETT_TEXT_ERR_H,
-  SETT_TEXT_ERR_H_LB = SETT_TEXT_ERR_H + SETT_MAPBIT_LEN - 1,
-  // Names of Input Signals
-  SETT_TEXT_IN,
-  SETT_TEXT_IN_LB = SETT_TEXT_IN + SETT_MAPBIT_LEN - 1,
-  // Names of Output signals
-  SETT_TEXT_OUT,
-  SETT_TEXT_OUT_LB = SETT_TEXT_OUT + SETT_MAPBIT_LEN - 1,
-  // Number of working point
-  SETT_TEXT_PNT_ACB,
-  SETT_TEXT_PNT_AC,
-  SETT_TEXT_PNT_CB,
-
-  //------------------------------------
-  // --- UNIT-1. General settings
-  // Type of control inputs
-  SETT_TEXT_PARAM_NO,
-  SETT_TEXT_PARAM_NC,
-  // Type of safety signal inputs
-  //NO/NC
-  // Safety signal reaction
-  SETT_TEXT_GEN_SFTY_REAC_STOP = SETT_TEXT_PARAM_NC + 2,
-  SETT_TEXT_GEN_SFTY_REAC_STOP_AND_LOW,
-  // Remote control unit
-  SETT_TEXT_RC_UNIT_RS485,
-  SETT_TEXT_RC_LB = SETT_TEXT_RC_UNIT_RS485 + 3,
-  // Common control set of blocker
-  SETT_TEXT_CTRL_SET_SEPAR,
-  SETT_TEXT_CTRL_SET_COMMON,
-  // Safety signal in EFO mode
-  SETT_TEXT_OFF,
-  SETT_TEXT_ON,
-
-  // --- UNIT-2. Angle sensors
-  // Stopping on impact 
-  //ON/OFF
-  // --- UNIT-3. HPU settings
-  // Slowering at the end position
-  //ON/OFF
-  // Valve P4 slowering speed type
-  //NO/NC
-  // UPS option
-  //ON/OFF
-  // EFO option
-  //ON/OFF
-  //External hydro station type
-  SETT_TEXT_HPU_TYPE_0_STANDART,
-	SETT_TEXT_HPU_TYPE_1_EFO_BASED,
-  // OIL level sensor
-  //ON/OFF
-  // OIL temp sensor
-  //ON/OFF
-  // Phase order sensor
-  //ON/OFF
-  // --- UNIT-4. Indication setings
-// LED indication type
-  SETT_TEXT_INDIC_OFF,
-  SETT_TEXT_INDIC_R,
-  SETT_TEXT_INDIC_RGY,
-  SETT_TEXT_INDIC_RYG,
-  SETT_TEXT_INDIC_GRY,
-  SETT_TEXT_INDIC_GYR,
-  SETT_TEXT_INDIC_YRG,
-  SETT_TEXT_INDIC_YGR,
-
-  // Position output type
-  SETT_TEXT_IND_LOGIC_TOP_BOT,
-  SETT_TEXT_IND_TRAFFIC_LIGHT,
-  SETT_TEXT_IND_DIRECT_TOP_BOT,
-
-  //Pos. out-s common control
-  SETT_TEXT_IND_OUT_SEPAR,
-  SETT_TEXT_IND_OUT_COMMON,
-
-  // --- UNIT-5. Interfaces
-  // --- UNIT-6. Calibration parameters
-
-  // --- UNIT-7. Automatic option
-  // Safety 1.1. Auto Opening Option"
-    //ON/OFF
-	// Safety 1.2. Auto Opening Option"
-    //ON/OFF
-	// Safety 2.1. Auto Opening Option"
-    //ON/OFF
-	// Safety 2.2. Auto Opening Option"
-    //ON/OFF
-
-  // RS485, mode
-  SETT_TEXT_RS_OFF,
-  SETT_TEXT_RS_REM,
-  SETT_TEXT_RS_206,
-  SETT_TEXT_RS_405,
-  SETT_TEXT_RS_MDBS,
-  SETT_TEXT_RS_GYRO,
-  SETT_TEXT_RS_DISP,
-  SETT_TEXT_RS_PC,
-  // RS485, remote direction
-  SETT_TEXT_REM_AB,
-  SETT_TEXT_REM_BA,
-  // Configs bits description
-  SETT_TEXT_CNFG0,
-  SETT_TEXT_CNFG0_LB = SETT_TEXT_CNFG0 + SETT_MAPBIT_LEN - 1,
-  SETT_TEXT_CNFG1,
-  SETT_TEXT_CNFG1_LB = SETT_TEXT_CNFG1 + SETT_MAPBIT_LEN - 1,
-  SETT_TEXT_CNFG2,
-  SETT_TEXT_CNFG2_LB = SETT_TEXT_CNFG2 + SETT_MAPBIT_LEN - 1,
-  SETT_TEXT_CNFG3,
-  SETT_TEXT_CNFG3_LB = SETT_TEXT_CNFG3 + SETT_MAPBIT_LEN - 1,
-  // BldcCal.statMap bits description
-  SETT_TEXT_BLDCCALSTAT,
-  SETT_TEXT_BLDCCALSTAT_LB = SETT_TEXT_BLDCCALSTAT + SETT_MAPBIT_LEN - 1,
-  // BldcCal.syncMap bits description
-  SETT_TEXT_BLDCCALSYNC,
-  SETT_TEXT_BLDCCALSYNC_LB = SETT_TEXT_BLDCCALSYNC + SETT_MAPBIT_LEN - 1,
-
-  SETT_TEXT_SRCHSTAT,
-  SETT_TEXT_SRCHSTAT_LB   = SETT_TEXT_SRCHSTAT + SETT_MAPBIT_LEN - 1,
-
-  // Names of types
-  SETT_TEXT_RB_TYPE,
-  // Names of models
-  SETT_TEXT_RB_MDL        = SETT_TEXT_RB_TYPE + RB_TYPE_NUM,
-  // number of strings
-  SETT_TEXT_NUM           = SETT_TEXT_RB_MDL + RB_MDL_TTL_NUM,
-
-  // // Name of gate group
-  SETT_TEXT_GATE_GROUP,
-
-  SETT_TEXT_KG_S1,
+  SETT_TEXT_KG_S1 = SETT_DUMMY + 1,
   SETT_TEXT_KG_MAX_S1,
   SETT_TEXT_KG_S2,
   SETT_TEXT_KG_MAX_S2,
@@ -821,6 +671,11 @@ typedef enum {
   SETT_TEXT_OFFSETT_S2,
   SETT_TEXT_SYNCHRO_MODE,
   SETT_TEXT_THRESHOLD_WEIGHT,
+
+  SETT_TEXT_OFF,
+  SETT_TEXT_ON,
+
+  SETT_TEXT_NUM
 } SETTTEXTVAL;
 #define SETT_WEIGHT_ERR  0x0000
 #define SETT_WEIGHT_DEF  0x0001

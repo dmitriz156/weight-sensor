@@ -129,6 +129,7 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
   DispInit();
+  SettInit();
 
   /* USER CODE END 2 */
 

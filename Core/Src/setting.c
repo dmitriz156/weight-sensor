@@ -10,6 +10,8 @@ u16 *pSettReg[SETT_BUFF_LEN];  // pointer to settings value
 // u16 SettBuffTemp[SETT_BUFF_LEN_MAX];		// for temporary calculation
 PresetDef Preset[RB_MDL_TTL_NUM]; ///PresetDef Preset[GATE_MDL_TTL_NUM];     // preset buffer def
 SettParamDef SettParam[SETT_BUFF_LEN];  // min,max,def,step of parameters
+u16 SettingsValue[SETT_BUFF_LEN]; //settings parameter value
+extern MenuTypeDef Menu;
 
 
 /**
@@ -134,9 +136,9 @@ void SettInit(void)
 
 
 
-  SettPresetRBIntHPU();
-  SettPresetRBExtHPU();
-  SettPresetRBMobile();
+//  SettPresetRBIntHPU();
+//  SettPresetRBExtHPU();
+//  SettPresetRBMobile();
 
   cnt = 0;
   while (cnt < RB_MDL_TTL_NUM) {///<GATE_MDL_TTL_NUM
@@ -147,18 +149,18 @@ void SettInit(void)
     // structure of settings. It is copied for each preset
     Preset[cnt].settDef[SETT_SETT_NUM_INDX] = SETT_BUFF_LEN;
     Preset[cnt].settDef[SETT_UNIT_NUM_INDX] = SETT_UNIT_NUM;
-    Preset[cnt].settDef[SETT_UNIT0_INDX]    = SETT_CRC_INDX;
-//    Preset[cnt].settDef[SETT_UNIT1_INDX]    = SETT_RB_TYPE;
-//    Preset[cnt].settDef[SETT_UNIT2_INDX]    = SETT_ANG_SENS_CHNG_ADDR;  //SETT_LOCKA_TYPE;
-//    Preset[cnt].settDef[SETT_UNIT3_INDX]    = SETT_HS_TOP_SLOW_ANGLE;   //SETT_CURR_TTL;
-//    Preset[cnt].settDef[SETT_UNIT4_INDX]    = SETT_IND_TYPE;            //SETT_BLDC_PID_P;
-//    Preset[cnt].settDef[SETT_UNIT5_INDX]    = SETT_I_RS1_MODE;
-//    Preset[cnt].settDef[SETT_UNIT6_INDX]    = SETT_CAL_PARAM_1;
-//    Preset[cnt].settDef[SETT_UNIT7_INDX]    = AUTO_CLOS_PAUSE_RB1;
 
     cnt++;
   }
 
+
+  SettSetParam(SETT_CRC_INDX, &SettCtrl.crcRd, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_WEIGHT_INDX, &SettCtrl.weight, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_SETT_NUM_INDX, &SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT_NUM_INDX, &SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+
+
+  SettSetParam(SETT_DUMMY, 				&Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
   SettSetParam(SETT_M_KG_S1,			&weight[0].kg, 0, 1, 1, SETT_TEXT_KG_S1, SETT_CONV_NO);
   SettSetParam(SETT_M_KG_MAX_S1,		&weight[0].max_kg, 0, 1, 1, SETT_TEXT_KG_MAX_S1, SETT_CONV_NO);
@@ -169,12 +171,19 @@ void SettInit(void)
   SettSetParam(SETT_M_RAW_S2,			&weight[1].raw_data, 0, 1, 1, SETT_TEXT_RAW_S2, SETT_CONV_NO);
   SettSetParam(SETT_M_OFFSETT_S2,	    &weight[1].raw_zero_offset, 0, 1, 1, SETT_TEXT_OFFSETT_S2, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_SYNCHRO_MODE,		&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_SYNCHRO_MODE, SETT_CONV_NO);
-  SettSetParam(SETT_M_THRESHOLD_WEIGHT, &settings.alarm_treshold_kg, 0, 1, 1, SETT_TEXT_THRESHOLD_WEIGHT, SETT_CONV_NO);
+  SettSetParam(SETT_M_SYNCHRO_MODE,		&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_THRESHOLD_WEIGHT, &settings.alarm_treshold_kg, 0, 100, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
-  // --- UNIT-1. General settings
-//  SettSetParam(SETT_RB_TYPE,                &road_blocker.RB_type, SETT_LIM_MIN, RB_TYPE_NUM - 1, 1, SETT_TEXT_RB_TYPE, SETT_CONV_NO);
-//  SettSetParam(SETT_RB_MODEL,               &road_blocker.RB_model, SETT_LIM_MIN, INT_HPU_NUM + EXT_HPU_NUM + MOBILE_RB_NUM, 1, SETT_TEXT_RB_MDL, SETT_CONV_NO);
+
+#define SettMemGetData(a) (&SettingsValue[a])
+#define SettMemGetAddr(a) ((u16 *)(addr + a * 2))
+  cnt = 0;
+  while (cnt < SETT_BUFF_LEN) {
+	  if (pSettReg[cnt] != NULL) {
+		  (*pSettReg[cnt]) = SettMemGetData(cnt);
+	  }
+	  cnt++;
+  }
 
   /*
   cntBlockExit = FLACH_SETT_BLOCK_NUM * 2;
@@ -592,21 +601,21 @@ u8 SettSaveTask(void)
 void SettRegChange(u16 indx, u8 dir)
 {
   // if "step"=0 it is forbidden to change variables
-  if ((indx < SETT_BUFF_LEN) && (pSettReg[indx] != NULL) && (!SettParam[indx].flag.bProt || !SettCtrl.flag.bTtlProtEn)) {
+  if ((indx < SETT_BUFF_LEN) && (!SettParam[indx].flag.bProt || !SettCtrl.flag.bTtlProtEn)) {
     SettParam[indx].flag.bChng = 1;
     SettCtrl.flag.bWasChng     = 1;
 
     if (dir == SETT_REG_UP) {
-      (*pSettReg[indx]) += SettParam[indx].step;
-      if ((*pSettReg[indx]) > SettParam[indx].max) {
-        (*pSettReg[indx]) = SettParam[indx].max;
+      (SettingsValue[indx]) += SettParam[indx].step;
+      if ((SettingsValue[indx]) > SettParam[indx].max) {
+        (SettingsValue[indx]) = SettParam[indx].max;
       }
 
     } else {  // dir==SETT_REG_DN
-      if ((*pSettReg[indx]) >= (SettParam[indx].min + SettParam[indx].step)) {
-        (*pSettReg[indx]) -= SettParam[indx].step;
+      if ((SettingsValue[indx]) >= (SettParam[indx].min + SettParam[indx].step)) {
+        (SettingsValue[indx]) -= SettParam[indx].step;
       } else {
-        (*pSettReg[indx]) = SettParam[indx].min;
+        (SettingsValue[indx]) = SettParam[indx].min;
       }
     }
 
@@ -658,7 +667,8 @@ void SettCopyToDummy(u16 indx)
 u16 SettGetData(u16 indx)
 {
   if ((indx < SETT_BUFF_LEN) && (pSettReg[indx] != NULL)) {
-    return *pSettReg[indx];
+    //return *pSettReg[indx];
+	return SettingsValue[indx];
   } else {
     return 0;
   }

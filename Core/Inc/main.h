@@ -62,11 +62,13 @@ typedef enum {
 } sensors_mod_t;
 
 typedef struct {
+//#define ADDR_FLASH_MOD
+//#define ADDR_FLASH_THRESHOLD
 	sensors_mod_t mod_config;
 	sensors_mod_t mod_config_prev;
 
-	uint16_t alarm_treshold_kg;
-	uint16_t alarm_treshold_kg_prev;
+	uint16_t alarm_threshold_kg;
+	uint16_t alarm_threshold_kg_prev;
 
 	bool flash_read_flag;
 	bool flash_write_flag;
@@ -123,7 +125,7 @@ typedef struct
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 #define NUM_OF_WEIGHT_SENSOR    			2
-#define FLASH_ADDR   						((uint32_t)0x08010000)//page 64
+#define ADDR_FLASH   						(0x08010000)//page 64
 
 //#define BUZZER_ACTIV_WEIGHT_KG				5 // weight limit in KG
 #define HX711_GAIN_PULSES 					1 // for example: 1 = 128x, 2 = 64x, 3 = 32x
@@ -134,7 +136,6 @@ typedef struct
 #define AVRG_OFFSETT_MEASURE_NUM			20
 #define MAX_WEIGHT_RESET_TIME_S				30
 #define MAX_DATA_NORMALIZ_TIME_MS			400 //time to detect and confirm threshold reaching
-//#define MAX_NORMALIZE_UNACTIVE_TIME_MS		300
 
 
 #define HX711_DATA_RATE_TIME_MS				110 // 10 SPS (from HX711 datasheet)
@@ -179,8 +180,9 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 extern void ButtonsResetLong(void);
 extern void ButtonsReset(void);
-extern void Flash_WriteByte(uint32_t addr, uint8_t data);
-extern uint8_t Flash_ReadByte(uint32_t addr);
+//extern void Flash_WriteData(uint32_t addr, uint16_t data);
+//extern uint16_t FlashGetData(uint32_t addr);
+//extern void ConfigReadWrite(void);
 
 /* USER CODE END EFP */
 

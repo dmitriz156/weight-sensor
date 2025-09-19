@@ -194,7 +194,7 @@ void HX711GetDataTask(void)
 			weight[sens_channel].kg = (float)kalman_filtering(&filter[sens_channel], weight[sens_channel].unfilt_kg, 1.0f, 10.0f);
 		}
 
-		if(weight[sens_channel].prev_kg <= settings.alarm_treshold_kg && weight[sens_channel].kg > settings.alarm_treshold_kg && weight[sens_channel].COM_ERR_flag == 0) {
+		if(weight[sens_channel].prev_kg <= settings.alarm_threshold_kg && weight[sens_channel].kg > settings.alarm_threshold_kg && weight[sens_channel].COM_ERR_flag == 0) {
 			if(weight[sens_channel].active_state_cnt == 0) { weight[sens_channel].active_state_cnt = MAX_DATA_NORMALIZ_TIME_MS; }
 		}
 		weight[sens_channel].prev_kg = weight[sens_channel].kg;

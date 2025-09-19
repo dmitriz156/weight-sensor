@@ -10,7 +10,7 @@ u16 *pSettReg[SETT_BUFF_LEN];  // pointer to settings value
 // u16 SettBuffTemp[SETT_BUFF_LEN_MAX];		// for temporary calculation
 PresetDef Preset[RB_MDL_TTL_NUM]; ///PresetDef Preset[GATE_MDL_TTL_NUM];     // preset buffer def
 SettParamDef SettParam[SETT_BUFF_LEN];  // min,max,def,step of parameters
-u16 SettingsValue[SETT_BUFF_LEN]; //settings parameter value
+u16 SettingsValue = 0; //settings parameter value
 extern MenuTypeDef Menu;
 
 
@@ -77,6 +77,62 @@ u16 SettCrcCalc(u16 *pnt, u16 len)
   return Crc;
 }
 
+void Flash_ErasePage(uint32_t addr)
+{
+    FLASH_EraseInitTypeDef EraseInitStruct;
+    uint32_t PageError = 0;
+
+    EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
+    EraseInitStruct.PageAddress = addr;
+    EraseInitStruct.NbPages     = 1;
+
+    HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
+}
+
+
+//uint16_t FlashGetData(uint32_t addr)
+//{
+//    return *(__IO uint16_t*)addr;
+//}
+//
+//void FlashConfigRead(void)
+//{
+//	uint16_t index;
+//	if (settings.flash_read_flag) {
+//		settings.flash_read_flag = 0;
+//
+//		index = 0;
+//		while (index < SETT_BUFF_LEN) {
+//			pSettReg[index] = FlashGetData(ADDR_FLASH + (index*2));
+//			index++;
+//		}
+//
+//		settings.mod_config_prev = settings. mod_config;
+//		settings.alarm_threshold_kg_prev = settings.alarm_threshold_kg;
+//	}
+//}
+
+void FlashConfigWrite(void)
+{
+	uint16_t index;
+	if (settings.flash_write_flag) {
+		settings.flash_write_flag = 0;
+
+		HAL_FLASH_Unlock();
+
+		Flash_ErasePage(ADDR_FLASH);
+
+		index = 0;
+		while (index < SETT_BUFF_LEN) {
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, (ADDR_FLASH + (index * 2)), *pSettReg[index]);
+			index++;
+		}
+
+		HAL_FLASH_Lock();
+	}
+}
+
+
 /**
  * @brief Initialization of settings:
  * Preset[]    - set all defined value
@@ -129,17 +185,6 @@ void SettInit(void)
   SettCtrl.tbLen           = SETT_TEXT_NUM;
   SettCtrl.flag.bTtlProtEn = ENABLE;
 
-// set types number for each model
-// and makes gate preset initialization (define values)
-//---------------------ROAD_BLOCKER--------------------
-  //SettCtrl.mdlNum[INTERNAL_HPU] = INT_HPU_NUM;
-
-
-
-//  SettPresetRBIntHPU();
-//  SettPresetRBExtHPU();
-//  SettPresetRBMobile();
-
   cnt = 0;
   while (cnt < RB_MDL_TTL_NUM) {///<GATE_MDL_TTL_NUM
     // common presets for all types of turnstiles
@@ -154,10 +199,10 @@ void SettInit(void)
   }
 
 
-  SettSetParam(SETT_CRC_INDX, &SettCtrl.crcRd, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_WEIGHT_INDX, &SettCtrl.weight, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_SETT_NUM_INDX, &SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_UNIT_NUM_INDX, &SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_CRC_INDX, 			&SettCtrl.crcRd, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_WEIGHT_INDX, 		&SettCtrl.weight, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_SETT_NUM_INDX, 		&SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT_NUM_INDX, 		&SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
 
   SettSetParam(SETT_DUMMY, 				&Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
@@ -172,18 +217,37 @@ void SettInit(void)
   SettSetParam(SETT_M_OFFSETT_S2,	    &weight[1].raw_zero_offset, 0, 1, 1, SETT_TEXT_OFFSETT_S2, SETT_CONV_NO);
 
   SettSetParam(SETT_M_SYNCHRO_MODE,		&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_OFF, SETT_CONV_NO);
-  SettSetParam(SETT_M_THRESHOLD_WEIGHT, &settings.alarm_treshold_kg, 0, 100, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_THRESHOLD_WEIGHT, &settings.alarm_threshold_kg, 1, 50, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
-
-#define SettMemGetData(a) (&SettingsValue[a])
+  //settings.flash_read_flag = 1;
+  //FlashConfigRead();
+#define SettMemGetData(a) (*(__IO u16 *)(addr + a * 2))
 #define SettMemGetAddr(a) ((u16 *)(addr + a * 2))
+
+  addr = ADDR_FLASH;
   cnt = 0;
   while (cnt < SETT_BUFF_LEN) {
+	  (*pSettReg[cnt]) = SettMemGetData(cnt);
 	  if (pSettReg[cnt] != NULL) {
-		  (*pSettReg[cnt]) = SettMemGetData(cnt);
+		  if (cnt >= SETT_M_SYNCHRO_MODE) {
+			  if ((*pSettReg[cnt]) > SettParam[cnt].max){
+				  (*pSettReg[cnt]) = SettParam[cnt].min;
+				  settings.flash_write_flag = 1;
+			  }
+			  if ((*pSettReg[cnt]) < SettParam[cnt].min){
+				  (*pSettReg[cnt]) = SettParam[cnt].min;
+				  settings.flash_write_flag = 1;
+			  }
+		  }
 	  }
-	  cnt++;
+	  cnt ++;
   }
+
+
+
+
+//  addr = FLASH_ADDR;
+//
 
   /*
   cntBlockExit = FLACH_SETT_BLOCK_NUM * 2;
@@ -601,23 +665,25 @@ u8 SettSaveTask(void)
 void SettRegChange(u16 indx, u8 dir)
 {
   // if "step"=0 it is forbidden to change variables
-  if ((indx < SETT_BUFF_LEN) && (!SettParam[indx].flag.bProt || !SettCtrl.flag.bTtlProtEn)) {
+  if ((indx < SETT_BUFF_LEN) && (pSettReg[indx] != NULL) && (!SettParam[indx].flag.bProt || !SettCtrl.flag.bTtlProtEn)) {
     SettParam[indx].flag.bChng = 1;
     SettCtrl.flag.bWasChng     = 1;
 
     if (dir == SETT_REG_UP) {
-      (SettingsValue[indx]) += SettParam[indx].step;
-      if ((SettingsValue[indx]) > SettParam[indx].max) {
-        (SettingsValue[indx]) = SettParam[indx].max;
+      (*pSettReg[indx]) += SettParam[indx].step;
+      if ((*pSettReg[indx]) > SettParam[indx].max) {
+        (*pSettReg[indx]) = SettParam[indx].max;
       }
 
     } else {  // dir==SETT_REG_DN
-      if ((SettingsValue[indx]) >= (SettParam[indx].min + SettParam[indx].step)) {
-        (SettingsValue[indx]) -= SettParam[indx].step;
+      if ((*pSettReg[indx]) >= (SettParam[indx].min + SettParam[indx].step)) {
+        (*pSettReg[indx]) -= SettParam[indx].step;
       } else {
-        (SettingsValue[indx]) = SettParam[indx].min;
+        (*pSettReg[indx]) = SettParam[indx].min;
       }
     }
+
+    SettingsValue = (*pSettReg[indx]);
 
     SettRfrParam();
   }
@@ -667,8 +733,7 @@ void SettCopyToDummy(u16 indx)
 u16 SettGetData(u16 indx)
 {
   if ((indx < SETT_BUFF_LEN) && (pSettReg[indx] != NULL)) {
-    //return *pSettReg[indx];
-	return SettingsValue[indx];
+    return *pSettReg[indx];
   } else {
     return 0;
   }

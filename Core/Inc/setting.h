@@ -793,7 +793,7 @@ extern u16 *pSettReg[];
 extern PresetDef Preset[];
 extern SettParamDef SettParam[];
 extern SettUnitDef SettUnit;
-
+void FlashConfigWrite(void);
 void SettInit(void);
 void SettClearErr(void);
 void SettResetToDef(u8, u8, u8);

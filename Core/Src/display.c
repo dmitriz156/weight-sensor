@@ -355,7 +355,7 @@ void MenuSysMsgFill(uint8_t type, char* str0, char* str1, char* str2, char* str3
 
 // void SettInit(void){
 // 	SettSetParam(SETT_SYNCHRO_MODE, &settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, measure_name[SETT_SYNCHRO_MODE], SETT_CONV_NO);
-// 	SettSetParam(SETT_THRESHOLD_WEIGHT, &settings.alarm_treshold_kg, 1, 30, 1, measure_name[SETT_THRESHOLD_WEIGHT], SETT_CONV_NO);
+// 	SettSetParam(SETT_THRESHOLD_WEIGHT, &settings.alarm_threshold_kg, 1, 30, 1, measure_name[SETT_THRESHOLD_WEIGHT], SETT_CONV_NO);
 // }
 
 
@@ -370,6 +370,7 @@ void DispPushBtn(void)
 			if (Menu.valueEdit) {
 				if (BtnSelect()) {
 					Menu.valueEdit = 0;
+					settings.flash_write_flag = 1;
 
 					switch (Menu.paramRealIndx) {
 
@@ -384,6 +385,7 @@ void DispPushBtn(void)
 				} else if (BtnBack()) {
 					MenuDelSysMsg();
 					Menu.valueEdit = 0;
+					settings.flash_write_flag = 1;
 				} else if (BtnDown()) {
 					SettRegChange(SETT_DUMMY, SETT_REG_UP);
 				} else if (BtnUp()) {
@@ -402,7 +404,9 @@ void DispPushBtn(void)
 	}
 	else // there is no active message
 	{
-		MenuChangeLine();
+		if (!Menu.valueEdit) {
+			MenuChangeLine();
+		}
 
 		switch(Menu.pageIndx){
 		case MENU_PAGE_HELLO:
@@ -421,28 +425,32 @@ void DispPushBtn(void)
 
 			if (!Menu.valueEdit) {
 				Menu.lineNum 	= MEASURE_ITEM_NUM;
-				if(btn.LEFT_state == BTN_LONG_PRESS) {
-					Menu.pageIndx   = MENU_PAGE_MODE;
-					Menu.lineNum    = MENU_MOD_NUM;
-					Menu.linePos    = 0;
-					Menu.lineSel    = settings.mod_config;
-				}
+//				if(btn.LEFT_state == BTN_LONG_PRESS) {
+//					Menu.pageIndx   = MENU_PAGE_MODE;
+//					Menu.lineNum    = MENU_MOD_NUM;
+//					Menu.linePos    = 0;
+//					Menu.lineSel    = settings.mod_config;
+//				}
 				if(btn.RIGHT_state == BTN_PRESS ) {
 					indx = Menu.linePos + Menu.lineSel + SETT_DUMMY + 1;  // param index
-					if(Menu.linePos + Menu.lineSel == SETT_SYNCHRO_MODE) {
-						Menu.valueEdit = 1;
+
+					if (Menu.linePos + Menu.lineSel == SETT_SYNCHRO_MODE) {
+						MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);									// open additional window for setting
+						Menu.paramRealIndx = indx;												// save index of real parameters (for future processing)
+						SettCopyToDummy(indx);
+					} else if (Menu.linePos + Menu.lineSel == SETT_THRESHOLD_WEIGHT) {
+
 					}
-					MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);									// open additional window for setting
-					Menu.paramRealIndx = indx;												// save index of real parameters (for future processing)
-					SettCopyToDummy(indx);													// copy real param. to Dummy
+					Menu.valueEdit = 1;// copy real param. to Dummy
 				}
 			} else {
 				if (BtnBack()) {
 					Menu.valueEdit = 0;
+					settings.flash_write_flag = 1;
 				} else if (BtnDown()) {
-					SettRegChange(SettUnit.unitIndx[GetPrevListPos()] + Menu.linePos + Menu.lineSel, SETT_REG_UP);
+					SettRegChange(Menu.linePos + Menu.lineSel + SETT_DUMMY + 1, SETT_REG_UP);
 				} else if (BtnUp()) {
-					SettRegChange(SettUnit.unitIndx[GetPrevListPos()] + Menu.linePos + Menu.lineSel, SETT_REG_DN);
+					SettRegChange(Menu.linePos + Menu.lineSel + SETT_DUMMY + 1, SETT_REG_DN);
 				}
 			}
 
@@ -666,7 +674,7 @@ void DispTask(void)
 									SetListValue(MenuModName[settings.mod_config]);
 									break;
 								case SETT_THRESHOLD_WEIGHT:
-									SetListValue(FloatToString((float)settings.alarm_treshold_kg, 2, "kg"));
+									SetListValue(FloatToString((float)settings.alarm_threshold_kg, 2, "kg"));
 									break;
 								}
 								//SetListValue(str_item_value);

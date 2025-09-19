@@ -74,10 +74,10 @@ static void MX_USART3_UART_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
-void Flash_ErasePage(uint32_t addr);
-void Flash_WriteByte(uint32_t addr, uint8_t data);
-uint8_t Flash_ReadByte(uint32_t addr);
-void ConfigReadWrite(void);
+//void Flash_ErasePage(uint32_t addr);
+//void Flash_WriteData(uint32_t addr, uint16_t data);
+//uint8_t Flash_ReadByte(uint32_t addr);
+//void ConfigReadWrite(void);
 
 void OutHandler(void);
 void ButtonsReset(void);
@@ -141,7 +141,8 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	 ConfigReadWrite();
+	 FlashConfigWrite();
+
 
 	  for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
 		  if (weight[i].offsett_status == false) {
@@ -368,57 +369,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void Flash_ErasePage(uint32_t addr)
-{
-    FLASH_EraseInitTypeDef EraseInitStruct;
-    uint32_t PageError = 0;
-
-    EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
-    EraseInitStruct.PageAddress = addr;
-    EraseInitStruct.NbPages     = 1;
-
-    HAL_FLASHEx_Erase(&EraseInitStruct, &PageError);
-}
-
-void Flash_WriteByte(uint32_t addr, uint8_t data)
-{
-    HAL_FLASH_Unlock();
-
-    Flash_ErasePage(addr);
-
-    // Flash в F1 пишеться тільки halfword (16 біт)
-    uint16_t halfword = (uint16_t)data;
-
-    HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr, halfword);
-
-    HAL_FLASH_Lock();
-}
-
-uint8_t Flash_ReadByte(uint32_t addr)
-{
-    uint16_t halfword = *(__IO uint16_t*)addr;
-    return (uint8_t)(halfword & 0xFF);
-}
-
-void ConfigReadWrite(void)
-{
-	if (settings.flash_write_flag && Menu.pageIndx != MENU_PAGE_MODE && Menu.sysMsg == MENU_SM_NO) {
-		Flash_WriteByte(FLASH_ADDR, (uint8_t)settings.mod_config);
-		settings.mod_config_prev = settings.mod_config;
-		settings.flash_write_flag = 0;
-	}
-	if (settings.flash_read_flag == 0) {
-		uint8_t mod_temp = Flash_ReadByte(FLASH_ADDR);
-		if (mod_temp <= ALARM_SYNCHRO) {
-			settings.mod_config = (sensors_mod_t)mod_temp;
-		} else {
-			settings.mod_config = ALARM_ST_ALONE;
-		}
-		settings.mod_config_prev = settings.mod_config;
-		settings.flash_read_flag = 1;
-	}
-}
-
 void OutHandler(void)
 {
 	// BUZZER activate condition start
@@ -640,7 +590,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		{
 			if(weight[i].read_cnt){ weight[i].read_cnt --; }
 
-			if(weight[i].kg > settings.alarm_treshold_kg)
+			if(weight[i].kg > settings.alarm_threshold_kg)
 			{
 				if(weight[i].active_state_cnt) {
 					weight[i].active_state_cnt --;

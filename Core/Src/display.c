@@ -26,36 +26,45 @@ char str_item_value[32];
 #define DISP_PAUSE_TMR		25	// ms
 #define DISP_SHIFT_TMR		80	
 
-#define BtnAny()               ((btn.UP_state == BTN_PRESS) || (btn.DOWN_state == BTN_PRESS) || (btn.RIGHT_state == BTN_PRESS) || (btn.LEFT_state == BTN_PRESS))//(((btn == DISP_BTN_L) || (btn == DISP_BTN_R) || (btn == DISP_BTN_UP) || (btn == DISP_BTN_DN)) && (mode == DISP_BTN_SHRT))
-#define BtnBack()              (btn.LEFT_state == BTN_PRESS)//((btn == DISP_BTN_L) && (mode == DISP_BTN_SHRT))
-#define BtnNext()              ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
-#define BtnSelect()            (btn.RIGHT_state == BTN_PRESS)//((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
-#define BtnLogInfo()           ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
-#define BtnClearErr()          ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
-#define BtnOk()                ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
-#define BtnUp()                (btn.UP_state == BTN_PRESS)//((btn == DISP_BTN_UP) && (mode == DISP_BTN_SHRT))
-#define BtnDown()              (btn.DOWN_state == BTN_PRESS)//((btn == DISP_BTN_DN) && (mode == DISP_BTN_SHRT))
-#define BtnLeft()              ((btn == DISP_BTN_L) && (mode == DISP_BTN_SHRT))
-#define BtnRight()             ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
-#define BtnQueNo()             ((btn == DISP_BTN_UP) && (mode == DISP_BTN_SHRT))
-#define BtnQueYes()            ((btn == DISP_BTN_DN) && (mode == DISP_BTN_SHRT))
-#define BtnShare()             ((btn == DISP_BTN_UP) && (mode == DISP_BTN_LONG))
-#define BtnSysMenu()           ((btn == DISP_BTN_DN) && (mode == DISP_BTN_LONG))
-#define BtnSysLogMenu()        ((btn == DISP_BTN_L) && (mode == DISP_BTN_LONG))
-#define BtnErrMenu()           ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
-#define BtnDef()               ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
-#define BtnAp()                ((btn == DISP_BTN_UP) && (mode == DISP_BTN_SHRT))
-#define BtnLongUen()           ((btn == DISP_BTN_UP) && (mode == DISP_BTN_LONG))
-#define BtnLongDen()           ((btn == DISP_BTN_DN) && (mode == DISP_BTN_LONG))
-#define BtnLongUdis()          ((btn == DISP_BTN_UP) && (mode == DISP_BTN_LONG_R))
-#define BtnLongDdis()          ((btn == DISP_BTN_DN) && (mode == DISP_BTN_LONG_R))
-#define BtnLongLen()           ((btn == DISP_BTN_L) && (mode == DISP_BTN_LONG))
-#define BtnLongRen()           ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG))
-#define BtnLongLdis()          ((btn == DISP_BTN_L) && (mode == DISP_BTN_LONG_R))
-#define BtnLongRdis()          ((btn == DISP_BTN_R) && (mode == DISP_BTN_LONG_R))
-#define BtnOpenA()             ((btn == DISP_BTN_L) && (mode == DISP_BTN_SHRT))
-#define BtnOpenB()             ((btn == DISP_BTN_R) && (mode == DISP_BTN_SHRT))
-#define BtnClose()             ((btn == DISP_BTN_DN) && (mode == DISP_BTN_SHRT))
+#define BtnAny()        ((btn.UP_state == BTN_PRESS)   || \
+                         (btn.DOWN_state == BTN_PRESS) || \
+                         (btn.RIGHT_state == BTN_PRESS)|| \
+                         (btn.LEFT_state == BTN_PRESS))
+
+#define BtnBack()       (btn.LEFT_state  == BTN_PRESS)
+#define BtnNext()       (btn.RIGHT_state == BTN_PRESS)
+#define BtnSelect()     (btn.RIGHT_state == BTN_PRESS)
+#define BtnLogInfo()    (btn.RIGHT_state == BTN_LONG_PRESS)
+#define BtnClearErr()   (btn.RIGHT_state == BTN_LONG_PRESS)
+#define BtnOk()         (btn.RIGHT_state == BTN_PRESS)
+
+#define BtnUp()         (btn.UP_state    == BTN_PRESS)
+#define BtnDown()       (btn.DOWN_state  == BTN_PRESS)
+#define BtnLeft()       (btn.LEFT_state  == BTN_PRESS)
+#define BtnRight()      (btn.RIGHT_state == BTN_PRESS)
+
+#define BtnQueNo()      (btn.UP_state    == BTN_PRESS)
+#define BtnQueYes()     (btn.DOWN_state  == BTN_PRESS)
+#define BtnShare()      (btn.UP_state    == BTN_LONG_PRESS)
+#define BtnSysMenu()    (btn.DOWN_state  == BTN_LONG_PRESS)
+#define BtnSysLogMenu() (btn.LEFT_state  == BTN_LONG_PRESS)
+#define BtnErrMenu()    (btn.RIGHT_state == BTN_LONG_PRESS)
+#define BtnDef()        (btn.RIGHT_state == BTN_LONG_PRESS)
+#define BtnAp()         (btn.UP_state    == BTN_PRESS)
+
+#define BtnLongUen()    (btn.UP_state    == BTN_LONG_PRESS)
+#define BtnLongDen()    (btn.DOWN_state  == BTN_LONG_PRESS)
+
+#define BtnLongUdis()   (btn.UP_state    == BTN_LONG_R)
+#define BtnLongDdis()   (btn.DOWN_state  == BTN_LONG_R)
+#define BtnLongLen()    (btn.LEFT_state  == BTN_LONG_PRESS)
+#define BtnLongRen()    (btn.RIGHT_state == BTN_LONG_PRESS)
+#define BtnLongLdis()   (btn.LEFT_state  == BTN_LONG_R)
+#define BtnLongRdis()   (btn.RIGHT_state == BTN_LONG_R)
+
+#define BtnOpenA()      (btn.LEFT_state  == BTN_PRESS)
+#define BtnOpenB()      (btn.RIGHT_state == BTN_PRESS)
+#define BtnClose()      (btn.DOWN_state  == BTN_PRESS)
 
 #define SetListSelLine(a)      DispUart.txBuff[DISP_PLD0_SELLINE] = a
 #define SetListValueEdit(a)    DispUart.txBuff[DISP_PLD0_VALUE_EDIT] = a

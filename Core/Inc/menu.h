@@ -7,6 +7,7 @@
 typedef enum
 {
 	MENU_PAGE_HELLO = 0,			// greating page
+	MENU_PAGE_MAIN,         		// main working page
 	MENU_PAGE_MEASURE = 2,			// weight sensors measurements list //MENU_PAGE_SETT_PARAM earlier
 	MENU_PAGE_EMPTY,				// empty page. For system message
 	MENU_PAGE_MODE,         		// page of selecting gate mode
@@ -14,6 +15,25 @@ typedef enum
 	MENU_PAGE_NUM,
 	MENU_PAGE_FREE = 0xFF,
 } MENUPAGE;
+
+
+#define MENU_TOUT_MAIN_PAGE 120      // sec
+#define MenuSetSysMsgTmr(a) (a + 1)  // timer in seconds
+#define MENU_LONG_HOLD_TMR  100      // ms
+#define MENU_BLINK_TMR_SLOW 500      // ms
+#define MENU_BLINK_TMR_FAST 150      // ms
+#define MENU_GATE_UNDEF     0xFF
+
+typedef struct{
+	u16 param_1;
+	u16 param_2;
+	u16 param_3;
+	u16 param_4;
+	u16 param_5;
+	u16 param_6;
+	u16 param_7;
+	u16 param_8;
+} dummy_t;
 
 typedef enum
 {
@@ -193,6 +213,9 @@ typedef struct
 	u16 posDispMdl;
 	u16 posDispOffset;
 	u16 posDispNegPnt;
+
+	u16 dispGoBackTmr;
+	u16 dispBrightnesTmr;
 } MenuTypeDef;
 
 
@@ -238,6 +261,6 @@ typedef struct
 		"S2 RAW:",
 		"OFFSET:",
 		"SYNCHRO MODE:",
-		"TRESHOLD:"
+		"THRESHOLD:"
 	};
 	

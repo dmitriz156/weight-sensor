@@ -97,7 +97,7 @@ char str_item_value[32];
 #define GetWPrevPageIndx()     Menu.pageSeq[Menu.pageSeqPos - 2].pageIndx
 // #define MenuGetBackPageIndx()	Menu.pageLvl[Menu.pageIndx]!=0 ? Menu.layer[Menu.pageLvl[Menu.pageIndx]-1].pageIndx : MENU_PAGE_MAIN
 #define MenuGoBack()           Menu.pageIndxNew = Menu.pageSeqPos != 0 ? Menu.pageSeq[Menu.pageSeqPos - 1].pageIndx : MENU_PAGE_MAIN
-#define MenuGoToPage(a)        Menu.pageIndxNew = a
+#define MenuGoToPage(a)        Menu.pageIndx = a
 
 DispUartTypeDef DispUart;
 MenuTypeDef Menu;
@@ -362,15 +362,14 @@ void MenuSysMsgFill(uint8_t type, char* str0, char* str1, char* str2, char* str3
 	if(str4)	strncpy((void*)&DispUart.txBuff[DISP_SYS_MSG_STR4],str4,DISP_SYS_MSG_STR_LEN);							
 }
 
-// void SettInit(void){
-// 	SettSetParam(SETT_SYNCHRO_MODE, &settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, measure_name[SETT_SYNCHRO_MODE], SETT_CONV_NO);
-// 	SettSetParam(SETT_THRESHOLD_WEIGHT, &settings.alarm_threshold_kg, 1, 30, 1, measure_name[SETT_THRESHOLD_WEIGHT], SETT_CONV_NO);
-// }
-
 
 void DispPushBtn(void)
 {
 	u16 indx, bit;
+
+	if (BtnAny()) {
+		Menu.toutMainPage = 0;
+	}
 
 	if (Menu.sysMsg)  // there is active message
 	{
@@ -379,12 +378,15 @@ void DispPushBtn(void)
 			if (Menu.valueEdit) {
 				if (BtnSelect()) {
 					Menu.valueEdit = 0;
-					settings.flash_write_flag = 1;
 
 					switch (Menu.paramRealIndx) {
 
 					case SETT_M_SYNCHRO_MODE:
 						settings.mod_config = Menu.paramDummy;
+						settings.flash_write_flag = 1;
+						break;
+					case SETT_THRESHOLD_WEIGHT:
+						//empty
 						break;
 					default:
 						SettSetData(Menu.paramRealIndx, Menu.paramDummy);
@@ -392,9 +394,17 @@ void DispPushBtn(void)
 						break;
 					}
 				} else if (BtnBack()) {
-					MenuDelSysMsg();
+					switch (Menu.paramRealIndx) {
+
+					case SETT_M_SYNCHRO_MODE:
+						settings.mod_config = settings.mod_config_prev;
+						break;
+					case SETT_THRESHOLD_WEIGHT:
+						//empty
+						break;
+					}
 					Menu.valueEdit = 0;
-					settings.flash_write_flag = 1;
+					MenuDelSysMsg();
 				} else if (BtnDown()) {
 					SettRegChange(SETT_DUMMY, SETT_REG_UP);
 				} else if (BtnUp()) {
@@ -419,7 +429,8 @@ void DispPushBtn(void)
 
 		switch(Menu.pageIndx){
 		case MENU_PAGE_HELLO:
-			if(Menu.startTmr) {
+			if(Menu.startTmr || !ready_to_read) {
+				//while run weight sensors offset definition process
 				Menu.pageIndx   = MENU_PAGE_HELLO;
 				Menu.sysMsg		= MENU_SM_NO;
 			} else {
@@ -434,28 +445,28 @@ void DispPushBtn(void)
 
 			if (!Menu.valueEdit) {
 				Menu.lineNum 	= MEASURE_ITEM_NUM;
-//				if(btn.LEFT_state == BTN_LONG_PRESS) {
-//					Menu.pageIndx   = MENU_PAGE_MODE;
-//					Menu.lineNum    = MENU_MOD_NUM;
-//					Menu.linePos    = 0;
-//					Menu.lineSel    = settings.mod_config;
-//				}
-				if(btn.RIGHT_state == BTN_PRESS ) {
+
+				if(BtnSelect()) {
 					indx = Menu.linePos + Menu.lineSel + SETT_DUMMY + 1;  // param index
 
 					if (Menu.linePos + Menu.lineSel == SETT_SYNCHRO_MODE) {
+						settings.mod_config_prev = settings.mod_config;
+						//Menu.paramDummy = settings.mod_config;
 						MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);									// open additional window for setting
 						Menu.paramRealIndx = indx;												// save index of real parameters (for future processing)
 						SettCopyToDummy(indx);
+						Menu.valueEdit = 1;// copy real param. to Dummy
 					} else if (Menu.linePos + Menu.lineSel == SETT_THRESHOLD_WEIGHT) {
-
+						settings.alarm_threshold_kg_prev = settings.alarm_threshold_kg;
+						Menu.valueEdit = 1;// copy real param. to Dummy
 					}
-					Menu.valueEdit = 1;// copy real param. to Dummy
 				}
 			} else {
 				if (BtnBack()) {
 					Menu.valueEdit = 0;
-					settings.flash_write_flag = 1;
+					if (settings.alarm_threshold_kg != settings.alarm_threshold_kg_prev) {
+						settings.flash_write_flag = 1;
+					}
 				} else if (BtnDown()) {
 					SettRegChange(Menu.linePos + Menu.lineSel + SETT_DUMMY + 1, SETT_REG_UP);
 				} else if (BtnUp()) {
@@ -465,29 +476,15 @@ void DispPushBtn(void)
 
 			break;
 
-		case MENU_PAGE_MODE:
-			if(btn.LEFT_state == BTN_LONG_PRESS) {
-				if(settings.mod_config_prev != settings.mod_config){
-					Menu.pageIndx   = MENU_PAGE_EMPTY;
-					Menu.sysMsg 	= MENU_SM_SAVE_MODE;
-				} else {
-					Menu.pageIndx   = MENU_PAGE_MEASURE;
-					Menu.sysMsg 	= MENU_SM_NO;
-					Menu.lineNum 	= MEASURE_ITEM_NUM;
-					Menu.linePos	= 0;
-					Menu.lineSel    = 0;
-				}
-			}
-			break;
 		case MENU_PAGE_EMPTY:
 			if(btn.DOWN_state == BTN_PRESS) {
-				settings.flash_write_flag = 1;
+				//settings.flash_write_flag = 1;
 				Menu.pageIndx   = MENU_PAGE_MEASURE;
 				Menu.sysMsg 	= MENU_SM_NO;
 				Menu.lineNum 	= MEASURE_ITEM_NUM;
 			}
 			if(btn.UP_state == BTN_PRESS) {
-				settings.flash_write_flag = 0;
+				//settings.flash_write_flag = 0;
 				Menu.pageIndx   = MENU_PAGE_MEASURE;
 				Menu.sysMsg 	= MENU_SM_NO;
 				Menu.lineNum 	= MEASURE_ITEM_NUM;
@@ -507,6 +504,8 @@ void DispPushBtn(void)
 
 void DispTask(void)
 {
+	uint16_t indx;
+
 	char str0[DISP_LISTPARAM_LEN];
 	char str1[DISP_LISTPARAM_LEN];
 	char str2[DISP_LISTPARAM_LEN];
@@ -530,13 +529,14 @@ void DispTask(void)
 			DispUart.pageIndex = Menu.pageIndx;
 		else //MENU_PAGE_FILE
 			DispUart.pageIndex = DISP_PAGE_LIST;
-		
+
 		// prepare display Tx buffer
 		memset((void*)&DispUart.txBuff[0],0x00,DISP_TX_BUFF);
 		
 		// common register for all packages
 		DispUart.txBuff[DISP_REG_PACKTYPE] = DispUart.txPackPnt;			// number of packet
-		DispUart.txBuff[DISP_REG_PAGE] = DispUart.pageIndex;					// current Display page index
+		DispUart.txBuff[DISP_REG_PAGE] = DispUart.pageIndex;				// current Display page index
+		DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
 
 		// clear it before using in code below
 		memset(str0,0x00,sizeof(str0));
@@ -593,7 +593,7 @@ void DispTask(void)
 		memset(str2,0x00,sizeof(str2));					
 		memset(str3,0x00,sizeof(str3));
 		memset(str4,0x00,sizeof(str4));		
-		
+
 		// current menu page
 		switch(Menu.pageIndx)
 		{
@@ -602,10 +602,10 @@ void DispTask(void)
 				switch(DispUart.txPackPnt)
 				{
 					// DISP_PACKTYPE_DATA_0 - common data
-					case DISP_PACK_DATA_0:		
+					case DISP_PACK_DATA_0:
 						// status of loading
-						DispUart.txBuff[DISP_PHD0_TMR]=(Menu.startTmr);	
-						DispUart.txBuff[DISP_PHD0_TMRMAX]=(DISP_START_TMR);		
+						DispUart.txBuff[DISP_PHD0_TMR] = (Menu.startTmr);
+						DispUart.txBuff[DISP_PHD0_TMRMAX] = (DISP_START_TMR);
 						break;
 					case DISP_PACK_STR_0:
 						// use this string if it need
@@ -620,12 +620,21 @@ void DispTask(void)
 			case MENU_PAGE_EMPTY:
 				break;
 
+// --- MAIN PAGE
+			case MENU_PAGE_MAIN:
+				switch (DispUart.txPackPnt) {
+				case DISP_PACK_DATA_0:
+					//DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
+				}
+				break;
+
 // --- MENU_PAGE_MEASURE
 			case MENU_PAGE_MEASURE:
 				switch(DispUart.txPackPnt)
 				{
 					// DISP_PACKTYPE_DATA_0 - common data
-					case DISP_PACK_DATA_0:		
+					case DISP_PACK_DATA_0:
+						DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
 						SetListSelLine(Menu.lineSel);
 						SetListValueEdit(Menu.valueEdit);
 						SetListValueExist(DISP_LIST_VALUE_YES);
@@ -710,34 +719,6 @@ void DispTask(void)
 					SetListSymbMode(DISP_LIST_SYMB_L);
 					SetListLineShow();
 					break;
-
-				case DISP_PACK_STR_0:
-					// status of loading
-					SetListName("SELECT MODE");
-					//					DispUart.txBuff[DISP_PHD0_TMR]=(Menu.startTmr);
-					//					DispUart.txBuff[DISP_PHD0_TMRMAX]=(DISP_START_TMR);
-					break;
-				case DISP_PACK_STR_1:
-				case DISP_PACK_STR_2:
-				case DISP_PACK_STR_3:
-				case DISP_PACK_STR_4:
-				case DISP_PACK_STR_5:
-					if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
-					{
-						SetListParam(MenuModName[GetListPos(DISP_PACK_STR_1)]);
-						SetListSymbL(DISP_LISTMSG_SYMB_ARROW);
-					}
-					if (settings.flash_read_flag == 1) {
-						switch(Menu.lineSel) {
-						case MENU_ALARM_ST_ALONE:
-							settings.mod_config = ALARM_ST_ALONE;
-							break;
-						case MENU_ALARM_SYNCHRO:
-							settings.mod_config = ALARM_SYNCHRO;
-							break;
-						}
-					}
-					break;
 				default:
 					break;
 				}
@@ -763,8 +744,57 @@ void DispTask(void)
 
 void DispTmr1ms(void)
 {
-	if(DispUart.pauseTmr)
-		DispUart.pauseTmr++;
-	else;
+  if (DispUart.pauseTmr) {
+    DispUart.pauseTmr++;
+  }
+
+  if ((Menu.flag.bLongU && !Menu.flag.bLongD) || (!Menu.flag.bLongU && Menu.flag.bLongD)) {
+    Menu.tmrLongHold++;
+  } else {
+    Menu.tmrLongHold = 0;
+  }
+
+  Menu.blinkTmrSlow++;
+  if (Menu.blinkTmrSlow >= MENU_BLINK_TMR_SLOW) {
+    Menu.blinkTmrSlow    = 0;
+    Menu.flag.bBlinkSlow = ~Menu.flag.bBlinkSlow;
+    if ((Menu.sysMsg == MENU_SM_MSG_INFO) && Menu.strLen) {
+      Menu.strPos++;
+      if ((Menu.strLen - Menu.strPos) < (DISP_SYS_MSG_STR_LEN - 3)) {
+        Menu.strPos = 0;
+      }
+    } else {
+      Menu.strPos = 0;
+      Menu.strLen = 0;
+    }
+  }
+
+  Menu.blinkTmrFast++;
+  if (Menu.blinkTmrFast >= MENU_BLINK_TMR_FAST) {
+    Menu.blinkTmrFast    = 0;
+    Menu.flag.bBlinkFast = ~Menu.flag.bBlinkFast;
+  }
+
+  if (Menu.toutMainPage >= MENU_TOUT_MAIN_PAGE) {
+    Menu.contrast = DISP_PMD0_CONTRAST_LOW;
+  } else {
+    Menu.contrast = DISP_PMD0_CONTRAST_HIGH;
+  }
+
+  if (Menu.toutSlowState) {
+    Menu.toutSlowState--;
+  }
+}
+
+void DispTmr1sec(void)
+{
+  Menu.toutMainPage++;
+  if (Menu.toutMainPage >= MENU_TOUT_MAIN_PAGE) {
+	  if (Menu.sysMsg) {MenuDelSysMsg();}
+	  Menu.linePos = 0;
+	  Menu.lineSel = 0;
+	  Menu.valueEdit = 0;
+  }
+
 }
 

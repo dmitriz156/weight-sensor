@@ -56,6 +56,8 @@ save_flash_t settings = {0};
 uint16_t UART_TX_counter = 0;
 button_t btn = {0};
 
+dummy_t dummy = {0};
+
 uint16_t one_sec_counter = 0;
 
 //SettParamDef SettParam[MEASURE_ITEM_NUM];  // min,max,def,step of parameters
@@ -530,12 +532,33 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM3) {
+
+
 		if (UART_TX_counter){
 			UART_TX_counter--;
 		} else {
 			DispUart.pauseTmr = 0;
 			HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
 		}
+
+		DispTmr1ms();
+
+		if(one_sec_counter < 1000) {one_sec_counter++;}
+		else
+		{
+			one_sec_counter = 0;
+			if(max_weight_rst_counter){
+				if(max_weight_rst_counter == 1) {
+					for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
+						weight[i].max_kg = 0;
+					}
+				}
+				max_weight_rst_counter--;
+			}
+
+			DispTmr1sec();
+		}
+
 
 		if(btn.R_debounce_cnt > 1) {
 			btn.R_debounce_cnt --;
@@ -571,20 +594,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			btn.L_long_press_cnt --;
 		}
 
-
-		if(one_sec_counter < 1000) {one_sec_counter++;}
-		else
-		{
-			one_sec_counter = 0;
-			if(max_weight_rst_counter){
-				if(max_weight_rst_counter == 1) {
-					for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-						weight[i].max_kg = 0;
-					}
-				}
-				max_weight_rst_counter--;
-			}
-		}
 
 		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++)
 		{

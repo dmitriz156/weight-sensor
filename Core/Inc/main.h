@@ -170,6 +170,7 @@ extern save_flash_t settings;
 extern button_t btn;
 extern char SwNewName[];
 extern char SwCurrName[];
+extern dummy_t dummy;
 
 
 /* USER CODE END EM */

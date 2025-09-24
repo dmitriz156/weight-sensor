@@ -61,9 +61,6 @@ dummy_t dummy = {0};
 
 uint16_t one_sec_counter = 0;
 
-//SettParamDef SettParam[MEASURE_ITEM_NUM];  // min,max,def,step of parameters
-//uint16_t *pSettReg[MEASURE_ITEM_NUM];  // pointer to settings value
-
 char SwNewName[32];
 char SwCurrName[32];
 
@@ -77,15 +74,13 @@ static void MX_USART3_UART_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
-//void Flash_ErasePage(uint32_t addr);
-//void Flash_WriteData(uint32_t addr, uint16_t data);
-//uint8_t Flash_ReadByte(uint32_t addr);
-//void ConfigReadWrite(void);
 
 void OutHandler(void);
 void ButtonsReset(void);
 void ButtonsResetLong(void);
-void ButtonHandler(void);
+void ButtonsHandler(void);
+void ButtonsCnt(void);
+void MeasureCnt(void);
 
 /* USER CODE END PFP */
 
@@ -147,7 +142,6 @@ int main(void)
 
 	 FlashConfigWrite();
 
-
 	 for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
 		 if (weight[i].offsett_status == false) {
 			 ready_to_read = 0;
@@ -156,12 +150,9 @@ int main(void)
 			 ready_to_read = 1;
 		 }
 	 }
-//	 if (ready_to_read == 0) {
-//		 HX711OffsettTask();
-//	 }
 
 	  HX711GetDataTask();
-	  ButtonHandler();
+	  ButtonsHandler();
 	  DispPushBtn();
 	  DispTask();
 	  OutHandler();
@@ -320,17 +311,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, STATUS_LED_Pin|OUT_1_Pin|OUT_2_Pin|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, STATUS_LED_Pin|OUT_1_Pin|OUT_2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_8, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : STATUS_LED_Pin PA15 */
-  GPIO_InitStruct.Pin = STATUS_LED_Pin|GPIO_PIN_15;
+  /*Configure GPIO pin : STATUS_LED_Pin */
+  GPIO_InitStruct.Pin = STATUS_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(STATUS_LED_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BTN_R_Pin */
   GPIO_InitStruct.Pin = BTN_R_Pin;
@@ -350,6 +341,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB3 PB5 PB7 PB9 */
   GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_5|GPIO_PIN_7|GPIO_PIN_9;
@@ -436,7 +433,7 @@ void ButtonsResetLong(void)
 	if (btn.LEFT_state  == BTN_LONG_PRESS) btn.LEFT_state  = BTN_IDLE;
 }
 
-void ButtonHandler(void)
+void ButtonsHandler(void)
 {
 	//button 3
 	if(BTN_UP_READ() == 0 && btn.UP_flag == 0) {
@@ -516,6 +513,80 @@ void ButtonHandler(void)
 
 }
 
+void ButtonsCnt(void)
+{
+	//buttons cnt begin
+	if(btn.R_debounce_cnt > 1) {
+		btn.R_debounce_cnt --;
+	}
+	if(btn.L_debounce_cnt > 1) {
+		btn.L_debounce_cnt --;
+	}
+	if(btn.U_debounce_cnt > 1) {
+		btn.U_debounce_cnt --;
+	}
+	if(btn.D_debounce_cnt > 1) {
+		btn.D_debounce_cnt --;
+	}
+
+	if (btn.U_long_press_cnt) {
+		if (btn.U_long_press_cnt == 1) {
+			btn.UP_state = BTN_LONG_PRESS; }
+		btn.U_long_press_cnt --;
+	}
+	if (btn.D_long_press_cnt) {
+		if (btn.D_long_press_cnt == 1) {
+			btn.DOWN_state = BTN_LONG_PRESS; }
+		btn.D_long_press_cnt --;
+	}
+	if (btn.R_long_press_cnt) {
+		if (btn.R_long_press_cnt == 1) {
+			btn.RIGHT_state = BTN_LONG_PRESS; }
+		btn.R_long_press_cnt --;
+	}
+	if (btn.L_long_press_cnt) {
+		if (btn.L_long_press_cnt == 1) {
+			btn.LEFT_state = BTN_LONG_PRESS; }
+		btn.L_long_press_cnt --;
+	}
+	// buttons cnt end
+}
+
+void MeasureCnt(void)
+{
+	if (offsett_time_cnt) {
+		offsett_time_cnt --; //maximum zero setting time decrement
+	}
+
+	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++)
+	{
+		if(weight[i].read_cnt){ weight[i].read_cnt --; }
+
+		if(weight[i].kg > settings.alarm_threshold_kg)
+		{
+			if(weight[i].active_state_cnt) {
+				weight[i].active_state_cnt --;
+			} else {
+				weight[i].signal_state = 1; ////Threshold reached!
+			}
+		} else {
+			weight[i].active_state_cnt = 0;
+			weight[i].signal_state = 0; ////Threshold not reached!
+		}
+	}
+
+	if(calibr_cnt){ calibr_cnt --; }
+
+	if(buzzer_counter) {
+		buzzer_counter--;
+		BUZZER_OUT(1);
+		LED_BLUE(1);
+	} else {
+		BUZZER_OUT(0);
+		LED_BLUE(0);
+	}
+}
+
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart->Instance == USART3)
@@ -559,74 +630,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			DispTmr1sec();
 		}
 
-		//buttons cnt begin
-		if(btn.R_debounce_cnt > 1) {
-			btn.R_debounce_cnt --;
-		}
-		if(btn.L_debounce_cnt > 1) {
-			btn.L_debounce_cnt --;
-		}
-		if(btn.U_debounce_cnt > 1) {
-			btn.U_debounce_cnt --;
-		}
-		if(btn.D_debounce_cnt > 1) {
-			btn.D_debounce_cnt --;
-		}
-
-		if (btn.U_long_press_cnt) {
-			if (btn.U_long_press_cnt == 1) {
-				btn.UP_state = BTN_LONG_PRESS; }
-			btn.U_long_press_cnt --;
-		}
-		if (btn.D_long_press_cnt) {
-			if (btn.D_long_press_cnt == 1) {
-				btn.DOWN_state = BTN_LONG_PRESS; }
-			btn.D_long_press_cnt --;
-		}
-		if (btn.R_long_press_cnt) {
-			if (btn.R_long_press_cnt == 1) {
-				btn.RIGHT_state = BTN_LONG_PRESS; }
-			btn.R_long_press_cnt --;
-		}
-		if (btn.L_long_press_cnt) {
-			if (btn.L_long_press_cnt == 1) {
-				btn.LEFT_state = BTN_LONG_PRESS; }
-			btn.L_long_press_cnt --;
-		}
-		// buttons cnt end
-
-		if (offsett_time_cnt) {
-			offsett_time_cnt --; //maximum zero setting time decrement
-		}
-
-		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++)
-		{
-			if(weight[i].read_cnt){ weight[i].read_cnt --; }
-
-			if(weight[i].kg > settings.alarm_threshold_kg)
-			{
-				if(weight[i].active_state_cnt) {
-					weight[i].active_state_cnt --;
-				} else {
-					weight[i].signal_state = 1; ////Threshold reached!
-				}
-			} else {
-				weight[i].active_state_cnt = 0;
-				weight[i].signal_state = 0; ////Threshold not reached!
-			}
-		}
-
-		if(calibr_cnt){ calibr_cnt --; }
-
-
-		if(buzzer_counter) {
-			buzzer_counter--;
-			BUZZER_OUT(1);
-			LED_BLUE(1);
-		} else {
-			BUZZER_OUT(0);
-			LED_BLUE(0);
-		}
+		ButtonsCnt();
+		MeasureCnt();
 	}
 }
 

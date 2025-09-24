@@ -429,16 +429,16 @@ void DispPushBtn(void)
 
 		switch(Menu.pageIndx){
 		case MENU_PAGE_HELLO:
-			if(Menu.startTmr || !ready_to_read) {
-				//while run weight sensors offset definition process
-				Menu.pageIndx   = MENU_PAGE_HELLO;
-				Menu.sysMsg		= MENU_SM_NO;
-			} else {
+			if(Menu.startTmr == 0 && (ready_to_read || offsett_time_cnt == 0)) {
 				Menu.pageIndx 	= MENU_PAGE_MEASURE;
 				Menu.sysMsg 	= MENU_SM_NO;
 				Menu.lineNum 	= MEASURE_ITEM_NUM;
 				Menu.linePos	= 0;
 				Menu.lineSel    = 0;
+			} else {
+				//while run weight sensors offset definition process
+				Menu.pageIndx   = MENU_PAGE_HELLO;
+				Menu.sysMsg		= MENU_SM_NO;
 			}
 			break;
 		case MENU_PAGE_MEASURE:
@@ -652,54 +652,60 @@ void DispTask(void)
 					case DISP_PACK_STR_4:
 					case DISP_PACK_STR_5:
 
-						if(ready_to_read == 0) {
-							SetListParam("ZERO SETTING");
-						}
-						else
+						//SetListParam("ZERO SETTING");
+
+						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
 						{
-							if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
+							SetListParam(measure_name[GetListPos(DISP_PACK_STR_1)]);
+							SetListSymbL(DISP_LISTMSG_SYMB_NO);
+							switch(measure_item[GetListPos(DISP_PACK_STR_1)])
 							{
-								SetListParam(measure_name[GetListPos(DISP_PACK_STR_1)]);
-								SetListSymbL(DISP_LISTMSG_SYMB_NO);
-								switch(measure_item[GetListPos(DISP_PACK_STR_1)])
-								{
-								case MEASURE_KG_S1:
+							case MEASURE_KG_S1:
+								if(weight[0].offsett_status == true) {
 									SetListValue(FloatToString(weight[0].kg, 2, "kg"));
-									break;
-								case MEASURE_KG_MAX_S1:
-									SetListValue(FloatToString(weight[0].max_kg, 2, "kg"));
-									break;
-								case MEASURE_KG_S2:
-									SetListValue(FloatToString(weight[1].kg, 2, "kg"));
-									break;
-								case MEASURE_KG_MAX_S2:
-									SetListValue(FloatToString(weight[1].max_kg, 2, "kg"));
-									break;
-								case MEASURE_RAW_S1:
-									SetListValue(DispIntToStr(weight[0].raw_data, 0, 0));
-									break;
-								case MEASURE_OFFSETT_S1:
-									SetListValue(DispIntToStr(weight[0].raw_zero_offset, 0, 0));
-									break;
-								case MEASURE_RAW_S2:
-									SetListValue(DispIntToStr(weight[1].raw_data, 0, 0));
-									break;
-								case MEASURE_OFFSETT_S2:
-									SetListValue(DispIntToStr(weight[1].raw_zero_offset, 0, 0));
-									break;
-								case SETT_SYNCHRO_MODE:
-									//SetListValue(DispSettParamToStr(DISP_SETT_VAL, 1));
-									SetListValue(MenuModName[settings.mod_config]);
-									break;
-								case SETT_THRESHOLD_WEIGHT:
-									SetListValue(FloatToString((float)settings.alarm_threshold_kg, 2, "kg"));
-									break;
+								} else {
+									SetListParam("S1 ZERO SETTING");
 								}
-								//SetListValue(str_item_value);
-								//SetListValue(DispSettParamToStr(DISP_SETT_VAL, measure_item[GetListPos(DISP_PACK_STR_1)]));
+								break;
+							case MEASURE_KG_MAX_S1:
+								SetListValue(FloatToString(weight[0].max_kg, 2, "kg"));
+								break;
+							case MEASURE_KG_S2:
+								if(weight[1].offsett_status == true) {
+									SetListValue(FloatToString(weight[1].kg, 2, "kg"));
+								} else {
+									SetListParam("S2 ZERO SETTING");
+								}
+								break;
+							case MEASURE_KG_MAX_S2:
+
+								SetListValue(FloatToString(weight[1].max_kg, 2, "kg"));
+								break;
+							case MEASURE_RAW_S1:
+								SetListValue(DispIntToStr(weight[0].raw_data, 0, 0));
+								break;
+							case MEASURE_OFFSETT_S1:
+								SetListValue(DispIntToStr(weight[0].raw_zero_offset, 0, 0));
+								break;
+							case MEASURE_RAW_S2:
+								SetListValue(DispIntToStr(weight[1].raw_data, 0, 0));
+								break;
+							case MEASURE_OFFSETT_S2:
+								SetListValue(DispIntToStr(weight[1].raw_zero_offset, 0, 0));
+								break;
+							case SETT_SYNCHRO_MODE:
+								//SetListValue(DispSettParamToStr(DISP_SETT_VAL, 1));
+								SetListValue(MenuModName[settings.mod_config]);
+								break;
+							case SETT_THRESHOLD_WEIGHT:
+								SetListValue(FloatToString((float)settings.alarm_threshold_kg, 2, "kg"));
+								break;
 							}
-							else;
+							//SetListValue(str_item_value);
+							//SetListValue(DispSettParamToStr(DISP_SETT_VAL, measure_item[GetListPos(DISP_PACK_STR_1)]));
 						}
+						else;
+
 
 						break;		
 						

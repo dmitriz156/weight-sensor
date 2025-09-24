@@ -49,9 +49,10 @@ DMA_HandleTypeDef hdma_usart3_tx;
 /* USER CODE BEGIN PV */
 
 bool ready_to_read = 0;
+uint16_t offsett_time_cnt = 0;
 extern MenuTypeDef Menu;
 extern DispUartTypeDef DispUart;
-extern weight_t weight [NUM_OF_WEIGHT_SENSOR];
+weight_t weight [NUM_OF_WEIGHT_SENSOR];
 save_flash_t settings = {0};
 uint16_t UART_TX_counter = 0;
 button_t btn = {0};
@@ -132,6 +133,7 @@ int main(void)
   HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
   DispInit();
   SettInit();
+  offsett_time_cnt = MAX_OFFSETT_TIME_MS;
 
   /* USER CODE END 2 */
 
@@ -146,17 +148,17 @@ int main(void)
 	 FlashConfigWrite();
 
 
-	  for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-		  if (weight[i].offsett_status == false) {
-			  ready_to_read = 0;
-			  break;
-		  } else {
-			  ready_to_read = 1;
-		  }
-	  }
-	  if (ready_to_read == 0) {
-		  HX711OffsettTask();
-	  }
+	 for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
+		 if (weight[i].offsett_status == false) {
+			 ready_to_read = 0;
+			 break;
+		 } else {
+			 ready_to_read = 1;
+		 }
+	 }
+	 if (ready_to_read == 0) {
+		 HX711OffsettTask();
+	 }
 
 	  HX711GetDataTask();
 	  ButtonHandler();
@@ -321,7 +323,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, STATUS_LED_Pin|OUT_1_Pin|OUT_2_Pin|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : STATUS_LED_Pin PA15 */
   GPIO_InitStruct.Pin = STATUS_LED_Pin|GPIO_PIN_15;
@@ -343,22 +345,20 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : BTN_L_Pin BTN_UP_Pin BTN_DOWN_Pin PB8
-                           PB9 */
-  GPIO_InitStruct.Pin = BTN_L_Pin|BTN_UP_Pin|BTN_DOWN_Pin|GPIO_PIN_8
-                          |GPIO_PIN_9;
+  /*Configure GPIO pins : BTN_L_Pin BTN_UP_Pin BTN_DOWN_Pin */
+  GPIO_InitStruct.Pin = BTN_L_Pin|BTN_UP_Pin|BTN_DOWN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB3 PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_5;
+  /*Configure GPIO pins : PB3 PB5 PB7 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_5|GPIO_PIN_7|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  /*Configure GPIO pins : PB4 PB6 PB8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -559,7 +559,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			DispTmr1sec();
 		}
 
-
+		//buttons cnt begin
 		if(btn.R_debounce_cnt > 1) {
 			btn.R_debounce_cnt --;
 		}
@@ -593,7 +593,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				btn.LEFT_state = BTN_LONG_PRESS; }
 			btn.L_long_press_cnt --;
 		}
+		// buttons cnt end
 
+		if (offsett_time_cnt) {
+			offsett_time_cnt --; //maximum zero setting time decrement
+		}
 
 		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++)
 		{

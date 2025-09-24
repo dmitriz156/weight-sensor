@@ -3,7 +3,6 @@
 #include "main.h"
 #include "kalman.h"
 
-weight_t weight[NUM_OF_WEIGHT_SENSOR];
 kalman_filter_t filter[NUM_OF_WEIGHT_SENSOR] = {0};
 
 uint8_t  sens_channel = 0;

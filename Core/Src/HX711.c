@@ -123,80 +123,112 @@ bool HX711_zero_offsett(int32_t *offset, uint8_t channel)
 }
 
 
-bool HX711OffsettTask(void)
+//bool HX711OffsettTask(void)
+//{
+//	bool status = 0;
+//	int32_t temp_v;
+//	if(weight[sens_channel].read_cnt == 0 || HX711_DOUT_READ(sens_channel) == GPIO_PIN_RESET) {
+//		weight[sens_channel].read_cnt = HX711_DATA_RATE_TIME_MS;
+//		temp_v = 0;
+//		if(weight[sens_channel].measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
+//			if(HX711_DOUT_READ(sens_channel) == GPIO_PIN_RESET) {
+//				if(HX711_read_raw(&temp_v, HX711_GAIN_PULSES, sens_channel)) {
+//					weight[sens_channel].COM_ERR_flag = 0;
+//					weight[sens_channel].measure_cnt ++;
+//					weight[sens_channel].raw_sum += temp_v;
+//
+//				} else {
+//					weight[sens_channel].COM_ERR_flag = 1;
+//				}
+//			} else {
+//				weight[sens_channel].COM_ERR_flag = 1;
+//			}
+//		} else {
+//			weight[sens_channel].measure_cnt = 0;
+//			weight[sens_channel].raw_zero_offset = (int32_t)(weight[sens_channel].raw_sum / AVRG_OFFSETT_MEASURE_NUM);
+//			weight[sens_channel].raw_sum = 0;
+//			weight[sens_channel].offsett_status = true;
+//		}
+//		status = weight[sens_channel].COM_ERR_flag;
+//	}
+//	if(sens_channel < (NUM_OF_WEIGHT_SENSOR - 1)) {
+//		sens_channel ++;
+//	} else {
+//		sens_channel = 0;
+//	}
+//	return status;
+//}
+
+bool HX711GetDataTask(void)
 {
 	bool status = 0;
+
 	int32_t temp_v;
 	if(weight[sens_channel].read_cnt == 0 || HX711_DOUT_READ(sens_channel) == GPIO_PIN_RESET) {
 		weight[sens_channel].read_cnt = HX711_DATA_RATE_TIME_MS;
 		temp_v = 0;
-		if(weight[sens_channel].measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
-			if(HX711_DOUT_READ(sens_channel) == GPIO_PIN_RESET) {
-				if(HX711_read_raw(&temp_v, HX711_GAIN_PULSES, sens_channel)) {
-					weight[sens_channel].COM_ERR_flag = 0;
-					weight[sens_channel].measure_cnt ++;
-					weight[sens_channel].raw_sum += temp_v;
 
+		if (weight[sens_channel].offsett_status == false)
+		{
+			if(weight[sens_channel].measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
+				if(HX711_DOUT_READ(sens_channel) == GPIO_PIN_RESET) {
+					if(HX711_read_raw(&temp_v, HX711_GAIN_PULSES, sens_channel)) {
+						weight[sens_channel].COM_ERR_flag = 0;
+						weight[sens_channel].measure_cnt ++;
+						weight[sens_channel].raw_sum += temp_v;
+
+					} else {
+						weight[sens_channel].COM_ERR_flag = 1; //read err
+					}
 				} else {
-					weight[sens_channel].COM_ERR_flag = 1;
+					weight[sens_channel].COM_ERR_flag = 1; //pin high state
 				}
 			} else {
-				weight[sens_channel].COM_ERR_flag = 1;
+				//write zero offsett
+				weight[sens_channel].measure_cnt = 0;
+				weight[sens_channel].raw_zero_offset = (int32_t)(weight[sens_channel].raw_sum / AVRG_OFFSETT_MEASURE_NUM);
+				weight[sens_channel].raw_sum = 0;
+				weight[sens_channel].offsett_status = true;
 			}
-		} else {
+		}
+		else //offsett_status == true
+		{
+			if(weight[sens_channel].measure_cnt < AVRG_MEASURE_NUMBER) {
+				if(HX711_DOUT_READ(sens_channel) == GPIO_PIN_RESET) {
+					if(HX711_read_raw(&temp_v, HX711_GAIN_PULSES, sens_channel)) {
+						weight[sens_channel].COM_ERR_flag = 0;
+						weight[sens_channel].measure_cnt ++;
+						weight[sens_channel].raw_sum += temp_v;
+
+					} else {
+						weight[sens_channel].COM_ERR_flag = 1; //read err
+					}
+				} else {
+					weight[sens_channel].COM_ERR_flag = 1; //pin high state
+				}
+			} else {
+				weight[sens_channel].measure_cnt = 0;
+				weight[sens_channel].raw_data = (int32_t)(weight[sens_channel].raw_sum / AVRG_MEASURE_NUMBER);
+				weight[sens_channel].raw_sum = 0;
+				//weight measurement preprocesing
+				weight[sens_channel].raw_data -= weight[sens_channel].raw_zero_offset;
+				weight[sens_channel].unfilt_kg = (float)weight[sens_channel].raw_data / KG_DIV; //convert to kg
+				weight[sens_channel].kg = (float)kalman_filtering(&filter[sens_channel], weight[sens_channel].unfilt_kg, 1.0f, 10.0f);
+			}
+
+			if(weight[sens_channel].prev_kg <= settings.alarm_threshold_kg && weight[sens_channel].kg > settings.alarm_threshold_kg && weight[sens_channel].COM_ERR_flag == 0) {
+				if(weight[sens_channel].active_state_cnt == 0) { weight[sens_channel].active_state_cnt = MAX_DATA_NORMALIZ_TIME_MS; }
+			}
+			weight[sens_channel].prev_kg = weight[sens_channel].kg;
+		}
+
+		if (weight[sens_channel].COM_ERR_flag) //if there was an ERR while reading
+		{
 			weight[sens_channel].measure_cnt = 0;
-			weight[sens_channel].raw_zero_offset = (int32_t)(weight[sens_channel].raw_sum / AVRG_OFFSETT_MEASURE_NUM);
 			weight[sens_channel].raw_sum = 0;
-			weight[sens_channel].offsett_status = true;
+			weight[sens_channel].kg = 0;
 		}
 		status = weight[sens_channel].COM_ERR_flag;
-	}
-	if(sens_channel < (NUM_OF_WEIGHT_SENSOR - 1)) {
-		sens_channel ++;
-	} else {
-		sens_channel = 0;
-	}
-	return status;
-}
-
-void HX711GetDataTask(void)
-{
-	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-		if (weight[i].offsett_status == false) {
-			return;
-		}
-	}
-
-	int32_t temp_v;
-	if(weight[sens_channel].read_cnt == 0 || HX711_DOUT_READ(sens_channel) == GPIO_PIN_RESET) {
-		weight[sens_channel].read_cnt = HX711_DATA_RATE_TIME_MS;
-		temp_v = 0;
-		if(weight[sens_channel].measure_cnt < AVRG_MEASURE_NUMBER) {
-			if(HX711_DOUT_READ(sens_channel) == GPIO_PIN_RESET) {
-				if(HX711_read_raw(&temp_v, HX711_GAIN_PULSES, sens_channel)) {
-					weight[sens_channel].COM_ERR_flag = 0;
-					weight[sens_channel].measure_cnt ++;
-					weight[sens_channel].raw_sum += temp_v;
-
-				} else {
-					weight[sens_channel].COM_ERR_flag = 1;
-				}
-			} else {
-				weight[sens_channel].COM_ERR_flag = 1;
-			}
-		} else {
-			weight[sens_channel].measure_cnt = 0;
-			weight[sens_channel].raw_data = (int32_t)(weight[sens_channel].raw_sum / AVRG_MEASURE_NUMBER);
-			weight[sens_channel].raw_sum = 0;
-			weight[sens_channel].raw_data -= weight[sens_channel].raw_zero_offset;
-			weight[sens_channel].unfilt_kg = (float)weight[sens_channel].raw_data / KG_DIV; //convert to kg
-			weight[sens_channel].kg = (float)kalman_filtering(&filter[sens_channel], weight[sens_channel].unfilt_kg, 1.0f, 10.0f);
-		}
-
-		if(weight[sens_channel].prev_kg <= settings.alarm_threshold_kg && weight[sens_channel].kg > settings.alarm_threshold_kg && weight[sens_channel].COM_ERR_flag == 0) {
-			if(weight[sens_channel].active_state_cnt == 0) { weight[sens_channel].active_state_cnt = MAX_DATA_NORMALIZ_TIME_MS; }
-		}
-		weight[sens_channel].prev_kg = weight[sens_channel].kg;
 	}
 
 	if(weight[sens_channel].kg < 0) { weight[sens_channel].kg = 0.001f; }
@@ -210,6 +242,8 @@ void HX711GetDataTask(void)
 	} else {
 		sens_channel = 0;
 	}
+
+	return status;
 }
 
 //bool HX711_zero_offsett(int32_t *offset, uint8_t channel)

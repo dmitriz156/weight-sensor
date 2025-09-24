@@ -156,9 +156,9 @@ int main(void)
 			 ready_to_read = 1;
 		 }
 	 }
-	 if (ready_to_read == 0) {
-		 HX711OffsettTask();
-	 }
+//	 if (ready_to_read == 0) {
+//		 HX711OffsettTask();
+//	 }
 
 	  HX711GetDataTask();
 	  ButtonHandler();

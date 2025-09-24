@@ -65,7 +65,7 @@ GPIO_PinState HX711_DOUT_READ(uint8_t channel);
 bool HX711_read_raw(int32_t *out, uint8_t gain_pulses, uint8_t channel);
 bool HX711_read_average(int32_t *out_avg, uint8_t samples, uint8_t gain_pulses, uint8_t channel);
 bool HX711_zero_offsett(int32_t *offset, uint8_t channel);
-void HX711GetDataTask(void);
+bool HX711GetDataTask(void);
 
 
 #endif /* APPLICATION_CORE_HX711_H_ */

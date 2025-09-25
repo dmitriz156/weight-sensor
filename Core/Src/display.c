@@ -382,7 +382,7 @@ void DispPushBtn(void)
 					switch (Menu.paramRealIndx) {
 
 					case SETT_M_SYNCHRO_MODE:
-						settings.mod_config = Menu.paramDummy;
+						settings.mod_config = (sensors_mod_t)Menu.paramDummy;
 						settings.flash_write_flag = 1;
 						break;
 					case SETT_THRESHOLD_WEIGHT:
@@ -447,7 +447,7 @@ void DispPushBtn(void)
 				Menu.lineNum 	= MEASURE_ITEM_NUM;
 
 				if(BtnSelect()) {
-					indx = Menu.linePos + Menu.lineSel + SETT_DUMMY + 1;  // param index
+					indx = SETT_M_KG_S1 + Menu.linePos + Menu.lineSel;  // param index
 
 					if (Menu.linePos + Menu.lineSel == SETT_SYNCHRO_MODE) {
 						settings.mod_config_prev = settings.mod_config;
@@ -609,7 +609,7 @@ void DispTask(void)
 						break;
 					case DISP_PACK_STR_0:
 						// use this string if it need
-						strncpy((void*)&DispUart.txBuff[DISP_REG_CMN_NUM], "WEIGHT SENS v1.3",	DISP_LISTPARAM_LEN);
+						strncpy((void*)&DispUart.txBuff[DISP_REG_CMN_NUM], "WEIGHT SENS v1.4",	DISP_LISTPARAM_LEN);
 						break;						
 					default:
 						break;						
@@ -662,24 +662,24 @@ void DispTask(void)
 							{
 							case MEASURE_KG_S1:
 								if(weight[0].offsett_status == true) {
-									SetListValue(FloatToString(weight[0].kg, 2, "kg"));
+									SetListValue(FloatToString(weight[0].kg, 2, 0));
 								} else {
 									SetListParam("S1 ZERO SETTING");
 								}
 								break;
 							case MEASURE_KG_MAX_S1:
-								SetListValue(FloatToString(weight[0].max_kg, 2, "kg"));
+								SetListValue(FloatToString(weight[0].max_kg, 2, 0));
 								break;
 							case MEASURE_KG_S2:
 								if(weight[1].offsett_status == true) {
-									SetListValue(FloatToString(weight[1].kg, 2, "kg"));
+									SetListValue(FloatToString(weight[1].kg, 2, 0));
 								} else {
 									SetListParam("S2 ZERO SETTING");
 								}
 								break;
 							case MEASURE_KG_MAX_S2:
 
-								SetListValue(FloatToString(weight[1].max_kg, 2, "kg"));
+								SetListValue(FloatToString(weight[1].max_kg, 2, 0));
 								break;
 							case MEASURE_RAW_S1:
 								SetListValue(DispIntToStr(weight[0].raw_data, 0, 0));
@@ -698,7 +698,7 @@ void DispTask(void)
 								SetListValue(MenuModName[settings.mod_config]);
 								break;
 							case SETT_THRESHOLD_WEIGHT:
-								SetListValue(FloatToString((float)settings.alarm_threshold_kg, 2, "kg"));
+								SetListValue(FloatToString((float)settings.alarm_threshold_kg, 2, 0));
 								break;
 							}
 							//SetListValue(str_item_value);

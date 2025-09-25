@@ -252,15 +252,15 @@ typedef struct
 
 	static char* measure_name [] =
 	{
-		"S1 WEIGHT:",
-		"S1 MAX:",
-		"S2 WEIGHT:",
-		"S2 MAX:",
-		"S1 RAW:",
-		"OFFSET:",
-		"S2 RAW:",
-		"OFFSET:",
-		"SYNCHRO MODE:",
-		"THRESHOLD:"
+		"S1 WEIGHT kg",
+		"S1 MAX kg",
+		"S2 WEIGHT kg",
+		"S2 MAX kg",
+		"S1 RAW",
+		"OFFSET",
+		"S2 RAW",
+		"OFFSET",
+		"SYNCHRO MODE",
+		"THRESHOLD kg"
 	};
 	

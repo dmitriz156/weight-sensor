@@ -606,13 +606,6 @@ typedef enum {
 
   SETT_DUMMY,       // P - dummy parameters. Contains temporary value for Menu parameters changing
                     // config words -> they CAN be changed via special Display menu
-//  SETT_CNFG0,       // P - config word #0
-//  SETT_CNFG1,       // P - config word #1
-//  SETT_CNFG2,       // P - config word #2
-//  SETT_CNFG3,       // P - config word #3
-//                    // group of turnstile settings
-//  SETT_GATE_GR,     // P - gate settings group
-
                     // --- UNIT-1. SETTINGS and MEASUREMENTS ITEMS
   SETT_M_KG_S1,
   SETT_M_KG_MAX_S1,

@@ -58,13 +58,11 @@ extern "C" {
 
 typedef enum {
 	ALARM_ST_ALONE = 0,
-	ALARM_SYNCHRO  = 1,
+	ALARM_SYNCHRO  = 1
 } sensors_mod_t;
 
 typedef struct {
-//#define ADDR_FLASH_MOD
-//#define ADDR_FLASH_THRESHOLD
-	sensors_mod_t mod_config;
+	uint16_t mod_config;
 	sensors_mod_t mod_config_prev;
 
 	uint16_t alarm_threshold_kg;
@@ -137,15 +135,11 @@ typedef struct
 #define MAX_WEIGHT_RESET_TIME_S				30
 #define MAX_DATA_NORMALIZ_TIME_MS			400 //time to detect and confirm threshold reaching
 
-
 #define HX711_DATA_RATE_TIME_MS				110 // 10 SPS (from HX711 datasheet)
-#define DISPLAY_OUT_INTERVAL			    100
 
 #define MAX_OFFSETT_TIME_MS					(HX711_DATA_RATE_TIME_MS + 50) * AVRG_OFFSETT_MEASURE_NUM * NUM_OF_WEIGHT_SENSOR
 
-
 #define BTN_LONG_PRESS_TIME_MS	1000
-
 
 #define BTN_R_READ()			HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) //pin 16
 #define BTN_L_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)//pin 13

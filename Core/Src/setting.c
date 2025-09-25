@@ -181,9 +181,7 @@ void SettInit(void)
   SettSetParam(SETT_SETT_NUM_INDX, 		&SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_UNIT_NUM_INDX, 		&SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-
   SettSetParam(SETT_DUMMY, 				&Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-
 
   SettSetParam(SETT_M_KG_S1,			&dummy.param_1, 0, 1, 1, SETT_TEXT_KG_S1, SETT_CONV_NO); 		//&weight[0].kg
   SettSetParam(SETT_M_KG_MAX_S1,		&dummy.param_2, 0, 1, 1, SETT_TEXT_KG_MAX_S1, SETT_CONV_NO); 	//&weight[0].max_kg
@@ -207,7 +205,7 @@ void SettInit(void)
   while (cnt < SETT_BUFF_LEN) {
 	  (*pSettReg[cnt]) = SettMemGetData(cnt);
 	  if (pSettReg[cnt] != NULL) {
-		  if (cnt >= SETT_M_SYNCHRO_MODE) {
+		  //if (cnt >= SETT_M_SYNCHRO_MODE) {
 			  if ((*pSettReg[cnt]) > SettParam[cnt].max){
 				  (*pSettReg[cnt]) = SettParam[cnt].min;
 				  settings.flash_write_flag = 1;
@@ -216,7 +214,7 @@ void SettInit(void)
 				  (*pSettReg[cnt]) = SettParam[cnt].min;
 				  settings.flash_write_flag = 1;
 			  }
-		  }
+		  //}
 	  }
 	  cnt ++;
   }
@@ -322,10 +320,11 @@ void SettBitChange(u16 indx, u8 bit)
  */
 void SettCopyToDummy(u16 indx)
 {
-  if ((indx < SETT_BUFF_LEN) && (pSettReg[indx] != NULL)) {
-    (*pSettReg[SETT_DUMMY]) = (*pSettReg[indx]);  // value
-    memcpy((void *)&SettParam[SETT_DUMMY], (void *)&SettParam[indx], sizeof(SettParamDef));
-  }
+	//u16 val = 0;
+	if ((indx < SETT_BUFF_LEN) && (pSettReg[indx] != NULL)) {
+		(*pSettReg[SETT_DUMMY]) = (*pSettReg[indx]);  // value
+		memcpy((void *)&SettParam[SETT_DUMMY], (void *)&SettParam[indx], sizeof(SettParamDef));
+	}
 }
 
 /**

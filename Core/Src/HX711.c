@@ -145,46 +145,54 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 	bool status;
 
 	if(weight->read_cnt == 0 || HX711_DOUT_READ(channel) == GPIO_PIN_RESET) {
-		weight->read_cnt = HX711_DATA_RATE_TIME_MS;
 
-		if (weight->offsett_status == false)
-		{
-			if(weight->measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
-				weight->raw_sum += HX711ReadData(weight, channel);
-			} else {
-				//write zero offsett
+		if(HX711_DOUT_READ(channel) == GPIO_PIN_RESET && weight->before_read_cnt == 0) {
+			weight->read_cnt = HX711_DATA_RATE_TIME_MS;
+			weight->before_read_cnt = (HX711_TIME_BEFORE_READ + 1);
+		}
+
+		if (weight->before_read_cnt == 1) {
+			weight->before_read_cnt = 0;
+			if (weight->offsett_status == false)
+			{
+				if(weight->measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
+					weight->raw_sum += HX711ReadData(weight, channel);
+				} else {
+					//write zero offsett
+					weight->measure_cnt = 0;
+					weight->raw_zero_offset = (int32_t)(weight->raw_sum / AVRG_OFFSETT_MEASURE_NUM);
+					weight->raw_sum = 0;
+					weight->offsett_status = true;
+				}
+			}
+			else //offsett_status == true
+			{
+				if(weight->measure_cnt < AVRG_MEASURE_NUMBER) {
+					weight->raw_sum += HX711ReadData(weight, channel);
+				} else {
+					weight->measure_cnt = 0;
+					weight->raw_data = (int32_t)(weight->raw_sum / AVRG_MEASURE_NUMBER);
+					weight->raw_sum = 0;
+					//weight measurement preprocesing
+					weight->raw_data -= weight->raw_zero_offset;
+					weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
+					weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
+				}
+
+				if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
+					if(weight->active_state_cnt == 0) { weight->active_state_cnt = MAX_DATA_NORMALIZ_TIME_MS; }
+				}
+				weight->prev_kg = weight->kg;
+			}
+
+			if (weight->COM_ERR_flag) //if there was an ERR while reading
+			{
 				weight->measure_cnt = 0;
-				weight->raw_zero_offset = (int32_t)(weight->raw_sum / AVRG_OFFSETT_MEASURE_NUM);
 				weight->raw_sum = 0;
-				weight->offsett_status = true;
+				weight->kg = 0;
 			}
-		}
-		else //offsett_status == true
-		{
-			if(weight->measure_cnt < AVRG_MEASURE_NUMBER) {
-				weight->raw_sum += HX711ReadData(weight, channel);
-			} else {
-				weight->measure_cnt = 0;
-				weight->raw_data = (int32_t)(weight->raw_sum / AVRG_MEASURE_NUMBER);
-				weight->raw_sum = 0;
-				//weight measurement preprocesing
-				weight->raw_data -= weight->raw_zero_offset;
-				weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
-				weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
-			}
-
-			if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
-				if(weight->active_state_cnt == 0) { weight->active_state_cnt = MAX_DATA_NORMALIZ_TIME_MS; }
-			}
-			weight->prev_kg = weight->kg;
 		}
 
-		if (weight->COM_ERR_flag) //if there was an ERR while reading
-		{
-			weight->measure_cnt = 0;
-			weight->raw_sum = 0;
-			weight->kg = 0;
-		}
 		status = weight->COM_ERR_flag;
 	}
 

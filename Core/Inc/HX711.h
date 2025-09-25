@@ -44,6 +44,7 @@ typedef struct
 	uint16_t unactive_state_cnt;
 	uint8_t  measure_cnt;
 	int64_t  raw_sum;
+	uint8_t  before_read_cnt;
 } weight_t;
 
 //extern weight_t weight[NUM_OF_WEIGHT_SENSOR];

@@ -136,6 +136,7 @@ typedef struct
 #define MAX_DATA_NORMALIZ_TIME_MS			400 //time to detect and confirm threshold reaching
 
 #define HX711_DATA_RATE_TIME_MS				110 // 10 SPS (from HX711 datasheet)
+#define HX711_TIME_BEFORE_READ				5
 
 #define MAX_OFFSETT_TIME_MS					(HX711_DATA_RATE_TIME_MS + 50) * AVRG_OFFSETT_MEASURE_NUM * NUM_OF_WEIGHT_SENSOR
 

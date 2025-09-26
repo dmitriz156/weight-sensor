@@ -33,16 +33,19 @@ const char *MenuTextBlock[] = {
 
     // --- UNIT-1. Gate settings
     // common gate settings
-	"S1 WEIGHT:",
-	"S1 MAX:",
-	"S2 WEIGHT:",
-	"S2 MAX:",
-	"S1 RAW:",
-	"OFFSET:",
-	"S2 RAW:",
-	"OFFSET:",
-	"SYNCHRO MODE:",
-	"TRESHOLD:",
+	"S1 WEIGHT kg",
+	"S1 MAX kg",
+	"S2 WEIGHT kg",
+	"S2 MAX kg",
+	"S1 RAW",
+	"OFFSET",
+	"S2 RAW",
+	"OFFSET",
+	"SYNCHRO MODE",
+	"THRESHOLD kg",
+	"AVERAGING NUM",
+	"BUZZER TIME",
+	"DATA NORMALIZE TIME",
 
 	"OFF",
 	"ON"

@@ -617,7 +617,9 @@ typedef enum {
   SETT_M_OFFSETT_S2,
   SETT_M_SYNCHRO_MODE,
   SETT_M_THRESHOLD_WEIGHT,
-  //MEASURE_ITEM_NUM,
+  SETT_M_AVRG_NUMBER,
+  SETT_M_BUZZER_TIME,
+  SETT_M_DATA_NORMALIZE_TIME,
 
   // last element of enumeration. Used as total number of enumeration.
   // !!! Don't use it directly in code
@@ -664,6 +666,9 @@ typedef enum {
   SETT_TEXT_OFFSETT_S2,
   SETT_TEXT_SYNCHRO_MODE,
   SETT_TEXT_THRESHOLD_WEIGHT,
+  SETT_TEXT_AVRG_NUMBER,
+  SETT_TEXT_BUZZER_TIME,
+  SETT_TEXT_DATA_NORMALIZE_TIME,
 
   SETT_TEXT_OFF,
   SETT_TEXT_ON,

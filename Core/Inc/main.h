@@ -63,10 +63,11 @@ typedef enum {
 
 typedef struct {
 	uint16_t mod_config;
-	sensors_mod_t mod_config_prev;
-
 	uint16_t alarm_threshold_kg;
-	uint16_t alarm_threshold_kg_prev;
+
+	uint16_t avrg_measure_num;
+	uint16_t buzzer_time;
+	uint16_t data_normalize_time;
 
 	bool flash_read_flag;
 	bool flash_write_flag;
@@ -122,7 +123,7 @@ typedef struct
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define FW_NAME_VERSION						"WEIGHT SENS v1.4"
+#define FW_NAME_VERSION						"WEIGHT SENS v1.5"
 
 #define NUM_OF_WEIGHT_SENSOR    			2
 #define ADDR_FLASH   						(0x08010000)//page 64
@@ -144,20 +145,6 @@ typedef struct
 
 #define BTN_LONG_PRESS_TIME_MS	1000
 
-#define BTN_R_READ()			HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) //pin 16
-#define BTN_L_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)//pin 13
-#define BTN_UP_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13)//pin 14
-#define BTN_DOWN_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)//pin 15
-
-#define STATUS_IN()     		HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) //pin 30
-
-#define DOUT_READ_1()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) //pin 23
-#define DOUT_READ_2()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) //pin 25
-
-#define PD_SCK_1(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 24
-#define PD_SCK_2(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 26
-
-
 //#define BTN_R_READ()			HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) //pin 16
 //#define BTN_L_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)//pin 13
 //#define BTN_UP_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13)//pin 14
@@ -172,6 +159,19 @@ typedef struct
 //
 //#define PD_SCK_1(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 28
 //#define PD_SCK_2(state)     	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 30
+
+#define BTN_R_READ()			HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) //pin 16
+#define BTN_L_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)//pin 13
+#define BTN_UP_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13)//pin 14
+#define BTN_DOWN_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)//pin 15
+
+#define STATUS_IN()     		HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) //pin 30
+
+#define DOUT_READ_1()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) //pin 23
+#define DOUT_READ_2()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) //pin 25
+
+#define PD_SCK_1(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 24
+#define PD_SCK_2(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 26
 
 #define BUZZER_OUT(state) 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 6 //OUT1
 #define STATUS_OUT(state) 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 7 //OUT2

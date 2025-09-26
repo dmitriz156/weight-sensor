@@ -119,6 +119,9 @@ const uint8_t measure_item [] = {
 		MEASURE_OFFSETT_S2,
 		SETT_SYNCHRO_MODE,
 		SETT_THRESHOLD_WEIGHT,
+		SETT_AVRG_NUMBER,
+		SETT_BUZZER_TIME,
+		SETT_DATA_NORMALIZE_TIME,
 		MEASURE_ITEM_NUM
 };
 
@@ -329,15 +332,13 @@ void DispPushBtn(void)
 			if (Menu.valueEdit) {
 				if (BtnSelect()) {
 					Menu.valueEdit = 0;
-
 					switch (Menu.paramRealIndx) {
 
 					case SETT_M_SYNCHRO_MODE:
-						settings.mod_config = (sensors_mod_t)Menu.paramDummy;
-						settings.flash_write_flag = 1;
-						break;
-					case SETT_THRESHOLD_WEIGHT:
-						//empty
+						 if (Menu.paramDummy != SettGetData(Menu.paramRealIndx)){
+							 SettSetData(Menu.paramRealIndx, Menu.paramDummy);
+							 settings.flash_write_flag = 1;
+						 }
 						break;
 					default:
 						SettSetData(Menu.paramRealIndx, Menu.paramDummy);
@@ -345,15 +346,6 @@ void DispPushBtn(void)
 						break;
 					}
 				} else if (BtnBack()) {
-					switch (Menu.paramRealIndx) {
-
-					case SETT_M_SYNCHRO_MODE:
-						settings.mod_config = settings.mod_config_prev;
-						break;
-					case SETT_THRESHOLD_WEIGHT:
-						//empty
-						break;
-					}
 					Menu.valueEdit = 0;
 					MenuDelSysMsg();
 				} else if (BtnDown()) {
@@ -393,35 +385,39 @@ void DispPushBtn(void)
 			}
 			break;
 		case MENU_PAGE_MEASURE:
+			indx = SETT_M_KG_S1 + Menu.linePos + Menu.lineSel;  // param index
 
 			if (!Menu.valueEdit) {
 				Menu.lineNum 	= MEASURE_ITEM_NUM;
 
 				if(BtnSelect()) {
-					indx = SETT_M_KG_S1 + Menu.linePos + Menu.lineSel;  // param index
-
-					if (Menu.linePos + Menu.lineSel == SETT_SYNCHRO_MODE) {
-						settings.mod_config_prev = settings.mod_config;
-						//Menu.paramDummy = settings.mod_config;
-						MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);									// open additional window for setting
-						Menu.paramRealIndx = indx;												// save index of real parameters (for future processing)
+					if (indx >= SETT_M_SYNCHRO_MODE) {
+						if (SettParam[indx].pText != SETT_TEXT_NO)		// setting contains string value
+						{
+							//Menu.paramDummy = settings.mod_config;
+							MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);									// open additional window for setting
+							Menu.paramRealIndx = indx;
+						}
+						else if (SettParam[indx].pText == SETT_TEXT_NO)	// setting contains parameter
+						{
+							//settings.alarm_threshold_kg_prev = settings.alarm_threshold_kg;
+						}
+						Menu.valueEdit = 1;
 						SettCopyToDummy(indx);
-						Menu.valueEdit = 1;// copy real param. to Dummy
-					} else if (Menu.linePos + Menu.lineSel == SETT_THRESHOLD_WEIGHT) {
-						settings.alarm_threshold_kg_prev = settings.alarm_threshold_kg;
-						Menu.valueEdit = 1;// copy real param. to Dummy
 					}
 				}
 			} else {
 				if (BtnBack()) {
 					Menu.valueEdit = 0;
-					if (settings.alarm_threshold_kg != settings.alarm_threshold_kg_prev) {
+					//if ((*pSettReg[indx]) != (*pSettReg[SETT_DUMMY]))
+					if (SettGetData(indx) != SettGetData(SETT_DUMMY))
+					{
 						settings.flash_write_flag = 1;
 					}
 				} else if (BtnDown()) {
-					SettRegChange(Menu.linePos + Menu.lineSel + SETT_DUMMY + 1, SETT_REG_UP);
+					SettRegChange(indx, SETT_REG_UP);
 				} else if (BtnUp()) {
-					SettRegChange(Menu.linePos + Menu.lineSel + SETT_DUMMY + 1, SETT_REG_DN);
+					SettRegChange(indx, SETT_REG_DN);
 				}
 			}
 
@@ -603,11 +599,12 @@ void DispTask(void)
 					case DISP_PACK_STR_4:
 					case DISP_PACK_STR_5:
 
-						//SetListParam("ZERO SETTING");
+						indx = GetListPos(DISP_PACK_STR_1) + SETT_DUMMY + 1;
 
 						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
 						{
-							SetListParam(measure_name[GetListPos(DISP_PACK_STR_1)]);
+							//SetListParam(measure_name[GetListPos(DISP_PACK_STR_1)]);
+							SetListParam(MenuTextBlock[indx]);
 							SetListSymbL(DISP_LISTMSG_SYMB_NO);
 							switch(measure_item[GetListPos(DISP_PACK_STR_1)])
 							{
@@ -648,10 +645,15 @@ void DispTask(void)
 								//SetListValue(DispSettParamToStr(DISP_SETT_VAL, 1));
 								SetListValue(MenuModName[settings.mod_config]);
 								break;
-							case SETT_THRESHOLD_WEIGHT:
-								SetListValue(FloatToString((float)settings.alarm_threshold_kg, 2, 0));
-								break;
+//							case SETT_THRESHOLD_WEIGHT:
+//								SetListValue(FloatToString((float)settings.alarm_threshold_kg, 2, 0));
+//								break;
+
 							}
+							if (GetListPos(DISP_PACK_STR_1) >= SETT_THRESHOLD_WEIGHT) {
+								SetListValue(DispIntToStr(SettGetData(indx), 0, 0));
+							}
+
 							//SetListValue(str_item_value);
 							//SetListValue(DispSettParamToStr(DISP_SETT_VAL, measure_item[GetListPos(DISP_PACK_STR_1)]));
 						}

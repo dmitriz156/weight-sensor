@@ -414,7 +414,7 @@ void OutHandler(void)
 		}
 	}
 	if(buzzer_flag) {
-		buzzer_counter = (uint16_t)(ONE_SEC * BUZZER_ACTIVE_TIME_S);
+		buzzer_counter = (uint16_t)(ONE_SEC * settings.buzzer_time); //BUZZER_ACTIVE_TIME_S
 	}
 	//----
 	// BUZZER activate condition end

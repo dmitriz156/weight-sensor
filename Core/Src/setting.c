@@ -49,6 +49,19 @@ void SettSetParam(u16 indx, u16 *pnt, u16 min, u16 max, u16 step, u16 indxText, 
   }
 }
 
+/**
+ * @brief  Set default value of parameters.
+ *
+ * @param indx     	   index in Settings buffer. Use SETREGINDX enum
+ * @param def_value	   default value
+ */
+void SettSetDef(u16 indx, u16 def_value)
+{
+	if (indx < SETT_BUFF_LEN) {
+		SettParam[indx].def = def_value;
+	}
+}
+
 u16 SettCrcCalc(u16 *pnt, u16 len)
 {
   u16 Crc;
@@ -176,27 +189,36 @@ void SettInit(void)
   }
 
 
-  SettSetParam(SETT_CRC_INDX, 			&SettCtrl.crcRd, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_WEIGHT_INDX, 		&SettCtrl.weight, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_SETT_NUM_INDX, 		&SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_UNIT_NUM_INDX, 		&SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_CRC_INDX, 				&SettCtrl.crcRd, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_WEIGHT_INDX, 			&SettCtrl.weight, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_SETT_NUM_INDX, 			&SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT_NUM_INDX, 			&SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_DUMMY, 				&Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_DUMMY, 					&Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_KG_S1,			&dummy.param_1, 0, 1, 1, SETT_TEXT_KG_S1, SETT_CONV_NO); 		//&weight[0].kg
-  SettSetParam(SETT_M_KG_MAX_S1,		&dummy.param_2, 0, 1, 1, SETT_TEXT_KG_MAX_S1, SETT_CONV_NO); 	//&weight[0].max_kg
-  SettSetParam(SETT_M_KG_S2,			&dummy.param_3, 0, 1, 1, SETT_TEXT_KG_S2, SETT_CONV_NO); 		//&weight[1].kg
-  SettSetParam(SETT_M_KG_MAX_S2,		&dummy.param_4, 0, 1, 1, SETT_TEXT_KG_MAX_S2, SETT_CONV_NO); 	//&weight[1].max_kg
-  SettSetParam(SETT_M_RAW_S1,			&dummy.param_5, 0, 1, 1, SETT_TEXT_RAW_S1, SETT_CONV_NO); 		//&weight[0].raw_data
-  SettSetParam(SETT_M_OFFSETT_S1,	    &dummy.param_6, 0, 1, 1, SETT_TEXT_OFFSETT_S1, SETT_CONV_NO); 	//&weight[0].raw_zero_offset
-  SettSetParam(SETT_M_RAW_S2,			&dummy.param_7, 0, 1, 1, SETT_TEXT_RAW_S2, SETT_CONV_NO); 		//&weight[1].raw_data
-  SettSetParam(SETT_M_OFFSETT_S2,	    &dummy.param_8, 0, 1, 1, SETT_TEXT_OFFSETT_S2, SETT_CONV_NO); 	//&weight[1].raw_zero_offset
+  SettSetParam(SETT_M_KG_S1,				&dummy.param_1, 0, 1, 1, SETT_TEXT_KG_S1, SETT_CONV_NO); 		//&weight[0].kg
+  SettSetParam(SETT_M_KG_MAX_S1,			&dummy.param_2, 0, 1, 1, SETT_TEXT_KG_MAX_S1, SETT_CONV_NO); 	//&weight[0].max_kg
+  SettSetParam(SETT_M_KG_S2,				&dummy.param_3, 0, 1, 1, SETT_TEXT_KG_S2, SETT_CONV_NO); 		//&weight[1].kg
+  SettSetParam(SETT_M_KG_MAX_S2,			&dummy.param_4, 0, 1, 1, SETT_TEXT_KG_MAX_S2, SETT_CONV_NO); 	//&weight[1].max_kg
+  SettSetParam(SETT_M_RAW_S1,				&dummy.param_5, 0, 1, 1, SETT_TEXT_RAW_S1, SETT_CONV_NO); 		//&weight[0].raw_data
+  SettSetParam(SETT_M_OFFSETT_S1,	    	&dummy.param_6, 0, 1, 1, SETT_TEXT_OFFSETT_S1, SETT_CONV_NO); 	//&weight[0].raw_zero_offset
+  SettSetParam(SETT_M_RAW_S2,				&dummy.param_7, 0, 1, 1, SETT_TEXT_RAW_S2, SETT_CONV_NO); 		//&weight[1].raw_data
+  SettSetParam(SETT_M_OFFSETT_S2,	    	&dummy.param_8, 0, 1, 1, SETT_TEXT_OFFSETT_S2, SETT_CONV_NO); 	//&weight[1].raw_zero_offset
 
-  SettSetParam(SETT_M_SYNCHRO_MODE,		&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_OFF, SETT_CONV_NO);
-  SettSetParam(SETT_M_THRESHOLD_WEIGHT, &settings.alarm_threshold_kg, 1, 50, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_SYNCHRO_MODE,			&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_THRESHOLD_WEIGHT, 	&settings.alarm_threshold_kg, 1, 50, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
-  //settings.flash_read_flag = 1;
-  //FlashConfigRead();
+  SettSetParam(SETT_M_AVRG_NUMBER, 			&settings.avrg_measure_num, 1, 5, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_BUZZER_TIME,			&settings.buzzer_time, 1, 20, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_DATA_NORMALIZE_TIME,  &settings.data_normalize_time, 100, 1000, 10, SETT_TEXT_NO, SETT_CONV_NO);
+
+  SettSetDef(SETT_M_SYNCHRO_MODE, ALARM_ST_ALONE);
+  SettSetDef(SETT_M_THRESHOLD_WEIGHT, 5);
+  SettSetDef(SETT_M_AVRG_NUMBER, 2);
+  SettSetDef(SETT_M_BUZZER_TIME, 4);
+  SettSetDef(SETT_M_DATA_NORMALIZE_TIME, 400);
+
+
 #define SettMemGetData(a) (*(__IO u16 *)(addr + a * 2))
 #define SettMemGetAddr(a) ((u16 *)(addr + a * 2))
 
@@ -205,20 +227,17 @@ void SettInit(void)
   while (cnt < SETT_BUFF_LEN) {
 	  (*pSettReg[cnt]) = SettMemGetData(cnt);
 	  if (pSettReg[cnt] != NULL) {
-		  //if (cnt >= SETT_M_SYNCHRO_MODE) {
-			  if ((*pSettReg[cnt]) > SettParam[cnt].max){
-				  (*pSettReg[cnt]) = SettParam[cnt].min;
-				  settings.flash_write_flag = 1;
-			  }
-			  if ((*pSettReg[cnt]) < SettParam[cnt].min){
-				  (*pSettReg[cnt]) = SettParam[cnt].min;
-				  settings.flash_write_flag = 1;
-			  }
-		  //}
+		  if ((*pSettReg[cnt]) > SettParam[cnt].max){
+			  (*pSettReg[cnt]) = SettParam[cnt].def;
+			  settings.flash_write_flag = 1;
+		  }
+		  if ((*pSettReg[cnt]) < SettParam[cnt].min){
+			  (*pSettReg[cnt]) = SettParam[cnt].def;
+			  settings.flash_write_flag = 1;
+		  }
 	  }
 	  cnt ++;
   }
-
 
 }
 

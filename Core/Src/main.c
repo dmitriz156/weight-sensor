@@ -64,7 +64,7 @@ uint16_t one_sec_counter = 0;
 char SwNewName[32];
 char SwCurrName[32];
 
-uint8_t before_read_cnt = 0;
+uint16_t start_reading_data_cnt = 1000; // 1 sec
 
 /* USER CODE END PV */
 
@@ -142,16 +142,16 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	 FlashConfigWrite();
+	  FlashConfigWrite();
 
-	 for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-		 if (weight[i].offsett_status == false) {
-			 ready_to_read = 0;
-			 break;
-		 } else {
-			 ready_to_read = 1;
-		 }
-	 }
+	  for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
+		  if (weight[i].offsett_status == false) {
+			  ready_to_read = 0;
+			  break;
+		  } else {
+			  ready_to_read = 1;
+		  }
+	  }
 
 	  HX711GetDataTask();
 	  ButtonsHandler();
@@ -591,6 +591,7 @@ void MeasureCnt(void)
 	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
 		if(weight[i].before_read_cnt > 1) { weight[i].before_read_cnt--; }
 	}
+	if(start_reading_data_cnt) { start_reading_data_cnt--; }
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)

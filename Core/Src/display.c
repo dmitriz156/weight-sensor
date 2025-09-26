@@ -131,55 +131,6 @@ struct
 } MenuFreeSysMsg;
 
 
-//char *DispSettParamToStr(u8 type, u8 indx)
-//{
-//#ifndef GATE_SW_SLIDER
-//  u8 div = 2;
-//#else
-//  u8 div = 4;
-//#endif
-//  u16 data;
-//  static char strSett[32];
-//
-//  if (indx >= MEASURE_ITEM_NUM) {
-//    strcpy(strSett, "?");
-//  } else {
-//    switch (type) {
-//      case DISP_SETT_DEF:
-//        data = SettParam[indx].def;
-//        break;
-//      case DISP_SETT_MIN:
-//        data = SettParam[indx].min;
-//        break;
-//      case DISP_SETT_MAX:
-//        data = SettParam[indx].max;
-//        break;
-//      case DISP_SETT_VAL:
-//      default:
-//        data = measure_name[indx];
-//        break;
-//    }
-//
-//    if (SettParam[indx].pText == SETT_TEXT_NO) {
-//      if (SettParam[indx].conv == SETT_CONV_COEFFICIENT) {
-//        strcpy(strSett, DispFloatToStr(CONVERT_VALUE_TO_COEFFICIENT(data), 1));
-//      } else if (SettParam[indx].conv == SETT_CONV_POS) {
-//        strcpy(strSett, DispIntToStr(data * 10 / div, 1, 0));
-//      } else if (SettParam[indx].conv == SETT_CONV_POS_MIRR) {
-//        strcpy(strSett, DispIntToStr(data * 10 / div, 1, 0));
-//      } else {
-//        strcpy(strSett, DispIntToStr(data, SettParam[indx].conv, 0));
-//      }
-//
-//    } else {
-//      strcpy(strSett, SettGetTextVal(SettParam[indx].pText + data));
-//    }
-//  }
-//
-//  return &strSett[0];
-//}
-
-
 
 /**
  * @brief Convert integer value into string
@@ -609,7 +560,7 @@ void DispTask(void)
 						break;
 					case DISP_PACK_STR_0:
 						// use this string if it need
-						strncpy((void*)&DispUart.txBuff[DISP_REG_CMN_NUM], "WEIGHT SENS v1.4",	DISP_LISTPARAM_LEN);
+						strncpy((void*)&DispUart.txBuff[DISP_REG_CMN_NUM], FW_NAME_VERSION,	DISP_LISTPARAM_LEN);
 						break;						
 					default:
 						break;						

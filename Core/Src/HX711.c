@@ -207,12 +207,15 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 
 bool HX711GetDataTask(void)
 {
-	bool status = HX711GetData(&weight[sens_channel], sens_channel);
+	bool status = 0;
+	if (start_reading_data_cnt == 0) {
+		status = HX711GetData(&weight[sens_channel], sens_channel);
 
-	if(sens_channel < (NUM_OF_WEIGHT_SENSOR - 1)) {
-		sens_channel ++;
-	} else {
-		sens_channel = 0;
+		if(sens_channel < (NUM_OF_WEIGHT_SENSOR - 1)) {
+			sens_channel ++;
+		} else {
+			sens_channel = 0;
+		}
 	}
 
 	return status;

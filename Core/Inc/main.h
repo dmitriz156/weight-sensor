@@ -122,6 +122,8 @@ typedef struct
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+#define FW_NAME_VERSION						"WEIGHT SENS v1.4"
+
 #define NUM_OF_WEIGHT_SENSOR    			2
 #define ADDR_FLASH   						(0x08010000)//page 64
 
@@ -131,7 +133,7 @@ typedef struct
 #define BUZZER_ACTIVE_TIME_S				3.0f
 #define ONE_SEC								1000.0f
 #define AVRG_MEASURE_NUMBER					2 //number of measurements for averaging
-#define AVRG_OFFSETT_MEASURE_NUM			20
+#define AVRG_OFFSETT_MEASURE_NUM			10
 #define MAX_WEIGHT_RESET_TIME_S				30
 #define MAX_DATA_NORMALIZ_TIME_MS			400 //time to detect and confirm threshold reaching
 
@@ -184,7 +186,7 @@ extern button_t btn;
 extern char SwNewName[];
 extern char SwCurrName[];
 extern dummy_t dummy;
-
+extern uint16_t start_reading_data_cnt;
 
 /* USER CODE END EM */
 

@@ -48,14 +48,6 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-//typedef signed int 			s32;
-//typedef signed short int 	s16;
-//typedef signed char 		s8;
-//
-//typedef unsigned int 		u32;
-//typedef unsigned short int 	u16;
-//typedef unsigned char 		u8;
-
 typedef enum {
 	ALARM_ST_ALONE = 0,
 	ALARM_SYNCHRO  = 1
@@ -131,7 +123,7 @@ typedef struct
 //#define BUZZER_ACTIV_WEIGHT_KG				5 // weight limit in KG
 #define HX711_GAIN_PULSES 					1 // for example: 1 = 128x, 2 = 64x, 3 = 32x
 #define KG_DIV								45000.0f
-#define BUZZER_ACTIVE_TIME_S				3.0f
+//#define BUZZER_ACTIVE_TIME_S				3.0f
 #define ONE_SEC								1000.0f
 #define AVRG_MEASURE_NUMBER					2 //number of measurements for averaging
 #define AVRG_OFFSETT_MEASURE_NUM			10
@@ -143,7 +135,7 @@ typedef struct
 
 #define MAX_OFFSETT_TIME_MS					(HX711_DATA_RATE_TIME_MS + 50) * AVRG_OFFSETT_MEASURE_NUM * NUM_OF_WEIGHT_SENSOR
 
-#define BTN_LONG_PRESS_TIME_MS	1000
+#define BTN_LONG_PRESS_TIME_MS				800
 
 //#define BTN_R_READ()			HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) //pin 16
 //#define BTN_L_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)//pin 13

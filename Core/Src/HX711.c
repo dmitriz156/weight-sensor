@@ -13,6 +13,7 @@ uint16_t max_weight_rst_counter = 0;
 bool	 alarm_status = 0;
 bool 	 buzzer_flag = 0;
 uint16_t buzzer_counter = 0;
+uint16_t alarm_out_cnt = 0;
 
 static inline void delay_us(uint32_t us)
 {

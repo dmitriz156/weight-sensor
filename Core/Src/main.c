@@ -64,7 +64,7 @@ uint16_t one_sec_counter = 0;
 char SwNewName[32];
 char SwCurrName[32];
 
-uint16_t start_reading_data_cnt = 1000; // 1 sec
+uint16_t start_reading_data_cnt = (uint16_t)ONE_SEC; // 1 sec
 
 /* USER CODE END PV */
 
@@ -391,9 +391,11 @@ void OutHandler(void)
 			}
 		}
 		if(buzzer_flag) {
-			if (alarm_status == 0) { STATUS_OUT(1); }
+			if (alarm_status == 0) { //to prevent cyclic OUT reseting
+				alarm_out_cnt = (uint16_t)ONE_SEC;
+			}
 		} else {
-			STATUS_OUT(0);
+			if (alarm_status) { buzzer_flag = 1; }
 		}
 	}
 	else if (settings.mod_config == ALARM_SYNCHRO)
@@ -401,13 +403,11 @@ void OutHandler(void)
 		//synchronized alarm mode
 		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
 			if(weight[i].signal_state) {
-				STATUS_OUT(1);
+				alarm_out_cnt = (uint16_t)ONE_SEC;
 				break;
-			} else {
-				STATUS_OUT(0);
 			}
 		}
-		if(alarm_status) {
+		if(alarm_status && alarm_out_cnt == ((uint16_t)ONE_SEC)) {
 			buzzer_flag = 1;
 		} else {
 			buzzer_flag = 0;
@@ -578,6 +578,13 @@ void MeasureCnt(void)
 	}
 
 	if(calibr_cnt){ calibr_cnt --; }
+
+	if(alarm_out_cnt) {
+		alarm_out_cnt--;
+		STATUS_OUT(1);
+	} else {
+		STATUS_OUT(0);
+	}
 
 	if(buzzer_counter) {
 		buzzer_counter--;

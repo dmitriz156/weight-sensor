@@ -57,6 +57,7 @@ extern uint16_t max_weight_rst_counter;
 extern bool alarm_status;
 extern bool buzzer_flag;
 extern uint16_t buzzer_counter;
+extern uint16_t alarm_out_cnt;
 
 extern UART_HandleTypeDef huart3;
 extern weight_t weight[];

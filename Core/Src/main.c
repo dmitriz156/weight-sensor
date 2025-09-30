@@ -131,6 +131,7 @@ int main(void)
   DispInit();
   SettInit();
   offsett_time_cnt = MAX_OFFSETT_TIME_MS;
+  MovingAvg_InitAll();
 
   /* USER CODE END 2 */
 
@@ -141,18 +142,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
+	  if (settings.flash_write_flag) {
+		  MovingAvg_InitAll();
+	  }
 	  FlashConfigWrite();
 
-	  for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-		  if (weight[i].offsett_status == false) {
-			  ready_to_read = 0;
-			  break;
-		  } else {
-			  ready_to_read = 1;
-		  }
-	  }
-
+	  OffsettStatusCheck();
 	  HX711GetDataTask();
 	  ButtonsHandler();
 	  DispPushBtn();

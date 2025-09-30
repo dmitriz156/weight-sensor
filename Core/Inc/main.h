@@ -115,7 +115,7 @@ typedef struct
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define FW_NAME_VERSION						"WEIGHT SENS v1.5"
+#define FW_NAME_VERSION						"WEIGHT SENS v1.6"
 
 #define NUM_OF_WEIGHT_SENSOR    			2
 #define ADDR_FLASH   						(0x08010000)//page 64

@@ -208,14 +208,14 @@ void SettInit(void)
   SettSetParam(SETT_M_SYNCHRO_MODE,			&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_OFF, SETT_CONV_NO);
   SettSetParam(SETT_M_THRESHOLD_WEIGHT, 	&settings.alarm_threshold_kg, 1, 50, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_AVRG_NUMBER, 			&settings.avrg_measure_num, 1, 5, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_AVRG_NUMBER, 			&settings.avrg_measure_num, 1, 10, 1, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_M_BUZZER_TIME,			&settings.buzzer_time, 1, 20, 1, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_M_DATA_NORMALIZE_TIME,  &settings.data_normalize_time, 100, 1000, 10, SETT_TEXT_NO, SETT_CONV_NO); //time to detect and confirm threshold reaching
 
   //set default settings value
   SettSetDef(SETT_M_SYNCHRO_MODE, ALARM_ST_ALONE);
   SettSetDef(SETT_M_THRESHOLD_WEIGHT, 10);
-  SettSetDef(SETT_M_AVRG_NUMBER, 2);
+  SettSetDef(SETT_M_AVRG_NUMBER, 5);
   SettSetDef(SETT_M_BUZZER_TIME, 4);
   SettSetDef(SETT_M_DATA_NORMALIZE_TIME, 400);
 

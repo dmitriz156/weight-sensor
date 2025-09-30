@@ -2,6 +2,7 @@
 #include "HX711.h"
 #include "main.h"
 #include "kalman.h"
+#include <string.h>
 
 kalman_filter_t filter[NUM_OF_WEIGHT_SENSOR] = {0};
 
@@ -14,6 +15,51 @@ bool	 alarm_status = 0;
 bool 	 buzzer_flag = 0;
 uint16_t buzzer_counter = 0;
 uint16_t alarm_out_cnt = 0;
+
+
+
+// ініціалізація
+void MovingAvg_Init(moving_avg_t *avg, uint16_t window_size) {
+    avg->avg_window = window_size;
+	avg->head 		= 0;
+    avg->tail 		= 0;
+    avg->sum 		= 0;
+    avg->count 		= 0;
+    memset(avg->buffer, 0, sizeof(avg->buffer));
+}
+
+void SetAvgNum(moving_avg_t *avg, uint16_t window_size) {
+	avg->avg_window = window_size;
+	avg->head 		= 0;
+	avg->tail 		= 0;
+	avg->sum 		= 0;
+	avg->count 		= 0;
+	for (uint8_t i = window_size; i < MAX_WINDOW; i++){
+		avg->buffer[i] = 0;
+	}
+}
+
+void MovingAvg_InitAll(void)
+{
+	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
+		MovingAvg_Init(&weight[i].avg_filter, settings.avrg_measure_num);
+	}
+}
+
+// додавання нового значення і обчислення середнього
+int32_t MovingAvg_Update(moving_avg_t *avg, int32_t new_val) {
+	if (avg->count == avg->avg_window) {
+		avg->sum -= avg->buffer[avg->head];
+		avg->head = (avg->head + 1) % avg->avg_window;
+	} else {
+		avg->count++;
+	}
+	avg->buffer[avg->tail] = new_val;
+	avg->sum += new_val;
+	avg->tail = (avg->tail + 1) % avg->avg_window;
+
+	return (int32_t)(avg->sum / avg->count);
+}
 
 static inline void delay_us(uint32_t us)
 {
@@ -168,17 +214,24 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 			}
 			else //offsett_status == true
 			{
-				if(weight->measure_cnt < settings.avrg_measure_num) {//AVRG_MEASURE_NUMBER
-					weight->raw_sum += HX711ReadData(weight, channel);
-				} else {
-					weight->measure_cnt = 0;
-					weight->raw_data = (int32_t)(weight->raw_sum / settings.avrg_measure_num); //AVRG_MEASURE_NUMBER
-					weight->raw_sum = 0;
-					//weight measurement preprocesing
-					weight->raw_data -= weight->raw_zero_offset;
-					weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
-					weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
-				}
+				int32_t new_raw = HX711ReadData(weight, channel);
+				weight->raw_data = MovingAvg_Update(&weight->avg_filter, new_raw);
+				weight->raw_data -= weight->raw_zero_offset;
+				weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
+				weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
+
+
+//				if(weight->measure_cnt < settings.avrg_measure_num) {//AVRG_MEASURE_NUMBER
+//					weight->raw_sum += HX711ReadData(weight, channel);
+//				} else {
+//					weight->measure_cnt = 0;
+//					weight->raw_data = (int32_t)(weight->raw_sum / settings.avrg_measure_num); //AVRG_MEASURE_NUMBER
+//					weight->raw_sum = 0;
+//					//weight measurement preprocesing
+//					weight->raw_data -= weight->raw_zero_offset;
+//					weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
+//					weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
+//				}
 
 				if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
 					if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
@@ -222,5 +275,15 @@ bool HX711GetDataTask(void)
 	return status;
 }
 
-
+void OffsettStatusCheck(void)
+{
+	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
+		if (weight[i].offsett_status == false) {
+			ready_to_read = 0;
+			break;
+		} else {
+			ready_to_read = 1;
+		}
+	}
+}
 

@@ -319,7 +319,7 @@ void MenuSysMsgFill(uint8_t type, char* str0, char* str1, char* str2, char* str3
 
 void DispPushBtn(void)
 {
-	u16 indx, bit;
+	u16 indx;
 
 	if (BtnAny()) {
 		Menu.toutMainPage = 0;
@@ -413,6 +413,7 @@ void DispPushBtn(void)
 					if (SettGetData(indx) != SettGetData(SETT_DUMMY))
 					{
 						settings.flash_write_flag = 1;
+
 					}
 				} else if (BtnDown()) {
 					SettRegChange(indx, SETT_REG_UP);
@@ -458,7 +459,7 @@ void DispTask(void)
 	char str2[DISP_LISTPARAM_LEN];
 	char str3[DISP_LISTPARAM_LEN];
 	char str4[DISP_LISTPARAM_LEN];
-	uint16_t len;
+	//uint16_t len;
 
 	if(DispUart.pauseTmr)
 	{

@@ -269,7 +269,7 @@ typedef enum {
   DISP_PMS2_BELOW_R = DISP_PMS2_BELOW_L + DISP_LIST_TTL_LEN_VIS / 2 + 1,
 } DISP_PMS2_MAIN;
 
-#ifdef PCB_VER  // This code is available only for BldcContr
+
   // -- Display buttons
   #define DISP_BTN_L      0
   #define DISP_BTN_R      1
@@ -290,11 +290,11 @@ void DispPushBtn(void);
 void DispTask(void);
 void DispTmr1ms(void);
 void DispTmr1sec(void);
-void DispPushBtn(u8 btn, u8 mode);
-GATECOMM DispGetGateCtrl(void);
+//void DispPushBtn(u8 btn, u8 mode);
+//GATECOMM DispGetGateCtrl(void);
 void DispWriteLog(u8 gr, u8 code);
 void DispPushGateCtrlBtn(u8 btn, u8 mode);
 u8 DispGetMenuPage(void);
-#endif
+
 
 #endif  //__DISPLAY__H__

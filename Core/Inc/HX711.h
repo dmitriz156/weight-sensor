@@ -6,6 +6,8 @@
 #include "stdbool.h"
 #include "main.h"
 
+#define MAX_WINDOW		10
+
 #define CHANNEL_A 0
 #define CHANNEL_B 1
 #define interrupts() __enable_irq()
@@ -26,6 +28,15 @@ typedef struct
   
 }hx711_t;
 
+typedef struct {
+    int32_t buffer[MAX_WINDOW];
+    uint8_t head; // Points to the oldest element
+    uint8_t tail; // Points to the newest element
+    int64_t sum;
+    uint8_t count; // Number of elements currently in the buffer
+    uint16_t avg_window;
+} moving_avg_t;
+
 typedef struct
 {
 	bool     offsett_status;
@@ -45,6 +56,8 @@ typedef struct
 	uint8_t  measure_cnt;
 	int64_t  raw_sum;
 	uint8_t  before_read_cnt;
+
+	moving_avg_t avg_filter;
 } weight_t;
 
 //extern weight_t weight[NUM_OF_WEIGHT_SENSOR];
@@ -68,6 +81,9 @@ bool HX711_read_raw(int32_t *out, uint8_t gain_pulses, uint8_t channel);
 bool HX711_read_average(int32_t *out_avg, uint8_t samples, uint8_t gain_pulses, uint8_t channel);
 bool HX711_zero_offsett(int32_t *offset, uint8_t channel);
 bool HX711GetDataTask(void);
-
+void OffsettStatusCheck(void);
+void MovingAvg_Init(moving_avg_t *avg, uint16_t window_size);
+void SetAvgNum(moving_avg_t *avg, uint16_t window_size);
+void MovingAvg_InitAll(void);
 
 #endif /* APPLICATION_CORE_HX711_H_ */

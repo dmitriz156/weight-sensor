@@ -16,6 +16,27 @@ bool 	 buzzer_flag = 0;
 uint16_t buzzer_counter = 0;
 uint16_t alarm_out_cnt = 0;
 
+int32_t HX711ReadRaw_UART(uart_data_t *data)
+{
+	if (data->buf[0] == 0xAA && data->buf[9] == 0xFF) {   // Determine the first and last bytes
+		uint16_t check_sum = 0;
+		for (uint8_t i = 1; i < 7; i++) {
+			check_sum += data->buf[i];
+		}
+		if ((data->buf[7] * 256 + data->buf[8]) == check_sum) {  // Verify if the checksum is correct
+			// It can be added to determine whether to return the
+			// corresponding current instruction. if accurate,
+			// execute the following procedure
+			if (data->buf[1] == 0XA2) {
+				// Calculate the detection result (here we get the AD value)
+				return (data->buf[4] * 65536 + data->buf[5] * 256 + data->buf[6]);
+			}
+			return -2;
+		}
+		return -1;
+	}
+	return 0;
+}
 
 
 // ініціалізація
@@ -126,48 +147,6 @@ bool HX711_read_raw(int32_t *out, uint8_t gain_pulses, uint8_t channel)
     return true;
 }
 
-/* Усереднення N вимірів */
-bool HX711_read_average(int32_t *out_avg, uint8_t samples, uint8_t gain_pulses, uint8_t channel)
-{
-    int64_t sum = 0;
-    int32_t v;
-    uint8_t got = 0;
-    for (uint8_t i = 0; i < samples; ++i) {
-    	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, 1);//debug pin
-        if (!HX711_read_raw(&v, gain_pulses, channel)) return false;
-        //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, 0);//debug pin
-        sum += v;
-        got++;
-    }
-    if (got == 0) return false;
-    *out_avg = (int32_t)(sum / got);
-    return true;
-}
-
-
-bool HX711_zero_offsett(int32_t *offset, uint8_t channel)
-{
-	int64_t sum = 0;
-	int32_t value = 0;
-	uint8_t i = 0;
-
-	HX711_read_raw(offset, HX711_GAIN_PULSES, channel);
-	*offset = 0;
-	while(i < 20) {
-		if(calibr_cnt == 0 || HX711_DOUT_READ(channel) == GPIO_PIN_RESET) {
-			calibr_cnt = HX711_DATA_RATE_TIME_MS;
-			if (!HX711_read_raw(&value, HX711_GAIN_PULSES, channel)) {
-				return false; // якщо зчитування невдале – вихід
-			}
-			sum += value;
-			i++;
-		}
-	}
-
-	*offset = (int32_t)(sum / 20);
-	return true;
-}
-
 int32_t HX711ReadData (weight_t *weight, uint8_t channel)
 {
 	int32_t value = 0;
@@ -189,7 +168,51 @@ int32_t HX711ReadData (weight_t *weight, uint8_t channel)
 
 bool HX711GetData(weight_t *weight, uint8_t channel)
 {
-	bool status;
+	bool status = 0;
+
+#ifdef HX711_UART
+
+	if (weight->uart_data.rx_flag) {
+		weight->uart_data.rx_flag = 0;
+
+		if (weight->offsett_status == false)
+		{
+			if(weight->measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
+				weight->raw_sum += HX711ReadRaw_UART(&weight->uart_data);
+				weight->measure_cnt ++;
+			} else {
+				//write zero offsett
+				weight->measure_cnt = 0;
+				weight->raw_zero_offset = (int32_t)(weight->raw_sum / AVRG_OFFSETT_MEASURE_NUM);
+				weight->raw_sum = 0;
+				weight->offsett_status = true;
+			}
+		}
+		else //offsett_status == true
+		{
+			int32_t new_raw = HX711ReadRaw_UART(&weight->uart_data);
+			weight->raw_data = MovingAvg_Update(&weight->avg_filter, new_raw);
+			weight->raw_data -= weight->raw_zero_offset;
+			weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
+			weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
+
+			if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
+				if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
+			}
+			weight->prev_kg = weight->kg;
+		}
+
+		if (weight->COM_ERR_flag) //if there was an ERR while reading
+		{
+			weight->measure_cnt = 0;
+			weight->raw_sum = 0;
+			weight->kg = 0;
+		}
+
+		status = weight->COM_ERR_flag;
+	}
+
+#else
 
 	if(weight->read_cnt == 0 || HX711_DOUT_READ(channel) == GPIO_PIN_RESET) {
 
@@ -220,19 +243,6 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 				weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
 				weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
 
-
-//				if(weight->measure_cnt < settings.avrg_measure_num) {//AVRG_MEASURE_NUMBER
-//					weight->raw_sum += HX711ReadData(weight, channel);
-//				} else {
-//					weight->measure_cnt = 0;
-//					weight->raw_data = (int32_t)(weight->raw_sum / settings.avrg_measure_num); //AVRG_MEASURE_NUMBER
-//					weight->raw_sum = 0;
-//					//weight measurement preprocesing
-//					weight->raw_data -= weight->raw_zero_offset;
-//					weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
-//					weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
-//				}
-
 				if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
 					if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
 				}
@@ -249,7 +259,7 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 
 		status = weight->COM_ERR_flag;
 	}
-
+#endif
 	if(weight->kg < 0) { weight->kg = 0.001f; }
 	if(weight->kg > weight->max_kg) {
 		weight->max_kg = weight->kg;

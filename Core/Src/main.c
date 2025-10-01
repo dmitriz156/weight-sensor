@@ -64,7 +64,7 @@ uint16_t one_sec_counter = 0;
 char SwNewName[32];
 char SwCurrName[32];
 
-uint16_t start_reading_data_cnt = (uint16_t)ONE_SEC; // 1 sec
+uint16_t start_reading_data_cnt = (uint16_t)(ONE_SEC * 2); // 2 sec
 
 /* USER CODE END PV */
 
@@ -105,7 +105,8 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
 

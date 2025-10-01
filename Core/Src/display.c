@@ -216,12 +216,14 @@ int count_digits(int32_t num, u8 decimals) {
     return count;
 }
 
-char *FloatToString(float value, u8 decimals, const char *suffix)
+char *FloatToString(float value, const char *suffix)
 {
-	int32_t int_part = (int32_t)value;
-	int32_t float_to_disp = (int32_t)(value * pow(10, decimals));
-    uint8_t dot_pos = count_digits(int_part, decimals);
-    return DispIntToStr(float_to_disp, dot_pos, suffix);
+#define DIG_NUM  	10             //
+#define DIG_BUFF 	(DIG_NUM + 3)  // + sign + dot + add
+	static char dig[DIG_BUFF];
+	sprintf(dig, "%.2f", value);
+	strcat(dig, suffix);
+	return dig;
 }
 
 void MenuChangeLine(void)
@@ -611,24 +613,23 @@ void DispTask(void)
 							{
 							case MEASURE_KG_S1:
 								if(weight[0].offsett_status == true) {
-									SetListValue(FloatToString(weight[0].kg, 2, 0));
+									SetListValue(FloatToString(weight[0].kg, 0));
 								} else {
 									SetListParam("S1 ZERO SETTING");
 								}
 								break;
 							case MEASURE_KG_MAX_S1:
-								SetListValue(FloatToString(weight[0].max_kg, 2, 0));
+								SetListValue(FloatToString(weight[0].max_kg, 0));
 								break;
 							case MEASURE_KG_S2:
 								if(weight[1].offsett_status == true) {
-									SetListValue(FloatToString(weight[1].kg, 2, 0));
+									SetListValue(FloatToString(weight[1].kg, 0));
 								} else {
 									SetListParam("S2 ZERO SETTING");
 								}
 								break;
 							case MEASURE_KG_MAX_S2:
-
-								SetListValue(FloatToString(weight[1].max_kg, 2, 0));
+								SetListValue(FloatToString(weight[1].max_kg, 0));
 								break;
 							case MEASURE_RAW_S1:
 								SetListValue(DispIntToStr(weight[0].raw_data, 0, 0));

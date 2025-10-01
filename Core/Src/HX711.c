@@ -220,19 +220,6 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 				weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
 				weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
 
-
-//				if(weight->measure_cnt < settings.avrg_measure_num) {//AVRG_MEASURE_NUMBER
-//					weight->raw_sum += HX711ReadData(weight, channel);
-//				} else {
-//					weight->measure_cnt = 0;
-//					weight->raw_data = (int32_t)(weight->raw_sum / settings.avrg_measure_num); //AVRG_MEASURE_NUMBER
-//					weight->raw_sum = 0;
-//					//weight measurement preprocesing
-//					weight->raw_data -= weight->raw_zero_offset;
-//					weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
-//					weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
-//				}
-
 				if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
 					if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
 				}

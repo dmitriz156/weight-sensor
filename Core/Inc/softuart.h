@@ -1,10 +1,10 @@
 
 #include "main.h"
 
-#define 	Number_Of_SoftUarts 	1 	// Max 8
-
-#define 	SoftUartTxBufferSize	32
-#define 	SoftUartRxBufferSize	64
+//#define 	Number_Of_SoftUarts 	2 	// Max 8
+//
+//#define 	SoftUartTxBufferSize	32
+//#define 	SoftUartRxBufferSize	64
 
 #define 	SoftUart_DATA_LEN   	8 	// Max 8 Bit
 #define 	SoftUart_PARITY     	0   // 0=None 1=odd 2=even
@@ -37,7 +37,10 @@ typedef struct {
 	uint8_t 		RxBitOffset;
 } SoftUart_S;
 
+extern SoftUart_S   SUart [];
+
 //Call Every (0.2)*(1/9600) = 20.83 uS
+uint8_t 	getchar(uint8_t SoftUartNumber);
 void 		SoftUartHandler(void);
 
 void 		SoftUartWaitUntilTxComplate(uint8_t SoftUartNumber);

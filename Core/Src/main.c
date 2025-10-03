@@ -22,7 +22,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +54,7 @@ extern MenuTypeDef Menu;
 extern DispUartTypeDef DispUart;
 weight_t weight [NUM_OF_WEIGHT_SENSOR];
 save_flash_t settings = {0};
+
 uint16_t UART_TX_counter = 0;
 button_t btn = {0};
 
@@ -138,8 +138,20 @@ int main(void)
   SettInit();
   offsett_time_cnt = MAX_OFFSETT_TIME_MS;
   MovingAvg_InitAll();
-  //__HAL_UART_CLEAR_FLAG(&huart1, UART_CLEAR_OREF);
-  //UART_status = HAL_UARTEx_ReceiveToIdle_IT(&huart1, weight[0].uart_data.buf, HX711_UART_BUF_SIZE);
+  settings.data_transfer_mode = 1;
+  if (settings.data_transfer_mode == 1) {
+	  HAL_GPIO_WritePin(TX1_Port, TX1_Pin, 1);
+	  HAL_GPIO_WritePin(TX2_Port, TX2_Pin, 1);
+	  SoftUartInit(0, TX1_Port, TX1_Pin, RX1_Port, RX1_Pin);
+	  SoftUartInit(1, TX2_Port, TX2_Pin, RX2_Port, RX2_Pin);
+	  SoftUartEnableRx(0);
+	  SoftUartEnableRx(1);
+	  //  SoftUartPuts(0, (uint8_t*)"HX711\r\n", 7);
+	  weight[0].uart_data.command = 0xA2;
+	  weight[1].uart_data.command = 0xA2;
+	  SoftUartPuts(0, &weight[0].uart_data.command, 1);
+	  SoftUartPuts(1, &weight[1].uart_data.command, 1);
+  }
 
   /* USER CODE END 2 */
 
@@ -150,6 +162,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
 	  if (settings.flash_write_flag) {
 		  MovingAvg_InitAll();
 	  }
@@ -225,7 +238,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 71-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 10-1;
+  htim2.Init.Period = 21-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -706,6 +719,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 	if (htim->Instance == TIM2) {
 		HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
+
+		SoftUartHandler();
 	}
 }
 

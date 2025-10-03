@@ -15,6 +15,25 @@
 #define interrupts() __enable_irq()
 #define noInterrupts() __disable_irq()
 
+typedef enum {
+	//command to config mode 1
+	CH_A_PASSIVE_TX_MODE1 	= 0xA1,	// Represents Channel A, Working Mode 1, Passive Transmission (one request → one response)
+	CH_A_ACTIVE_TX_MODE1 	= 0xA2,	// Represents Channel A, Working Mode 1, Active Transmission
+	CH_B_PASSIVE_TX_MODE1 	= 0xB1,	// Represents Channel B, Working Mode 1, Passive Transmission (one request → one response)
+	CH_B_ACTIVE_TX_MODE1 	= 0xB2,	// Represents Channel B, Working Mode 1, Active Transmission
+	//command to config mode 2
+	CH_A_PASSIVE_TX_MODE2 	= 0xA3,	// Represents Channel A, Working Mode 2, Passive Transmission (one request → one response)
+	CH_A_ACTIVE_TX_MODE2 	= 0xA4,	// Represents Channel A, Working Mode 2, Active Transmission
+	CH_B_PASSIVE_TX_MODE2 	= 0xB3,	// Represents Channel B, Working Mode 2, Passive Transmission (one request → one response)
+	CH_B_ACTIVE_TX_MODE2 	= 0xB4,	// Represents Channel B, Working Mode 2, Active Transmission
+	//calibration mode command
+	CH_A_CALIBR_MODE 		= 0xA5,	// Enter the Channel A calibration function
+	CH_A_TARE 				= 0xAA,	// Perform tare (zero calibration) Ch A
+	CH_B_TARE				= 0xBA,	// Perform tare (zero calibration) Ch B
+	CH_A_INCREAS_K 			= 0xAB,	// Increasing the calibration coefficient K (Actual Weight = Weight_jingzhong / K)
+	CH_A_DECREAS_K 			= 0xAC	// Decreasing the calibration coefficient K (Actual Weight = Weight_jingzhong / K)
+}HX711_command_t;
+
 typedef struct
 {
   GPIO_TypeDef  *clk_gpio;
@@ -31,11 +50,12 @@ typedef struct
 }hx711_t;
 
 typedef struct {
-	uint8_t buf[HX711_UART_BUF_SIZE];
 	uint8_t command;
 	uint8_t tx_flag;
 	uint8_t rx_flag;
-	uint8_t rx_cnt;
+	uint8_t rx_index;
+	uint8_t rx_len;
+	uint8_t buf[HX711_UART_BUF_SIZE];
 } uart_data_t;
 
 typedef struct {
@@ -67,8 +87,8 @@ typedef struct
 	uint8_t  measure_cnt;
 	uint8_t  before_read_cnt;
 
-	moving_avg_t avg_filter;
 	uart_data_t uart_data;
+	moving_avg_t avg_filter;
 } weight_t;
 
 //extern weight_t weight[NUM_OF_WEIGHT_SENSOR];

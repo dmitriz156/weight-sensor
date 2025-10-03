@@ -1,4 +1,5 @@
 
+#include "main.h"
 #include "softuart.h"
 
 // Some internal define
@@ -20,6 +21,14 @@ __IO  uint8_t 		SU_Timer=0;
 
 // Parity var
 static uint8_t DV,PCount;
+
+uint8_t getchar(uint8_t SoftUartNumber)
+{
+    uint8_t ch;
+    while(SoftUartRxAlavailable(SoftUartNumber)==0);
+    SoftUartReadRxBuffer(SoftUartNumber,&ch,1);
+    return ch;
+}
 
 // Read RX single Pin Value
 GPIO_PinState SoftUartGpioReadPin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)

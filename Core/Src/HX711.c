@@ -1,6 +1,7 @@
 
 #include "HX711.h"
 #include "main.h"
+#include "softuart.h"
 #include "kalman.h"
 #include <string.h>
 
@@ -16,26 +17,41 @@ bool 	 buzzer_flag = 0;
 uint16_t buzzer_counter = 0;
 uint16_t alarm_out_cnt = 0;
 
+void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
+{
+	uint8_t len = 0;
+
+//	if(SUart[channel].RxIndex >= HX711_UART_BUF_SIZE){
+//		len = SUart[channel].RxIndex;
+//	}
+
+	// Read >= 10 Byte Data if Received
+	len = SoftUartRxAlavailable(channel);
+	if(len >= HX711_UART_BUF_SIZE) {
+		// Move Received Data To Another Buffer
+		if(SoftUartReadRxBuffer(channel, data->buf, len) == SoftUart_OK) {
+			if (data->buf[0] == 0xAA && data->buf[9] == 0xFF) {   // Determine the first and last bytes
+				uint16_t check_sum = 0;
+				for (uint8_t i = 1; i < 7; i++) {
+					check_sum += data->buf[i];
+				}
+				if ((data->buf[7] * 256 + data->buf[8]) == check_sum) {  // Verify if the checksum is correct
+					//return (data->buf[4] * 65536 + data->buf[5] * 256 + data->buf[6]);
+					data->rx_flag = 1;
+				}
+			}
+		}
+	}
+}
+
 int32_t HX711ReadRaw_UART(uart_data_t *data)
 {
-	if (data->buf[0] == 0xAA && data->buf[9] == 0xFF) {   // Determine the first and last bytes
-		uint16_t check_sum = 0;
-		for (uint8_t i = 1; i < 7; i++) {
-			check_sum += data->buf[i];
-		}
-		if ((data->buf[7] * 256 + data->buf[8]) == check_sum) {  // Verify if the checksum is correct
-			// It can be added to determine whether to return the
-			// corresponding current instruction. if accurate,
-			// execute the following procedure
-			if (data->buf[1] == 0XA2) {
-				// Calculate the detection result (here we get the AD value)
-				return (data->buf[4] * 65536 + data->buf[5] * 256 + data->buf[6]);
-			}
-			return -2;
-		}
-		return -1;
+	if (data->buf[1] == data->command) {
+		// Calculate the detection result (here we get the AD value)
+		return (data->buf[4] * 65536 + data->buf[5] * 256 + data->buf[6]);
+	} else {
+		return 0;
 	}
-	return 0;
 }
 
 
@@ -170,50 +186,6 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 {
 	bool status = 0;
 
-#ifdef HX711_UART
-
-	if (weight->uart_data.rx_flag) {
-		weight->uart_data.rx_flag = 0;
-
-		if (weight->offsett_status == false)
-		{
-			if(weight->measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
-				weight->raw_sum += HX711ReadRaw_UART(&weight->uart_data);
-				weight->measure_cnt ++;
-			} else {
-				//write zero offsett
-				weight->measure_cnt = 0;
-				weight->raw_zero_offset = (int32_t)(weight->raw_sum / AVRG_OFFSETT_MEASURE_NUM);
-				weight->raw_sum = 0;
-				weight->offsett_status = true;
-			}
-		}
-		else //offsett_status == true
-		{
-			int32_t new_raw = HX711ReadRaw_UART(&weight->uart_data);
-			weight->raw_data = MovingAvg_Update(&weight->avg_filter, new_raw);
-			weight->raw_data -= weight->raw_zero_offset;
-			weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
-			weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
-
-			if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
-				if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
-			}
-			weight->prev_kg = weight->kg;
-		}
-
-		if (weight->COM_ERR_flag) //if there was an ERR while reading
-		{
-			weight->measure_cnt = 0;
-			weight->raw_sum = 0;
-			weight->kg = 0;
-		}
-
-		status = weight->COM_ERR_flag;
-	}
-
-#else
-
 	if(weight->read_cnt == 0 || HX711_DOUT_READ(channel) == GPIO_PIN_RESET) {
 
 		if(HX711_DOUT_READ(channel) == GPIO_PIN_RESET && weight->before_read_cnt == 0) {
@@ -259,7 +231,62 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 
 		status = weight->COM_ERR_flag;
 	}
-#endif
+	if(weight->kg < 0) { weight->kg = 0.001f; }
+	if(weight->kg > weight->max_kg) {
+		weight->max_kg = weight->kg;
+		max_weight_rst_counter = MAX_WEIGHT_RESET_TIME_S;
+	}
+	return status;
+}
+
+bool HX711GetData_UART(weight_t *weight, uint8_t channel)
+{
+	bool status = 0;
+	if (weight->uart_data.rx_flag) {
+		weight->uart_data.rx_flag = 0;
+		int32_t new_raw = 0;
+		if (weight->offsett_status == false)
+		{
+			if(weight->measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
+				new_raw = HX711ReadRaw_UART(&weight->uart_data);
+				if (new_raw <= 0) {
+					weight->raw_sum = 0;
+					weight->measure_cnt = 0;
+				} else {
+					weight->raw_sum += new_raw;
+					weight->measure_cnt ++;
+				}
+			} else {
+				//write zero offsett
+				weight->measure_cnt = 0;
+				weight->raw_zero_offset = (int32_t)(weight->raw_sum / AVRG_OFFSETT_MEASURE_NUM);
+				weight->raw_sum = 0;
+				weight->offsett_status = true;
+			}
+		}
+		else //offsett_status == true
+		{
+			new_raw = HX711ReadRaw_UART(&weight->uart_data);
+			weight->raw_data = MovingAvg_Update(&weight->avg_filter, new_raw);
+			weight->raw_data -= weight->raw_zero_offset;
+			weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
+			weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
+
+			if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
+				if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
+			}
+			weight->prev_kg = weight->kg;
+		}
+
+		if (weight->COM_ERR_flag) //if there was an ERR while reading
+		{
+			weight->measure_cnt = 0;
+			weight->raw_sum = 0;
+			weight->kg = 0;
+		}
+
+		status = weight->COM_ERR_flag;
+	}
 	if(weight->kg < 0) { weight->kg = 0.001f; }
 	if(weight->kg > weight->max_kg) {
 		weight->max_kg = weight->kg;
@@ -273,7 +300,12 @@ bool HX711GetDataTask(void)
 {
 	bool status = 0;
 	if (start_reading_data_cnt == 0) {
-		status = HX711GetData(&weight[sens_channel], sens_channel);
+		if(settings.data_transfer_mode == 1){
+			HX711DataValidate_UART(&weight[sens_channel].uart_data, sens_channel);
+			status = HX711GetData_UART(&weight[sens_channel], sens_channel);
+		} else {
+			status = HX711GetData(&weight[sens_channel], sens_channel);
+		}
 
 		if(sens_channel < (NUM_OF_WEIGHT_SENSOR - 1)) {
 			sens_channel ++;

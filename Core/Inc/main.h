@@ -55,6 +55,7 @@ typedef enum {
 
 typedef struct {
 	uint16_t mod_config;
+	uint16_t data_transfer_mode;
 	uint16_t alarm_threshold_kg;
 
 	uint16_t avrg_measure_num;
@@ -115,7 +116,7 @@ typedef struct
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define FW_NAME_VERSION						"WEIGHT SENS v1.6"
+#define FW_NAME_VERSION						"WEIGHT SENS v1.7"
 
 #define NUM_OF_WEIGHT_SENSOR    			2
 #define ADDR_FLASH   						(0x08010000)//page 64
@@ -137,20 +138,28 @@ typedef struct
 
 #define BTN_LONG_PRESS_TIME_MS				800
 
-//#define BTN_R_READ()			HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) //pin 16
-//#define BTN_L_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)//pin 13
-//#define BTN_UP_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13)//pin 14
-//#define BTN_DOWN_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)//pin 15
-//
-//#define STATUS_IN()     		HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) //pin 23
-//
-//#define DOUT_READ_1()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5) //pin 27
-//#define PD_SCK_READ_1()     	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4) //pin 28
-//#define DOUT_READ_2()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_3) //pin 29
-//#define PD_SCK_READ_2()     	HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15)//pin 30
-//
-//#define PD_SCK_1(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 28
-//#define PD_SCK_2(state)     	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 30
+//SOFTWARE UART
+#define Number_Of_SoftUarts	 	2
+#define	SoftUartTxBufferSize	32
+#define	SoftUartRxBufferSize	64
+
+//SOFTWARE UART PINS
+#define TX1_Port			GPIOB
+#define TX1_Pin				GPIO_PIN_8
+#define RX1_Port			GPIOB
+#define RX1_Pin				GPIO_PIN_9
+
+#define TX2_Port			GPIOB
+#define TX2_Pin				GPIO_PIN_6
+#define RX2_Port			GPIOB
+#define RX2_Pin				GPIO_PIN_7
+
+#define UART_RX_1()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) //pin 23
+#define UART_RX_2()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) //pin 25
+
+#define UART_TX_1(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 24
+#define UART_TX_2(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 26
+//------------------
 
 #define BTN_R_READ()			HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) //pin 16
 #define BTN_L_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)//pin 13
@@ -173,6 +182,7 @@ typedef struct
 extern bool ready_to_read;
 extern uint16_t offsett_time_cnt;
 extern save_flash_t settings;
+extern uint8_t rx_flag;
 
 extern button_t btn;
 extern char SwNewName[];

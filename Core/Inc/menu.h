@@ -233,6 +233,12 @@ typedef struct
 		"ON"
 	};
 
+	static char* MenuTransferModName[]=
+	{
+		"special",
+		"UART"
+	};
+
 
 	typedef enum
 	{
@@ -245,6 +251,7 @@ typedef struct
 		MEASURE_OFFSETT_S1,
 		MEASURE_OFFSETT_S2,
 		SETT_SYNCHRO_MODE,
+		SETT_DATA_TRANSFER_MODE,
 		SETT_THRESHOLD_WEIGHT,
 		SETT_AVRG_NUMBER,
 		SETT_BUZZER_TIME,
@@ -264,6 +271,7 @@ typedef struct
 		"S2 RAW",
 		"OFFSET",
 		"SYNCHRO MODE",
+		"TRANSFER MODE",
 		"THRESHOLD kg",
 		"AVERAGING NUM",
 		"BUZZER TIME",

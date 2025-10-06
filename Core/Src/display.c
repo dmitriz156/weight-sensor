@@ -15,6 +15,8 @@ extern uint16_t *pSettReg[];  // pointer to settings value
 
 //MenuTypeDef Menu;
 
+uint16_t Temp = 0;
+
 char *DispIntToStr(s32 data, u8 dot, const char *suffix);
 
 
@@ -118,6 +120,7 @@ const uint8_t measure_item [] = {
 		MEASURE_RAW_S2,
 		MEASURE_OFFSETT_S2,
 		SETT_SYNCHRO_MODE,
+		SETT_DATA_TRANSFER_MODE,
 		SETT_THRESHOLD_WEIGHT,
 		SETT_AVRG_NUMBER,
 		SETT_BUZZER_TIME,
@@ -341,6 +344,12 @@ void DispPushBtn(void)
 							 SettSetData(Menu.paramRealIndx, Menu.paramDummy);
 							 settings.flash_write_flag = 1;
 						 }
+						break;
+					case SETT_M_DATA_TRANSFER_MODE:
+						if (Menu.paramDummy != SettGetData(Menu.paramRealIndx)){
+							SettSetData(Menu.paramRealIndx, Menu.paramDummy);
+							settings.flash_write_flag = 1;
+						}
 						break;
 					default:
 						SettSetData(Menu.paramRealIndx, Menu.paramDummy);
@@ -606,6 +615,7 @@ void DispTask(void)
 
 						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
 						{
+							Temp = measure_item[GetListPos(DISP_PACK_STR_1)];
 							//SetListParam(measure_name[GetListPos(DISP_PACK_STR_1)]);
 							SetListParam(MenuTextBlock[indx]);
 							SetListSymbL(DISP_LISTMSG_SYMB_NO);
@@ -647,10 +657,9 @@ void DispTask(void)
 								//SetListValue(DispSettParamToStr(DISP_SETT_VAL, 1));
 								SetListValue(MenuModName[settings.mod_config]);
 								break;
-//							case SETT_THRESHOLD_WEIGHT:
-//								SetListValue(FloatToString((float)settings.alarm_threshold_kg, 2, 0));
-//								break;
-
+							case SETT_DATA_TRANSFER_MODE:
+								SetListValue(MenuTextBlock[SETT_TEXT_SPECIAL_PROT + settings.data_transfer_mode]);
+								break;
 							}
 							if (GetListPos(DISP_PACK_STR_1) >= SETT_THRESHOLD_WEIGHT) {
 								SetListValue(DispIntToStr(SettGetData(indx), 0, 0));

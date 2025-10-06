@@ -42,13 +42,17 @@ const char *MenuTextBlock[] = {
 	"S2 RAW",
 	"OFFSET",
 	"SYNCHRO MODE",
+	"TRANSFER MODE",
 	"THRESHOLD kg",
 	"AVERAGING NUM",
 	"BUZZER TIME",
 	"DATA NORMALIZE TIME",
 
 	"OFF",
-	"ON"
+	"ON",
+
+	"special protocol",
+	"UART protocol"
 };
 
 // --- BLDCCTRL names

@@ -206,6 +206,7 @@ void SettInit(void)
   SettSetParam(SETT_M_OFFSETT_S2,	    	&dummy.param_8, 0, 1, 1, SETT_TEXT_OFFSETT_S2, SETT_CONV_NO); 	//&weight[1].raw_zero_offset
 
   SettSetParam(SETT_M_SYNCHRO_MODE,			&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_DATA_TRANSFER_MODE,	&settings.data_transfer_mode, 0, 1, 1, SETT_TEXT_SPECIAL_PROT, SETT_CONV_NO);
   SettSetParam(SETT_M_THRESHOLD_WEIGHT, 	&settings.alarm_threshold_kg, 1, 50, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
   SettSetParam(SETT_M_AVRG_NUMBER, 			&settings.avrg_measure_num, 1, 10, 1, SETT_TEXT_NO, SETT_CONV_NO);
@@ -214,6 +215,7 @@ void SettInit(void)
 
   //set default settings value
   SettSetDef(SETT_M_SYNCHRO_MODE, ALARM_ST_ALONE);
+  SettSetDef(SETT_M_DATA_TRANSFER_MODE, 0);
   SettSetDef(SETT_M_THRESHOLD_WEIGHT, 10);
   SettSetDef(SETT_M_AVRG_NUMBER, 5);
   SettSetDef(SETT_M_BUZZER_TIME, 4);

@@ -42,10 +42,16 @@ void HX711Init_UART(void){
 		SoftUartInit(1, TX2_Port, TX2_Pin, RX2_Port, RX2_Pin);
 		SoftUartEnableRx(0);
 		SoftUartEnableRx(1);
+		HAL_Delay(5);
 		weight[0].uart_data.command = 0xA2;
 		weight[1].uart_data.command = 0xA2;
 		SoftUartPuts(0, &weight[0].uart_data.command, 1);
 		SoftUartPuts(1, &weight[1].uart_data.command, 1);
+	} else {
+		PD_SCK_1(0);
+		PD_SCK_2(0);
+		SoftUartDisableRx(0);
+		SoftUartDisableRx(1);
 	}
 }
 
@@ -59,7 +65,6 @@ void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 		len = SUart[channel].RxIndex;
 		for(uint8_t i = 0; i < len; i++){
 			if(SUart[channel].Buffer->Rx[i] == 0xAA){ //if first byte in array is equal 0xAA
-				SUart[channel].RxIndex = 0;
 				local_index = i;
 				local_flag = 1;
 				break;
@@ -69,6 +74,7 @@ void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 		{
 			local_flag = 0;
 			if(SUart[channel].Buffer->Rx[local_index + HX711_UART_BUF_SIZE-1] == 0xFF){ //if last byte in array is equal 0xFF
+				SUart[channel].RxIndex = 0;
 				memcpy(data->buf, &SUart[channel].Buffer->Rx[local_index], HX711_UART_BUF_SIZE);
 				memset(SUart[channel].Buffer->Rx, 0, SoftUartRxBufferSize);
 				uint16_t check_sum = 0;

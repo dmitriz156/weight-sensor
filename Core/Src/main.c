@@ -675,14 +675,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM3) {
 
-
 		if (UART_TX_counter){
 			UART_TX_counter--;
 		} else {
 			DispUart.pauseTmr = 0;
 			HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
 		}
-
 		DispTmr1ms();
 
 		if(one_sec_counter < 1000) {one_sec_counter++;}
@@ -700,14 +698,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 			DispTmr1sec();
 		}
-
 		ButtonsCnt();
 		MeasureCnt();
 	}
 	if (htim->Instance == TIM2) {
-		HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
-
-		SoftUartHandler();
+		//HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
+		if (settings.data_transfer_mode == 1){
+			SoftUartHandler();
+		}
 	}
 }
 

@@ -138,20 +138,8 @@ int main(void)
   SettInit();
   offsett_time_cnt = MAX_OFFSETT_TIME_MS;
   MovingAvg_InitAll();
-  settings.data_transfer_mode = 1;
-  if (settings.data_transfer_mode == 1) {
-	  HAL_GPIO_WritePin(TX1_Port, TX1_Pin, 1);
-	  HAL_GPIO_WritePin(TX2_Port, TX2_Pin, 1);
-	  SoftUartInit(0, TX1_Port, TX1_Pin, RX1_Port, RX1_Pin);
-	  SoftUartInit(1, TX2_Port, TX2_Pin, RX2_Port, RX2_Pin);
-	  SoftUartEnableRx(0);
-	  SoftUartEnableRx(1);
-	  //  SoftUartPuts(0, (uint8_t*)"HX711\r\n", 7);
-	  weight[0].uart_data.command = 0xA2;
-	  weight[1].uart_data.command = 0xA2;
-	  SoftUartPuts(0, &weight[0].uart_data.command, 1);
-	  SoftUartPuts(1, &weight[1].uart_data.command, 1);
-  }
+  HX711Init_UART();
+  ptr_hx711_change_transfer_mode = HX711ChangeTransferMode;
 
   /* USER CODE END 2 */
 
@@ -167,7 +155,6 @@ int main(void)
 		  MovingAvg_InitAll();
 	  }
 	  FlashConfigWrite();
-
 	  OffsettStatusCheck();
 	  HX711GetDataTask();
 	  ButtonsHandler();

@@ -110,6 +110,8 @@ char dStr2[DISP_LISTPARAM_LEN];
 char dStr3[DISP_LISTPARAM_LEN];
 char dStr4[DISP_LISTPARAM_LEN];
 
+char *DispFloatToStr(float data, u8 dot);
+
 const uint8_t measure_item [] = {
 		MEASURE_KG_S1,
 		MEASURE_KG_MAX_S1,
@@ -136,7 +138,52 @@ struct
 	u8 tmr;
 } MenuFreeSysMsg;
 
+char *DispSettParamToStr(u8 type, u8 indx)
+{
+#ifndef GATE_SW_SLIDER
+  u8 div = 2;
+#else
+  u8 div = 4;
+#endif
+  u16 data;
+  static char strSett[32];
 
+  if (indx >= SETT_BUFF_LEN) {
+    strcpy(strSett, "?");
+  } else {
+    switch (type) {
+      case DISP_SETT_DEF:
+        data = SettParam[indx].def;
+        break;
+      case DISP_SETT_MIN:
+        data = SettParam[indx].min;
+        break;
+      case DISP_SETT_MAX:
+        data = SettParam[indx].max;
+        break;
+      case DISP_SETT_VAL:
+      default:
+        data = SettGetData(indx);
+        break;
+    }
+
+    if (SettParam[indx].pText == SETT_TEXT_NO) {
+      if (SettParam[indx].conv == SETT_CONV_COEFFICIENT) {
+        strcpy(strSett, DispFloatToStr(CONVERT_VALUE_TO_COEFFICIENT(data), 1));
+      } else if (SettParam[indx].conv == SETT_CONV_POS) {
+        strcpy(strSett, DispIntToStr(data * 10 / div, 1, 0));
+      } else if (SettParam[indx].conv == SETT_CONV_POS_MIRR) {
+        strcpy(strSett, DispIntToStr(data * 10 / div, 1, 0));
+      } else {
+        strcpy(strSett, DispIntToStr(data, SettParam[indx].conv, 0));
+      }
+    } else {
+      strcpy(strSett, SettGetTextVal(SettParam[indx].pText + data));
+    }
+  }
+
+  return &strSett[0];
+}
 
 /**
  * @brief Convert integer value into string
@@ -205,6 +252,13 @@ char *DispIntToStr(s32 data, u8 dot, const char *suffix)
 //  snprintf(str, 13, "%.*f", dot, data);
 //  return str;
 //}
+
+char *DispFloatToStr(float data, u8 dot)
+{
+  static char str[13];
+  snprintf(str, 13, "%.*f", dot, data);
+  return str;
+}
 
 int count_digits(int32_t num, u8 decimals) {
     if (num == 0) return 1;   // нуль має 1 цифру
@@ -349,6 +403,8 @@ void DispPushBtn(void)
 						if (Menu.paramDummy != SettGetData(Menu.paramRealIndx)){
 							SettSetData(Menu.paramRealIndx, Menu.paramDummy);
 							settings.flash_write_flag = 1;
+							HX711Init_UART();
+							HX711ChangeTransferMode();
 						}
 						break;
 					default:
@@ -356,6 +412,9 @@ void DispPushBtn(void)
 						MenuDelSysMsg();
 						break;
 					}
+//					if(Menu.paramDummy != SettGetData(Menu.paramRealIndx)){
+//						ptr_hx711_change_transfer_mode();
+//					}
 				} else if (BtnBack()) {
 					Menu.valueEdit = 0;
 					MenuDelSysMsg();
@@ -424,7 +483,6 @@ void DispPushBtn(void)
 					if (SettGetData(indx) != SettGetData(SETT_DUMMY))
 					{
 						settings.flash_write_flag = 1;
-
 					}
 				} else if (BtnDown()) {
 					SettRegChange(indx, SETT_REG_UP);
@@ -611,14 +669,13 @@ void DispTask(void)
 					case DISP_PACK_STR_4:
 					case DISP_PACK_STR_5:
 
-						indx = GetListPos(DISP_PACK_STR_1) + SETT_DUMMY + 1;
+						indx = (GetListPos(DISP_PACK_STR_1) + SETT_DUMMY + 1);
 
 						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
 						{
-							Temp = measure_item[GetListPos(DISP_PACK_STR_1)];
-							//SetListParam(measure_name[GetListPos(DISP_PACK_STR_1)]);
-							SetListParam(MenuTextBlock[indx]);
+							SetListParam(SettGetParamName(indx));
 							SetListSymbL(DISP_LISTMSG_SYMB_NO);
+
 							switch(measure_item[GetListPos(DISP_PACK_STR_1)])
 							{
 							case MEASURE_KG_S1:
@@ -653,16 +710,10 @@ void DispTask(void)
 							case MEASURE_OFFSETT_S2:
 								SetListValue(DispIntToStr(weight[1].raw_zero_offset, 0, 0));
 								break;
-							case SETT_SYNCHRO_MODE:
-								//SetListValue(DispSettParamToStr(DISP_SETT_VAL, 1));
-								SetListValue(MenuModName[settings.mod_config]);
-								break;
-							case SETT_DATA_TRANSFER_MODE:
-								SetListValue(MenuTextBlock[SETT_TEXT_SPECIAL_PROT + settings.data_transfer_mode]);
-								break;
 							}
-							if (GetListPos(DISP_PACK_STR_1) >= SETT_THRESHOLD_WEIGHT) {
-								SetListValue(DispIntToStr(SettGetData(indx), 0, 0));
+
+							if (GetListPos(DISP_PACK_STR_1) >= SETT_SYNCHRO_MODE) {
+								SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
 							}
 
 							//SetListValue(str_item_value);

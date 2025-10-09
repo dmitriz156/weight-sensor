@@ -64,6 +64,7 @@ typedef struct {
 
 	bool flash_read_flag;
 	bool flash_write_flag;
+	bool sett_change_flag;
 } save_flash_t;
 
 
@@ -141,7 +142,7 @@ typedef struct
 //SOFTWARE UART
 #define Number_Of_SoftUarts	 	2
 #define	SoftUartTxBufferSize	32
-#define	SoftUartRxBufferSize	64
+#define	SoftUartRxBufferSize	32
 
 //SOFTWARE UART PINS
 #define TX1_Port			GPIOB

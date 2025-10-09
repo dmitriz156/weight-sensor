@@ -16,21 +16,61 @@ bool	 alarm_status = 0;
 bool 	 buzzer_flag = 0;
 uint16_t buzzer_counter = 0;
 uint16_t alarm_out_cnt = 0;
+void (*ptr_hx711_change_transfer_mode)(void) = NULL;
+
+void HX711ChangeTransferMode(void)
+{
+	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++){
+		weight[i].raw_zero_offset = 0;
+		weight[i].offsett_status = 0;
+		weight[i].max_kg = 0;
+		weight[i].prev_kg = 0;
+		weight[i].kg = 0;
+		weight[i].raw_data = 0;
+		weight[i].raw_sum = 0;
+		weight[i].measure_cnt = 0;
+		MovingAvg_Init(&weight[i].avg_filter, settings.avrg_measure_num);
+	}
+}
+
+void HX711Init_UART(void){
+	// If you wont to use more then 2 channels of soft UART, then you need to define and set RXn, TXn pins.
+	if (settings.data_transfer_mode == 1) {
+		HAL_GPIO_WritePin(TX1_Port, TX1_Pin, 1);
+		HAL_GPIO_WritePin(TX2_Port, TX2_Pin, 1);
+		SoftUartInit(0, TX1_Port, TX1_Pin, RX1_Port, RX1_Pin);
+		SoftUartInit(1, TX2_Port, TX2_Pin, RX2_Port, RX2_Pin);
+		SoftUartEnableRx(0);
+		SoftUartEnableRx(1);
+		weight[0].uart_data.command = 0xA2;
+		weight[1].uart_data.command = 0xA2;
+		SoftUartPuts(0, &weight[0].uart_data.command, 1);
+		SoftUartPuts(1, &weight[1].uart_data.command, 1);
+	}
+}
 
 void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 {
 	uint8_t len = 0;
+	uint8_t local_index = 0;
+	uint8_t local_flag = 0;
 
-//	if(SUart[channel].RxIndex >= HX711_UART_BUF_SIZE){
-//		len = SUart[channel].RxIndex;
-//	}
-
-	// Read >= 10 Byte Data if Received
-	len = SoftUartRxAlavailable(channel);
-	if(len >= HX711_UART_BUF_SIZE) {
-		// Move Received Data To Another Buffer
-		if(SoftUartReadRxBuffer(channel, data->buf, len) == SoftUart_OK) {
-			if (data->buf[0] == 0xAA && data->buf[9] == 0xFF) {   // Determine the first and last bytes
+	if(SUart[channel].RxIndex >= HX711_UART_BUF_SIZE){
+		len = SUart[channel].RxIndex;
+		for(uint8_t i = 0; i < len; i++){
+			if(SUart[channel].Buffer->Rx[i] == 0xAA){ //if first byte in array is equal 0xAA
+				SUart[channel].RxIndex = 0;
+				local_index = i;
+				local_flag = 1;
+				break;
+			}
+		}
+		if(local_flag)
+		{
+			local_flag = 0;
+			if(SUart[channel].Buffer->Rx[local_index + HX711_UART_BUF_SIZE-1] == 0xFF){ //if last byte in array is equal 0xFF
+				memcpy(data->buf, &SUart[channel].Buffer->Rx[local_index], HX711_UART_BUF_SIZE);
+				memset(SUart[channel].Buffer->Rx, 0, SoftUartRxBufferSize);
 				uint16_t check_sum = 0;
 				for (uint8_t i = 1; i < 7; i++) {
 					check_sum += data->buf[i];
@@ -42,6 +82,24 @@ void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 			}
 		}
 	}
+
+	// Read >= 10 Byte Data if Received
+//	len = SoftUartRxAlavailable(channel);
+//	if(len >= HX711_UART_BUF_SIZE) {
+//		// Move Received Data To Another Buffer
+//		if(SoftUartReadRxBuffer(channel, data->buf, len) == SoftUart_OK) {
+//			if (data->buf[0] == 0xAA && data->buf[9] == 0xFF) {   // Determine the first and last bytes
+//				uint16_t check_sum = 0;
+//				for (uint8_t i = 1; i < 7; i++) {
+//					check_sum += data->buf[i];
+//				}
+//				if ((data->buf[7] * 256 + data->buf[8]) == check_sum) {  // Verify if the checksum is correct
+//					//return (data->buf[4] * 65536 + data->buf[5] * 256 + data->buf[6]);
+//					data->rx_flag = 1;
+//				}
+//			}
+//		}
+//	}
 }
 
 int32_t HX711ReadRaw_UART(uart_data_t *data)
@@ -306,7 +364,6 @@ bool HX711GetDataTask(void)
 		} else {
 			status = HX711GetData(&weight[sens_channel], sens_channel);
 		}
-
 		if(sens_channel < (NUM_OF_WEIGHT_SENSOR - 1)) {
 			sens_channel ++;
 		} else {

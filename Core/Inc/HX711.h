@@ -106,8 +106,12 @@ extern uint16_t alarm_out_cnt;
 extern UART_HandleTypeDef huart3;
 extern weight_t weight[];
 
+extern void (*ptr_hx711_change_transfer_mode)(void);
+
 GPIO_PinState HX711_DOUT_READ(uint8_t channel);
 
+void HX711ChangeTransferMode(void);
+void HX711Init_UART(void);
 bool HX711_read_raw(int32_t *out, uint8_t gain_pulses, uint8_t channel);
 bool HX711GetDataTask(void);
 void OffsettStatusCheck(void);

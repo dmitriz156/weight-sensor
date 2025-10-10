@@ -65,7 +65,7 @@ void HX711Init_UART(void){
 	}
 }
 
-void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
+bool HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 {
 	uint8_t len = 0;
 	uint8_t local_index = 0;
@@ -98,7 +98,8 @@ void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 				}
 				if ((data->buf[7] * 256 + data->buf[8]) == check_sum) {  // Verify if the checksum is correct
 					//return (data->buf[4] * 65536 + data->buf[5] * 256 + data->buf[6]);
-					data->rx_flag = 1;
+					//data->rx_flag = 1;
+					return true;
 				}
 			}
 		}
@@ -321,51 +322,49 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 bool HX711GetData_UART(weight_t *weight, uint8_t channel)
 {
 	bool status = 0;
-	if (weight->uart_data.rx_flag) {
-		weight->uart_data.rx_flag = 0;
-		int32_t new_raw = 0;
-		if (weight->offsett_status == false)
-		{
-			if(weight->measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
-				new_raw = HX711ReadRaw_UART(&weight->uart_data);
-				if (new_raw <= 0) {
-					weight->raw_sum = 0;
-					weight->measure_cnt = 0;
-				} else {
-					weight->raw_sum += new_raw;
-					weight->measure_cnt ++;
-				}
-			} else {
-				//write zero offsett
-				weight->measure_cnt = 0;
-				weight->raw_zero_offset = (int32_t)(weight->raw_sum / AVRG_OFFSETT_MEASURE_NUM);
-				weight->raw_sum = 0;
-				weight->offsett_status = true;
-			}
-		}
-		else //offsett_status == true
-		{
+
+	int32_t new_raw = 0;
+	if (weight->offsett_status == false)
+	{
+		if(weight->measure_cnt < AVRG_OFFSETT_MEASURE_NUM) {
 			new_raw = HX711ReadRaw_UART(&weight->uart_data);
-			weight->raw_data = MovingAvg_Update(&weight->avg_filter, new_raw);
-			weight->raw_data -= weight->raw_zero_offset;
-			weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
-			weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
-
-			if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
-				if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
+			if (new_raw <= 0) {
+				weight->raw_sum = 0;
+				weight->measure_cnt = 0;
+			} else {
+				weight->raw_sum += new_raw;
+				weight->measure_cnt ++;
 			}
-			weight->prev_kg = weight->kg;
-		}
-
-		if (weight->COM_ERR_flag) //if there was an ERR while reading
-		{
+		} else {
+			//write zero offsett
 			weight->measure_cnt = 0;
+			weight->raw_zero_offset = (int32_t)(weight->raw_sum / AVRG_OFFSETT_MEASURE_NUM);
 			weight->raw_sum = 0;
-			weight->kg = 0;
+			weight->offsett_status = true;
 		}
-
-		status = weight->COM_ERR_flag;
 	}
+	else //offsett_status == true
+	{
+		new_raw = HX711ReadRaw_UART(&weight->uart_data);
+		weight->raw_data = MovingAvg_Update(&weight->avg_filter, new_raw);
+		weight->raw_data -= weight->raw_zero_offset;
+		weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
+		weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
+
+		if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
+			if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
+		}
+		weight->prev_kg = weight->kg;
+	}
+
+	if (weight->COM_ERR_flag) //if there was an ERR while reading
+	{
+		weight->measure_cnt = 0;
+		weight->raw_sum = 0;
+		weight->kg = 0;
+	}
+
+	status = weight->COM_ERR_flag;
 	if(weight->kg < 0) { weight->kg = 0.001f; }
 	if(weight->kg > weight->max_kg) {
 		weight->max_kg = weight->kg;
@@ -380,8 +379,9 @@ bool HX711GetDataTask(void)
 	bool status = 0;
 	if (start_reading_data_cnt == 0) {
 		if(settings.data_transfer_mode == 1){
-			HX711DataValidate_UART(&weight[sens_channel].uart_data, sens_channel);
-			status = HX711GetData_UART(&weight[sens_channel], sens_channel);
+			if (HX711DataValidate_UART(&weight[sens_channel].uart_data, sens_channel) == true) {
+				status = HX711GetData_UART(&weight[sens_channel], sens_channel);
+			}
 		} else {
 			status = HX711GetData(&weight[sens_channel], sens_channel);
 		}

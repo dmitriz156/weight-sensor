@@ -700,12 +700,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 
 			DispTmr1sec();
+			HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
 		}
 		ButtonsCnt();
 		MeasureCnt();
 	}
 	if (htim->Instance == TIM2) {
-		//HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
 		if (settings.data_transfer_mode == 1){
 			SoftUartHandler();
 		}

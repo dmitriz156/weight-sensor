@@ -227,17 +227,17 @@ typedef struct
 		MENU_MOD_NUM
 	} MENUSEL;
 	
-	static char* MenuModName[]=
-	{
-		"OFF",
-		"ON"
-	};
-
-	static char* MenuTransferModName[]=
-	{
-		"special",
-		"UART"
-	};
+//	static char* MenuModName[]=
+//	{
+//		"OFF",
+//		"ON"
+//	};
+//
+//	static char* MenuTransferModName[]=
+//	{
+//		"special",
+//		"UART"
+//	};
 
 
 	typedef enum

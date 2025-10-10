@@ -33,6 +33,15 @@ void HX711ChangeTransferMode(void)
 	}
 }
 
+uint8_t HX711TransmitCommand_UART(uint8_t channel, uint8_t command, uint8_t num)
+{
+	for(uint8_t i = 0; i < num; i++) {
+		SoftUartPuts(channel, &command, 1);
+		SoftUartWaitUntilTxComplate(channel);
+	}
+	return 0;
+}
+
 void HX711Init_UART(void){
 	// If you wont to use more then 2 channels of soft UART, then you need to define and set RXn, TXn pins.
 	if (settings.data_transfer_mode == 1) {
@@ -42,11 +51,12 @@ void HX711Init_UART(void){
 		SoftUartInit(1, TX2_Port, TX2_Pin, RX2_Port, RX2_Pin);
 		SoftUartEnableRx(0);
 		SoftUartEnableRx(1);
-		HAL_Delay(5);
-		weight[0].uart_data.command = 0xA2;
-		weight[1].uart_data.command = 0xA2;
-		SoftUartPuts(0, &weight[0].uart_data.command, 1);
-		SoftUartPuts(1, &weight[1].uart_data.command, 1);
+		HAL_Delay(1);
+		weight[0].uart_data.command = CH_A_ACTIVE_TX_MODE1;
+		weight[1].uart_data.command = CH_A_ACTIVE_TX_MODE1;
+
+		HX711TransmitCommand_UART(0, weight[0].uart_data.command, 2);
+		HX711TransmitCommand_UART(1, weight[1].uart_data.command, 2);
 	} else {
 		PD_SCK_1(0);
 		PD_SCK_2(0);
@@ -59,11 +69,16 @@ void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 {
 	uint8_t len = 0;
 	uint8_t local_index = 0;
-	uint8_t local_flag = 0;
+	static uint8_t local_flag = 0;
 
 	if(SUart[channel].RxIndex >= HX711_UART_BUF_SIZE){
 		len = SUart[channel].RxIndex;
-		for(uint8_t i = 0; i < len; i++){
+		uint8_t start = 0;
+		if(local_flag) {
+			local_flag = 0;
+			start = 1;
+		}
+		for(uint8_t i = start; i < len; i++){
 			if(SUart[channel].Buffer->Rx[i] == 0xAA){ //if first byte in array is equal 0xAA
 				local_index = i;
 				local_flag = 1;
@@ -72,8 +87,8 @@ void HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 		}
 		if(local_flag)
 		{
-			local_flag = 0;
 			if(SUart[channel].Buffer->Rx[local_index + HX711_UART_BUF_SIZE-1] == 0xFF){ //if last byte in array is equal 0xFF
+				local_flag = 0;
 				SUart[channel].RxIndex = 0;
 				memcpy(data->buf, &SUart[channel].Buffer->Rx[local_index], HX711_UART_BUF_SIZE);
 				memset(SUart[channel].Buffer->Rx, 0, SoftUartRxBufferSize);

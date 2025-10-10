@@ -119,7 +119,6 @@ void FlashConfigWrite(void)
 		}
 
 		HAL_FLASH_Lock();
-		settings.sett_change_flag = 1;
 	}
 }
 

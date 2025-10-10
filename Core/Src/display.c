@@ -403,7 +403,7 @@ void DispPushBtn(void)
 						if (Menu.paramDummy != SettGetData(Menu.paramRealIndx)){
 							SettSetData(Menu.paramRealIndx, Menu.paramDummy);
 							settings.flash_write_flag = 1;
-							HX711Init_UART();
+							settings.sett_change_flag = 1;
 							HX711ChangeTransferMode();
 						}
 						break;
@@ -412,9 +412,7 @@ void DispPushBtn(void)
 						MenuDelSysMsg();
 						break;
 					}
-//					if(Menu.paramDummy != SettGetData(Menu.paramRealIndx)){
-//						ptr_hx711_change_transfer_mode();
-//					}
+
 				} else if (BtnBack()) {
 					Menu.valueEdit = 0;
 					MenuDelSysMsg();

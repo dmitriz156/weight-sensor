@@ -150,9 +150,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
 	  if (settings.flash_write_flag) {
 		  MovingAvg_InitAll();
+	  }
+	  if (settings.sett_change_flag) {
+		  settings.sett_change_flag = 0;
+		  HX711Init_UART();
 	  }
 	  FlashConfigWrite();
 	  OffsettStatusCheck();

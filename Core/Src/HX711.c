@@ -98,30 +98,16 @@ bool HX711DataValidate_UART(uart_data_t *data, uint8_t channel)
 				}
 				if ((data->buf[7] * 256 + data->buf[8]) == check_sum) {  // Verify if the checksum is correct
 					//return (data->buf[4] * 65536 + data->buf[5] * 256 + data->buf[6]);
-					//data->rx_flag = 1;
+					data->rx_pkt_cnt ++;
 					return true;
+				} else {
+					data->error_pkt_cnt ++;
+					return false;
 				}
 			}
 		}
 	}
-
-	// Read >= 10 Byte Data if Received
-//	len = SoftUartRxAlavailable(channel);
-//	if(len >= HX711_UART_BUF_SIZE) {
-//		// Move Received Data To Another Buffer
-//		if(SoftUartReadRxBuffer(channel, data->buf, len) == SoftUart_OK) {
-//			if (data->buf[0] == 0xAA && data->buf[9] == 0xFF) {   // Determine the first and last bytes
-//				uint16_t check_sum = 0;
-//				for (uint8_t i = 1; i < 7; i++) {
-//					check_sum += data->buf[i];
-//				}
-//				if ((data->buf[7] * 256 + data->buf[8]) == check_sum) {  // Verify if the checksum is correct
-//					//return (data->buf[4] * 65536 + data->buf[5] * 256 + data->buf[6]);
-//					data->rx_flag = 1;
-//				}
-//			}
-//		}
-//	}
+	return false;
 }
 
 int32_t HX711ReadRaw_UART(uart_data_t *data)

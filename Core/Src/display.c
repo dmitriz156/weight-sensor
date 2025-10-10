@@ -459,10 +459,9 @@ void DispPushBtn(void)
 				Menu.lineNum 	= MEASURE_ITEM_NUM;
 
 				if(BtnSelect()) {
-					if (indx >= SETT_M_SYNCHRO_MODE) {
+					if (indx >= SETT_M_SYNCHRO_MODE && indx < SETT_M_1_RX_PKT_CNT) {
 						if (SettParam[indx].pText != SETT_TEXT_NO)		// setting contains string value
 						{
-							//Menu.paramDummy = settings.mod_config;
 							MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);									// open additional window for setting
 							Menu.paramRealIndx = indx;
 						}

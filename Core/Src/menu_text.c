@@ -47,6 +47,12 @@ const char *MenuTextBlock[] = {
 	"AVERAGING NUM",
 	"BUZZER TIME",
 	"DATA NORMALIZE TIME",
+	"RX ch1 pkt cnt",
+	"ERR ch1 pkt cnt",
+	"TX ch1 pkt cnt",
+	"RX ch2 pkt cnt",
+	"ERR ch2 pkt cnt",
+	"TX ch2 pkt cnt",
 
 	"OFF",
 	"ON",

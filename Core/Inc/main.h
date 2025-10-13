@@ -140,9 +140,10 @@ typedef struct
 #define BTN_LONG_PRESS_TIME_MS				800
 
 //SOFTWARE UART
-#define Number_Of_SoftUarts	 	2
-#define	SoftUartTxBufferSize	32
-#define	SoftUartRxBufferSize	32
+#define Number_Of_SoftUarts	 				2
+#define	SoftUartTxBufferSize				32
+#define	SoftUartRxBufferSize				32
+#define HX711_DATA_MAX_WAIT_TIME_MS			5000
 
 //SOFTWARE UART PINS
 #define TX1_Port			GPIOB

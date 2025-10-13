@@ -229,13 +229,20 @@ void SettInit(void)
   SettSetDef(SETT_M_BUZZER_TIME, 4);
   SettSetDef(SETT_M_DATA_NORMALIZE_TIME, 400);
 
+  SettSetDef(SETT_M_1_RX_PKT_CNT, 		0);
+  SettSetDef(SETT_M_1_ERRORS_PKT_CNT, 	0);
+  SettSetDef(SETT_M_1_TX_PKT_CNT, 		0);
+  SettSetDef(SETT_M_2_RX_PKT_CNT, 		0);
+  SettSetDef(SETT_M_2_ERRORS_PKT_CNT, 	0);
+  SettSetDef(SETT_M_2_TX_PKT_CNT, 		0);
+
 
 #define SettMemGetData(a) (*(__IO u16 *)(addr + a * 2))
 #define SettMemGetAddr(a) ((u16 *)(addr + a * 2))
 
   addr = ADDR_FLASH;
   cnt = 0;
-  while (cnt < SETT_BUFF_LEN) {
+  while (cnt < SETT_MAIN_BUFF_LEN) { //SETT_BUFF_LEN
 	  (*pSettReg[cnt]) = SettMemGetData(cnt);
 	  if (pSettReg[cnt] != NULL) {
 		  if ((*pSettReg[cnt]) > SettParam[cnt].max){

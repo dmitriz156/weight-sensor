@@ -127,6 +127,12 @@ const uint8_t measure_item [] = {
 		SETT_AVRG_NUMBER,
 		SETT_BUZZER_TIME,
 		SETT_DATA_NORMALIZE_TIME,
+		SETT_1_RX_PKT_CNT,
+		SETT_1_ERRORS_PKT_CNT,
+		SETT_1_TX_PKT_CNT,
+		SETT_2_RX_PKT_CNT,
+		SETT_2_ERRORS_PKT_CNT,
+		SETT_2_TX_PKT_CNT,
 		MEASURE_ITEM_NUM
 };
 
@@ -652,7 +658,7 @@ void DispTask(void)
 						SetListSelLine(Menu.lineSel);
 						SetListValueEdit(Menu.valueEdit);
 						SetListValueExist(DISP_LIST_VALUE_YES);
-						SetListSymbMode(DISP_LIST_SYMB_R);
+						SetListSymbMode(DISP_LIST_SYMB_L);
 						SetListLineShow();
 						break;
 
@@ -668,11 +674,20 @@ void DispTask(void)
 
 						indx = (GetListPos(DISP_PACK_STR_1) + SETT_DUMMY + 1);
 
+						if(GetListPos(DISP_PACK_STR_1) <= MEASURE_OFFSETT_S2) {
+							SetListSymbL(DISP_LISTMSG_SYMB_INFO);
+						}
+						if(GetListPos(DISP_PACK_STR_1) >= SETT_SYNCHRO_MODE && GetListPos(DISP_PACK_STR_1) <= SETT_DATA_NORMALIZE_TIME) {
+							SetListSymbL(DISP_LISTMSG_SYMB_CHECK_FILL);
+						}
+						if(GetListPos(DISP_PACK_STR_1) >= SETT_1_RX_PKT_CNT && GetListPos(DISP_PACK_STR_1) < MEASURE_ITEM_NUM) {
+							SetListSymbL(DISP_LISTMSG_SYMB_INFO);
+						}
+
 						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
 						{
 							SetListParam(SettGetParamName(indx));
-							SetListSymbL(DISP_LISTMSG_SYMB_NO);
-
+							// weight sensors measurements
 							switch(measure_item[GetListPos(DISP_PACK_STR_1)])
 							{
 							case MEASURE_KG_S1:
@@ -708,7 +723,7 @@ void DispTask(void)
 								SetListValue(DispIntToStr(weight[1].raw_zero_offset, 0, 0));
 								break;
 							}
-
+							// Settings parameters
 							if (GetListPos(DISP_PACK_STR_1) >= SETT_SYNCHRO_MODE) {
 								SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
 							}
@@ -742,7 +757,6 @@ void DispTask(void)
 				}
 				break;
 				break;
-
 
 				default:
 					break;

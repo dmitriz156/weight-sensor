@@ -227,18 +227,6 @@ typedef struct
 		MENU_MOD_NUM
 	} MENUSEL;
 	
-//	static char* MenuModName[]=
-//	{
-//		"OFF",
-//		"ON"
-//	};
-//
-//	static char* MenuTransferModName[]=
-//	{
-//		"special",
-//		"UART"
-//	};
-
 
 	typedef enum
 	{
@@ -256,28 +244,13 @@ typedef struct
 		SETT_AVRG_NUMBER,
 		SETT_BUZZER_TIME,
 		SETT_DATA_NORMALIZE_TIME,
+		SETT_1_RX_PKT_CNT,
+		SETT_1_ERRORS_PKT_CNT,
+		SETT_1_TX_PKT_CNT,
+		SETT_2_RX_PKT_CNT,
+		SETT_2_ERRORS_PKT_CNT,
+		SETT_2_TX_PKT_CNT,
 		MEASURE_ITEM_NUM
 	} MESUREITEM;
 
-
-	static char* measure_name [] =
-	{
-		"S1 WEIGHT kg",
-		"S1 MAX kg",
-		"S2 WEIGHT kg",
-		"S2 MAX kg",
-		"S1 RAW",
-		"OFFSET",
-		"S2 RAW",
-		"OFFSET",
-		"SYNCHRO MODE",
-		"TRANSFER MODE",
-		"THRESHOLD kg",
-		"AVERAGING NUM",
-		"BUZZER TIME",
-		"DATA NORMALIZE TIME",
-
-		"OFF",
-		"ON"
-	};
 	

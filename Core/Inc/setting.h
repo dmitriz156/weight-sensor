@@ -633,6 +633,8 @@ typedef enum {
   SETT_BUFF_LEN  // !!! must be <= SETT_BUFF_LEN_MAX
 } SETREGINDX;
 
+#define SETT_MAIN_BUFF_LEN  (SETT_M_DATA_NORMALIZE_TIME + 1)
+
 #define SETT_UNIT_MAX 9
 
 // real start index of unit set in SettInit()->Preset[cnt].settDef[...]

@@ -38,6 +38,8 @@ uint8_t HX711TransmitCommand_UART(uint8_t channel, uint8_t command, uint8_t num)
 	for(uint8_t i = 0; i < num; i++) {
 		SoftUartPuts(channel, &command, 1);
 		SoftUartWaitUntilTxComplate(channel);
+		weight[channel].uart_data.tx_pkt_cnt ++;
+		weight[channel].uart_data.tx_flag = 1;
 	}
 	return 0;
 }
@@ -337,17 +339,10 @@ bool HX711GetData_UART(weight_t *weight, uint8_t channel)
 		weight->unfilt_kg = (float)weight->raw_data / KG_DIV; //convert to kg
 		weight->kg = (float)kalman_filtering(&filter[sens_channel], weight->unfilt_kg, 1.0f, 10.0f);
 
-		if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg && weight->COM_ERR_flag == 0) {
+		if(weight->prev_kg <= settings.alarm_threshold_kg && weight->kg > settings.alarm_threshold_kg) {
 			if(weight->active_state_cnt == 0) { weight->active_state_cnt = settings.data_normalize_time; } //MAX_DATA_NORMALIZ_TIME_MS
 		}
 		weight->prev_kg = weight->kg;
-	}
-
-	if (weight->COM_ERR_flag) //if there was an ERR while reading
-	{
-		weight->measure_cnt = 0;
-		weight->raw_sum = 0;
-		weight->kg = 0;
 	}
 
 	status = weight->COM_ERR_flag;
@@ -367,6 +362,12 @@ bool HX711GetDataTask(void)
 		if(settings.data_transfer_mode == 1){
 			if (HX711DataValidate_UART(&weight[sens_channel].uart_data, sens_channel) == true) {
 				status = HX711GetData_UART(&weight[sens_channel], sens_channel);
+				weight[sens_channel].read_cnt = HX711_DATA_MAX_WAIT_TIME_MS;
+			}
+			if (weight[sens_channel].read_cnt == 0 && weight[sens_channel].uart_data.tx_flag == 1) {
+				weight[sens_channel].uart_data.tx_flag = 0;
+				weight[sens_channel].read_cnt = HX711_DATA_MAX_WAIT_TIME_MS;
+				HX711TransmitCommand_UART(sens_channel, weight[sens_channel].uart_data.command, 2);
 			}
 		} else {
 			status = HX711GetData(&weight[sens_channel], sens_channel);

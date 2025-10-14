@@ -13,9 +13,9 @@ const char *MenuTextBlock[] = {
     "Sys1",  //"SettWeight",
     "SettNum",
     "UnitNum",
-//    "Unit0",
-//    "Unit1",
-//    "Unit2",
+    "Unit0",
+    "Unit1",
+    "Unit2",
 //    "Unit3",
 //    "Unit4",
 //    "Unit5",
@@ -31,8 +31,7 @@ const char *MenuTextBlock[] = {
 //    "Cnfg3",
 //    "SettGroup",
 
-    // --- UNIT-1. Gate settings
-    // common gate settings
+    // --- UNIT-1. Weight measurements
 	"S1 WEIGHT kg",
 	"S1 MAX kg",
 	"S2 WEIGHT kg",
@@ -41,12 +40,18 @@ const char *MenuTextBlock[] = {
 	"OFFSET",
 	"S2 RAW",
 	"OFFSET",
+
+	"CONFIG PARAMETERS",
+	"INTERFACE INFO",
+
+	// --- UNIT-2. Config parameters
 	"SYNCHRO MODE",
 	"TRANSFER MODE",
 	"THRESHOLD kg",
 	"AVERAGING NUM",
 	"BUZZER TIME",
 	"DATA NORMALIZE TIME",
+	// --- UNIT-3. Interface info
 	"RX ch1 pkt cnt",
 	"ERR ch1 pkt cnt",
 	"TX ch1 pkt cnt",

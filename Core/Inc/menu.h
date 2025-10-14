@@ -33,6 +33,8 @@ typedef struct{
 	u16 param_6;
 	u16 param_7;
 	u16 param_8;
+	u16 param_9;
+	u16 param_10;
 } dummy_t;
 
 typedef enum
@@ -238,6 +240,8 @@ typedef struct
 		MEASURE_RAW_S2,
 		MEASURE_OFFSETT_S1,
 		MEASURE_OFFSETT_S2,
+		SETT_CONFIG_PARAM,
+		SETT_INTERFACE_INFO,
 		SETT_SYNCHRO_MODE,
 		SETT_DATA_TRANSFER_MODE,
 		SETT_THRESHOLD_WEIGHT,

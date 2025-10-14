@@ -47,6 +47,7 @@ char str_item_value[32];
 
 #define BtnQueNo()      (btn.UP_state    == BTN_PRESS)
 #define BtnQueYes()     (btn.DOWN_state  == BTN_PRESS)
+#define BtnBackToMain() (btn.LEFT_state  == BTN_LONG_PRESS)
 #define BtnShare()      (btn.UP_state    == BTN_LONG_PRESS)
 #define BtnSysMenu()    (btn.DOWN_state  == BTN_LONG_PRESS)
 #define BtnSysLogMenu() (btn.LEFT_state  == BTN_LONG_PRESS)
@@ -458,22 +459,52 @@ void DispPushBtn(void)
 				Menu.sysMsg		= MENU_SM_NO;
 			}
 			break;
+//--
 		case MENU_PAGE_MEASURE:
-			indx = SETT_M_KG_S1 + Menu.linePos + Menu.lineSel;  // param index
+			indx = SETT_M_KG_S1 + Menu.linePos + Menu.lineSel;   // param index
+			Menu.lineNum = SETT_INTERFACE_INFO + 1;
 
 			if (!Menu.valueEdit) {
-				Menu.lineNum 	= MEASURE_ITEM_NUM;
-
 				if(BtnSelect()) {
-					if (indx >= SETT_M_SYNCHRO_MODE && indx < SETT_M_1_RX_PKT_CNT) {
+					if (indx == SETT_M_CONFIG_PARAM) {
+						MenuGoToPage(MENU_PAGE_MODE);
+						Menu.linePos = 0;
+						Menu.lineSel = 0;
+					}
+					if (indx == SETT_M_INTERFACE_INFO) {
+						MenuGoToPage(MENU_PAGE_PROC);
+						Menu.linePos = 0;
+						Menu.lineSel = 0;
+					}
+				}
+			} else {
+				if (BtnBack()) {
+
+				} else if (BtnDown()) {
+					SettRegChange(indx, SETT_REG_UP);
+				} else if (BtnUp()) {
+					SettRegChange(indx, SETT_REG_DN);
+				}
+			}
+
+			break;
+//--
+		case MENU_PAGE_MODE:
+			indx = SETT_M_SYNCHRO_MODE + Menu.linePos + Menu.lineSel;   // param index
+			Menu.lineNum = SETT_M_DATA_NORMALIZE_TIME - SETT_M_SYNCHRO_MODE + 1;
+
+			if (BtnBackToMain()) {
+				MenuGoToPage(MENU_PAGE_MEASURE);
+				Menu.linePos = 0;
+				Menu.lineSel = 0;
+			}
+			if (!Menu.valueEdit) {
+				if(BtnSelect()) {
+					if (indx >= SETT_M_SYNCHRO_MODE && indx <= SETT_M_DATA_NORMALIZE_TIME) {
 						if (SettParam[indx].pText != SETT_TEXT_NO)		// setting contains string value
 						{
-							MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);									// open additional window for setting
+							MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);		// open additional window for setting
 							Menu.paramRealIndx = indx;
-						}
-						else if (SettParam[indx].pText == SETT_TEXT_NO)	// setting contains parameter
-						{
-							//settings.alarm_threshold_kg_prev = settings.alarm_threshold_kg;
 						}
 						Menu.valueEdit = 1;
 						SettCopyToDummy(indx);
@@ -482,7 +513,6 @@ void DispPushBtn(void)
 			} else {
 				if (BtnBack()) {
 					Menu.valueEdit = 0;
-					//if ((*pSettReg[indx]) != (*pSettReg[SETT_DUMMY]))
 					if (SettGetData(indx) != SettGetData(SETT_DUMMY))
 					{
 						settings.flash_write_flag = 1;
@@ -496,19 +526,19 @@ void DispPushBtn(void)
 
 			break;
 
-		case MENU_PAGE_EMPTY:
-			if(btn.DOWN_state == BTN_PRESS) {
-				//settings.flash_write_flag = 1;
-				Menu.pageIndx   = MENU_PAGE_MEASURE;
-				Menu.sysMsg 	= MENU_SM_NO;
-				Menu.lineNum 	= MEASURE_ITEM_NUM;
+		case MENU_PAGE_PROC:
+			indx = SETT_M_1_RX_PKT_CNT + Menu.linePos + Menu.lineSel;   // param index
+			Menu.lineNum = SETT_M_2_TX_PKT_CNT - SETT_M_1_RX_PKT_CNT + 1;
+
+			if (BtnBackToMain()) {
+				MenuGoToPage(MENU_PAGE_MEASURE);
+				Menu.linePos = 0;
+				Menu.lineSel = 0;
 			}
-			if(btn.UP_state == BTN_PRESS) {
-				//settings.flash_write_flag = 0;
-				Menu.pageIndx   = MENU_PAGE_MEASURE;
-				Menu.sysMsg 	= MENU_SM_NO;
-				Menu.lineNum 	= MEASURE_ITEM_NUM;
+			if (!Menu.valueEdit) {
+
 			}
+
 			break;
 		default:
 			Menu.pageIndx = MENU_PAGE_EMPTY;
@@ -636,9 +666,6 @@ void DispTask(void)
 				}				
 				break;
 		
-// --- MENU_PAGE_EMPTY	- do not print anything			
-			case MENU_PAGE_EMPTY:
-				break;
 
 // --- MAIN PAGE
 			case MENU_PAGE_MAIN:
@@ -677,11 +704,8 @@ void DispTask(void)
 						if(GetListPos(DISP_PACK_STR_1) <= MEASURE_OFFSETT_S2) {
 							SetListSymbL(DISP_LISTMSG_SYMB_INFO);
 						}
-						if(GetListPos(DISP_PACK_STR_1) >= SETT_SYNCHRO_MODE && GetListPos(DISP_PACK_STR_1) <= SETT_DATA_NORMALIZE_TIME) {
+						if(GetListPos(DISP_PACK_STR_1) >= SETT_CONFIG_PARAM && GetListPos(DISP_PACK_STR_1) <= SETT_INTERFACE_INFO) {
 							SetListSymbL(DISP_LISTMSG_SYMB_CHECK_FILL);
-						}
-						if(GetListPos(DISP_PACK_STR_1) >= SETT_1_RX_PKT_CNT && GetListPos(DISP_PACK_STR_1) < MEASURE_ITEM_NUM) {
-							SetListSymbL(DISP_LISTMSG_SYMB_INFO);
 						}
 
 						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
@@ -723,10 +747,6 @@ void DispTask(void)
 								SetListValue(DispIntToStr(weight[1].raw_zero_offset, 0, 0));
 								break;
 							}
-							// Settings parameters
-							if (GetListPos(DISP_PACK_STR_1) >= SETT_SYNCHRO_MODE) {
-								SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
-							}
 
 							//SetListValue(str_item_value);
 							//SetListValue(DispSettParamToStr(DISP_SETT_VAL, measure_item[GetListPos(DISP_PACK_STR_1)]));
@@ -746,17 +766,73 @@ void DispTask(void)
 				{
 				// DISP_PACKTYPE_DATA_0 - common data
 				case DISP_PACK_DATA_0:
+					DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
 					SetListSelLine(Menu.lineSel);
 					SetListValueEdit(Menu.valueEdit);
-					SetListValueExist(DISP_LIST_VALUE_NO);
+					SetListValueExist(DISP_LIST_VALUE_YES);
 					SetListSymbMode(DISP_LIST_SYMB_L);
 					SetListLineShow();
 					break;
+
+				case DISP_PACK_STR_0:
+					SetListName("CONFIG PARAM");
+					break;
+				case DISP_PACK_STR_1:
+				case DISP_PACK_STR_2:
+				case DISP_PACK_STR_3:
+				case DISP_PACK_STR_4:
+				case DISP_PACK_STR_5:
+
+					indx = SETT_M_SYNCHRO_MODE + GetListPos(DISP_PACK_STR_1);
+					// Settings parameters
+					if (indx >= SETT_M_SYNCHRO_MODE && indx <= SETT_M_DATA_NORMALIZE_TIME) {
+						SetListSymbL(DISP_LISTMSG_SYMB_CHECK_FILL);
+						SetListParam(SettGetParamName(indx));
+						SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
+					}
+					break;
+
 				default:
 					break;
 				}
 				break;
+
+			case MENU_PAGE_PROC:
+				switch(DispUart.txPackPnt)
+				{
+				// DISP_PACKTYPE_DATA_0 - common data
+				case DISP_PACK_DATA_0:
+					DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
+					SetListSelLine(Menu.lineSel);
+					SetListValueEdit(Menu.valueEdit);
+					SetListValueExist(DISP_LIST_VALUE_YES);
+					SetListSymbMode(DISP_LIST_SYMB_L);
+					SetListLineShow();
+					break;
+
+				case DISP_PACK_STR_0:
+					SetListName("INTERFACE INFO");
+					break;
+				case DISP_PACK_STR_1:
+				case DISP_PACK_STR_2:
+				case DISP_PACK_STR_3:
+				case DISP_PACK_STR_4:
+				case DISP_PACK_STR_5:
+
+					indx = SETT_M_1_RX_PKT_CNT + GetListPos(DISP_PACK_STR_1);
+					// Settings parameters
+					if (indx >= SETT_M_1_RX_PKT_CNT && indx <= SETT_M_2_TX_PKT_CNT) {
+						SetListSymbL(DISP_LISTMSG_SYMB_INFO);
+						SetListParam(SettGetParamName(indx));
+						SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
+					}
+					break;
+
+				default:
+					break;
+				}
 				break;
+
 
 				default:
 					break;

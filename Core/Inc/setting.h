@@ -5,129 +5,7 @@
 
 
 // total number of supported road blocker (sum all models together)
-#define RB_MDL_TTL_NUM  SETT_BUFF_LEN
-
-typedef enum {
-  INTERNAL_HPU,
-  EXTERNAL_HPU,
-  MOBILE_RB,      // Road blocker with modular structure
-  RB_TYPE_NUM     // length of list
-} RB_TYPE;
-
-// There are two type of settings:
-// - protected settings (P)  -> can't be change manually
-// - adjustable settings (A) -> CAN be changed manually
-#if defined(GATE_SW_FREEWAY)
-
-  #define GATE_GR_DEF GATE_GR_BS
-
-  #include "sett_sw.h"   // sweepers
-  #include "sett_sws.h"  // sweeper-slims
-  #include "sett_sb.h"   // speedblades
-  #include "sett_jp.h"   // jetpan
-  #include "sett_hw.h"   // highWay
-  // total number of supported turnstile (sum all models together)
-  #define GATE_MDL_TTL_NUM (GATE_SB_NUM + GATE_SW_NUM + GATE_JP_NUM + GATE_SWS_NUM + GATE_HW_NUM)
-
-// Types of gates. !!! Names of Types put in MenuTextBlock[] in menu_text.c
-typedef enum {
-  GATE_SW = 0,   // Sweeper
-  GATE_SWS,      // SweeperSlim
-  GATE_SB,       // SpeedBlade.
-  GATE_JP,       // JetPan
-  GATE_HW,       // HighWay
-  GATE_TYPE_NUM  // length of list
-} GATETYPE;
-
-#elif defined(GATE_SW_GATE)
-
-  #define GATE_GR_DEF GATE_GR_GT
-
-  #include "sett_gt.h"   // gate
-  #include "sett_gts.h"  // gate-slim
-
-  // total number of supported turnstile (sum all models together)
-  #define GATE_MDL_TTL_NUM (GATE_GT_NUM + GATE_GTS_NUM)
-
-// Types of gates. !!! Names of Types put in MenuTextBlock[] in menu_text.c
-typedef enum {
-  GATE_GT = 0,   // Gate
-  GATE_GTS,      // Gate-S
-
-  GATE_TYPE_NUM  // length of list
-} GATETYPE;
-
-#elif defined(GATE_SW_ONYX_GATE)
-
-  #define GATE_GR_DEF GATE_GR_ONXGT
-
-  #include "sett_onx_gt.h"  // gate onyx
-
-  // total number of supported turnstile (sum all models together)
-  #define GATE_MDL_TTL_NUM (GATE_ONXGT_NUM)
-
-// Types of gates. !!! Names of Types put in MenuTextBlock[] in menu_text.c
-typedef enum {
-  GATE_ONXGT = 0,  // Onyx_Gate
-  GATE_TYPE_NUM    // length of list
-} GATETYPE;
-
-#elif defined(GATE_SW_ROTOR)
-
-  #define GATE_GR_DEF GATE_GR_TR
-  #include "sett_tr.h"  // tripod
-
-  // total number of supported turnstile (sum all models together)
-  #define GATE_MDL_TTL_NUM (GATE_TR_NUM)
-
-// Types of gates. !!! Names of Types put in MenuTextBlock[] in menu_text.c
-typedef enum {
-  GATE_TR = 0,   // Tripod
-  GATE_TYPE_NUM  // length of list
-} GATETYPE;
-
-#elif defined(GATE_SW_TEST)
-
-  #define GATE_GR_DEF GATE_GR_TS
-
-  #include "sett_tst.h"  // test-bench
-
-  // total number of supported turnstile (sum all models together)
-  #define GATE_MDL_TTL_NUM (GATE_TST_NUM)
-
-// Types of gates. !!! Names of Types put in MenuTextBlock[] in menu_text.c
-typedef enum {
-  GATE_TST = 0,  // Tester. For R&D department only
-  GATE_TYPE_NUM  // length of list
-} GATETYPE;
-
-#elif defined(GATE_SW_SLIDER)
-
-  #define GATE_GR_DEF GATE_GR_SL
-
-  #include "sett_sl.h"  // sliders
-
-  // total number of supported turnstile (sum all models together)
-  #define GATE_MDL_TTL_NUM (GATE_SL_NUM)
-
-// Types of gates. !!! Names of Types put in MenuTextBlock[] in menu_text.c
-typedef enum {
-  GATE_SL = 0,   // Slider. For R&D department only
-  GATE_TYPE_NUM  // length of list
-} GATETYPE;
-
-#endif
-
-typedef enum {
-  GATE_GR_BS = 0,  // "Basic" 	software for Gate Type: Sweepers, speedblade, jetpan.
-  GATE_GR_GT,      // "Gate" 	software for Gate Type: Gate.
-  GATE_GR_TR,      // "Tripod" software for Gate Type: Tripod.
-  GATE_GR_TS,      // "Tester" software for Gate Type: Tester
-  GATE_GR_SL,      // "Slider" software for Gate Type: Slider
-  GATE_GR_ONXGT,   // "OnyxGate" software for Gate Type: OnyxGate
-  GATE_GR_NUM      // length of list
-} GATEGROUP;
-
+#define RB_MDL_TTL_NUM  SETT_UNIT_NUM
 
 #define SettIsProt(a)                   SettParam[a].flag.bProt
 #define SettIsAvail(a)                  SettParam[a].flag.bAvail
@@ -595,9 +473,9 @@ typedef enum {
   SETT_WEIGHT_INDX,   // P - weight of settings block
   SETT_SETT_NUM_INDX,
   SETT_UNIT_NUM_INDX,
-//  SETT_UNIT0_INDX,  // Internal parameters
-//  SETT_UNIT1_INDX,  // Gate parameters
-//  SETT_UNIT2_INDX,  // Lock parameters
+  SETT_UNIT0_INDX,  	//Weight measurement
+  SETT_UNIT1_INDX,  	//Config parameters
+  SETT_UNIT2_INDX,  	//Interface info
 //  SETT_UNIT3_INDX,  // Current consumption
 //  SETT_UNIT4_INDX,  // Motor settings
 //  SETT_UNIT5_INDX,  // Interfaces
@@ -615,12 +493,17 @@ typedef enum {
   SETT_M_OFFSETT_S1,
   SETT_M_RAW_S2,
   SETT_M_OFFSETT_S2,
+
+  SETT_M_CONFIG_PARAM,
+  SETT_M_INTERFACE_INFO,
+
   SETT_M_SYNCHRO_MODE,
   SETT_M_DATA_TRANSFER_MODE,
   SETT_M_THRESHOLD_WEIGHT,
   SETT_M_AVRG_NUMBER,
   SETT_M_BUZZER_TIME,
   SETT_M_DATA_NORMALIZE_TIME,
+
   SETT_M_1_RX_PKT_CNT,
   SETT_M_1_ERRORS_PKT_CNT,
   SETT_M_1_TX_PKT_CNT,
@@ -640,13 +523,9 @@ typedef enum {
 // real start index of unit set in SettInit()->Preset[cnt].settDef[...]
 typedef enum {
   SETT_UNIT_INT = 0,
-  SETT_UNIT_GENERAL,
-  SETT_UNIT_ANGLE_SENS,
-  SETT_UNIT_HPU,
-  SETT_UNIT_INDICATION,
-  SETT_UNIT_CONN,
-  SETT_UNIT_CAL,
-  SETT_UNIT_AUTOMATIC_OPTION,
+  SETT_UNIT_MEASUREMENTS,
+  SETT_UNIT_CONFIG_PARAM,
+  SETT_UNIT_INTERFACE_INFO,
   SETT_UNIT_NUM,
 } SETTUNIT;
 #if SETT_UNIT_NUM > SETT_UNIT_MAX
@@ -673,12 +552,17 @@ typedef enum {
   SETT_TEXT_OFFSETT_S1,
   SETT_TEXT_RAW_S2,
   SETT_TEXT_OFFSETT_S2,
+
+  SETT_TEXT_CONFIG_PARAM,
+  SETT_TEXT_INTERFACE_INFO,
+
   SETT_TEXT_SYNCHRO_MODE,
   SETT_TEXT_DATA_TRANSFER_MODE,
   SETT_TEXT_THRESHOLD_WEIGHT,
   SETT_TEXT_AVRG_NUMBER,
   SETT_TEXT_BUZZER_TIME,
   SETT_TEXT_DATA_NORMALIZE_TIME,
+
   SETT_TEXT_1_RX_PKT_CNT,
   SETT_TEXT_1_ERRORS_PKT_CNT,
   SETT_TEXT_1_TX_PKT_CNT,
@@ -750,8 +634,8 @@ typedef struct
 
 typedef struct
 {
-  u16 settDef[SETT_BUFF_LEN];  // defined value of setting parameter
   u16 bldcDef[SETT_BLDC_NUM];
+  u16 settDef[SETT_BUFF_LEN];  // defined value of setting parameter
 } PresetDef;
 
 typedef struct

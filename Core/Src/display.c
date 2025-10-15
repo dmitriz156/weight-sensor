@@ -100,7 +100,7 @@ char str_item_value[32];
 #define GetWPrevPageIndx()     Menu.pageSeq[Menu.pageSeqPos - 2].pageIndx
 // #define MenuGetBackPageIndx()	Menu.pageLvl[Menu.pageIndx]!=0 ? Menu.layer[Menu.pageLvl[Menu.pageIndx]-1].pageIndx : MENU_PAGE_MAIN
 #define MenuGoBack()           Menu.pageIndxNew = Menu.pageSeqPos != 0 ? Menu.pageSeq[Menu.pageSeqPos - 1].pageIndx : MENU_PAGE_MAIN
-#define MenuGoToPage(a)        Menu.pageIndx = a
+#define MenuGoToPage(a)        Menu.pageIndxNew = a
 
 DispUartTypeDef DispUart;
 MenuTypeDef Menu;
@@ -448,14 +448,10 @@ void DispPushBtn(void)
 		switch(Menu.pageIndx){
 		case MENU_PAGE_HELLO:
 			if(Menu.startTmr == 0 && (ready_to_read || offsett_time_cnt == 0)) {
-				Menu.pageIndx 	= MENU_PAGE_MEASURE;
-				Menu.sysMsg 	= MENU_SM_NO;
-				Menu.lineNum 	= MEASURE_ITEM_NUM;
-				Menu.linePos	= 0;
-				Menu.lineSel    = 0;
+				MenuGoToPage(MENU_PAGE_MEASURE);
 			} else {
 				//while run weight sensors offset definition process
-				Menu.pageIndx   = MENU_PAGE_HELLO;
+				MenuGoToPage(MENU_PAGE_HELLO);
 				Menu.sysMsg		= MENU_SM_NO;
 			}
 			break;
@@ -467,14 +463,10 @@ void DispPushBtn(void)
 			if (!Menu.valueEdit) {
 				if(BtnSelect()) {
 					if (indx == SETT_M_CONFIG_PARAM) {
-						MenuGoToPage(MENU_PAGE_MODE);
-						Menu.linePos = 0;
-						Menu.lineSel = 0;
+						MenuGoToPage(MENU_PAGE_CONFIG);
 					}
 					if (indx == SETT_M_INTERFACE_INFO) {
-						MenuGoToPage(MENU_PAGE_PROC);
-						Menu.linePos = 0;
-						Menu.lineSel = 0;
+						MenuGoToPage(MENU_PAGE_INT_INFO);
 					}
 				}
 			} else {
@@ -489,15 +481,13 @@ void DispPushBtn(void)
 
 			break;
 //--
-		case MENU_PAGE_MODE:
+		case MENU_PAGE_CONFIG:
 			indx = SETT_M_SYNCHRO_MODE + Menu.linePos + Menu.lineSel;   // param index
 			Menu.lineNum = SETT_M_DATA_NORMALIZE_TIME - SETT_M_SYNCHRO_MODE + 1;
 
-			if (BtnBackToMain()) {
-				MenuGoToPage(MENU_PAGE_MEASURE);
-				Menu.linePos = 0;
-				Menu.lineSel = 0;
-			}
+//			if (BtnBackToMain()) {
+//				MenuGoToPage(MENU_PAGE_MEASURE);
+//			}
 			if (!Menu.valueEdit) {
 				if(BtnSelect()) {
 					if (indx >= SETT_M_SYNCHRO_MODE && indx <= SETT_M_DATA_NORMALIZE_TIME) {
@@ -509,6 +499,8 @@ void DispPushBtn(void)
 						Menu.valueEdit = 1;
 						SettCopyToDummy(indx);
 					}
+				} else if (BtnBack()) {
+					MenuGoToPage(MENU_PAGE_MEASURE);
 				}
 			} else {
 				if (BtnBack()) {
@@ -526,17 +518,11 @@ void DispPushBtn(void)
 
 			break;
 
-		case MENU_PAGE_PROC:
+		case MENU_PAGE_INT_INFO:
 			indx = SETT_M_1_RX_PKT_CNT + Menu.linePos + Menu.lineSel;   // param index
-			Menu.lineNum = SETT_M_2_TX_PKT_CNT - SETT_M_1_RX_PKT_CNT + 1;
-
-			if (BtnBackToMain()) {
+			Menu.lineNum = SETT_M_2_ERRORS_PKT_CNT - SETT_M_1_RX_PKT_CNT + 1;
+			if (BtnBack()) {
 				MenuGoToPage(MENU_PAGE_MEASURE);
-				Menu.linePos = 0;
-				Menu.lineSel = 0;
-			}
-			if (!Menu.valueEdit) {
-
 			}
 
 			break;
@@ -571,8 +557,58 @@ void DispTask(void)
 
 // --- next packet		
 		DispUart.txPackPnt++;
-		if(DispUart.txPackPnt>=DispUart.txPackNum[DispUart.pageIndex])
-			DispUart.txPackPnt=0;
+		if(DispUart.txPackPnt >= DispUart.txPackNum[DispUart.pageIndex]) {
+			DispUart.txPackPnt = 0;
+			// new menu page is set
+			if (Menu.pageIndxNew != Menu.pageIndx) {
+
+				DispUart.txPackPnt = 0;
+				Menu.valueEdit     = 0;
+
+				// just for any case
+				Menu.pageSeq[MENU_PAGE_HELLO].pageIndx = MENU_PAGE_HELLO;
+
+				indx = 0;
+				// search NewPage in sequence buffer
+				while (indx < MENU_PAGE_NUM) {
+					if (Menu.pageSeq[indx].pageIndx == Menu.pageIndxNew) {
+						break;
+					}
+
+					indx++;
+				}
+				// there is no such Page in sequence -> add it.
+				// We is moving deeper in Menu structure
+				if (indx == MENU_PAGE_NUM) {
+					if (Menu.pageSeqPos < MENU_PAGE_NUM) {
+						// footprint of current page
+						Menu.pageSeq[Menu.pageSeqPos].pageIndx = Menu.pageIndx;
+						Menu.pageSeq[Menu.pageSeqPos].listPos  = Menu.linePos + Menu.lineSel;  // current position in list
+						Menu.pageSeq[Menu.pageSeqPos].linePos  = Menu.linePos;
+						Menu.pageSeq[Menu.pageSeqPos].lineSel  = Menu.lineSel;
+						// reset data for new page
+						Menu.linePos                           = 0;
+						Menu.lineSel                           = 0;
+						Menu.pageSeqPos++;
+						Menu.pageSeq[Menu.pageSeqPos].pageIndx = Menu.pageIndxNew;
+					}
+				} else {  // page is Found -> restore it's data
+					Menu.pageSeqPos = indx;
+					// restore position in list
+					Menu.linePos    = Menu.pageSeq[Menu.pageSeqPos].linePos;
+					Menu.lineSel    = Menu.pageSeq[Menu.pageSeqPos].lineSel;
+					// release current page
+					indx++;
+					while (indx < MENU_PAGE_NUM) {
+						Menu.pageSeq[indx].pageIndx = MENU_PAGE_FREE;
+						indx++;
+					}
+				}
+
+				Menu.pageIndx = Menu.pageIndxNew;  // set new page
+			}
+		}
+
 		else;
 		
 		if(Menu.pageIndx <= MENU_PAGE_EMPTY)
@@ -581,7 +617,7 @@ void DispTask(void)
 			DispUart.pageIndex = DISP_PAGE_LIST;
 
 		// prepare display Tx buffer
-		memset((void*)&DispUart.txBuff[0],0x00,DISP_TX_BUFF);
+		memset((void*)&DispUart.txBuff[0], 0x00, DISP_TX_BUFF);
 		
 		// common register for all packages
 		DispUart.txBuff[DISP_REG_PACKTYPE] = DispUart.txPackPnt;			// number of packet
@@ -705,7 +741,7 @@ void DispTask(void)
 							SetListSymbL(DISP_LISTMSG_SYMB_INFO);
 						}
 						if(GetListPos(DISP_PACK_STR_1) >= SETT_CONFIG_PARAM && GetListPos(DISP_PACK_STR_1) <= SETT_INTERFACE_INFO) {
-							SetListSymbL(DISP_LISTMSG_SYMB_CHECK_FILL);
+							SetListSymbL(DISP_LISTMSG_SYMB_ARROW);
 						}
 
 						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
@@ -761,7 +797,7 @@ void DispTask(void)
 				}					
 				break;
 			
-			case MENU_PAGE_MODE:
+			case MENU_PAGE_CONFIG:
 				switch(DispUart.txPackPnt)
 				{
 				// DISP_PACKTYPE_DATA_0 - common data
@@ -797,7 +833,7 @@ void DispTask(void)
 				}
 				break;
 
-			case MENU_PAGE_PROC:
+			case MENU_PAGE_INT_INFO:
 				switch(DispUart.txPackPnt)
 				{
 				// DISP_PACKTYPE_DATA_0 - common data
@@ -806,7 +842,7 @@ void DispTask(void)
 					SetListSelLine(Menu.lineSel);
 					SetListValueEdit(Menu.valueEdit);
 					SetListValueExist(DISP_LIST_VALUE_YES);
-					SetListSymbMode(DISP_LIST_SYMB_L);
+					SetListSymbMode(DISP_LIST_SYMB_NO);
 					SetListLineShow();
 					break;
 
@@ -820,9 +856,7 @@ void DispTask(void)
 				case DISP_PACK_STR_5:
 
 					indx = SETT_M_1_RX_PKT_CNT + GetListPos(DISP_PACK_STR_1);
-					// Settings parameters
-					if (indx >= SETT_M_1_RX_PKT_CNT && indx <= SETT_M_2_TX_PKT_CNT) {
-						SetListSymbL(DISP_LISTMSG_SYMB_INFO);
+					if (indx >= SETT_M_1_RX_PKT_CNT && indx <= SETT_M_2_ERRORS_PKT_CNT) {
 						SetListParam(SettGetParamName(indx));
 						SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
 					}
@@ -896,9 +930,11 @@ void DispTmr1ms(void)
 
 void DispTmr1sec(void)
 {
-  Menu.toutMainPage++;
-  if (Menu.toutMainPage >= MENU_TOUT_MAIN_PAGE) {
-	  if (Menu.sysMsg) {MenuDelSysMsg();}
+  if (Menu.toutMainPage < MENU_TOUT_MAIN_PAGE) {
+	  Menu.toutMainPage++;
+  } else {
+	  if (Menu.sysMsg) { MenuDelSysMsg(); }
+	  if (Menu.pageIndx != MENU_PAGE_MEASURE) { MenuGoToPage(MENU_PAGE_MEASURE); }
 	  Menu.linePos = 0;
 	  Menu.lineSel = 0;
 	  Menu.valueEdit = 0;

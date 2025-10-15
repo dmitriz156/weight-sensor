@@ -10,8 +10,8 @@ typedef enum
 	MENU_PAGE_MAIN,         		// main working page
 	MENU_PAGE_MEASURE = 2,			// weight sensors measurements list //MENU_PAGE_SETT_PARAM earlier
 	MENU_PAGE_EMPTY,				// empty page. For system message
-	MENU_PAGE_MODE,         		// page of selecting gate mode
-	MENU_PAGE_PROC,					// processing page
+	MENU_PAGE_CONFIG,         		// config parameter page
+	MENU_PAGE_INT_INFO,				// interface info page
 	MENU_PAGE_NUM,
 	MENU_PAGE_FREE = 0xFF,
 } MENUPAGE;
@@ -249,11 +249,13 @@ typedef struct
 		SETT_BUZZER_TIME,
 		SETT_DATA_NORMALIZE_TIME,
 		SETT_1_RX_PKT_CNT,
-		SETT_1_ERRORS_PKT_CNT,
 		SETT_1_TX_PKT_CNT,
+		SETT_1_ERRORS_PKT_CNT,
+		SETT_1_READ_CNT,
 		SETT_2_RX_PKT_CNT,
-		SETT_2_ERRORS_PKT_CNT,
 		SETT_2_TX_PKT_CNT,
+		SETT_2_ERRORS_PKT_CNT,
+		SETT_2_READ_CNT,
 		MEASURE_ITEM_NUM
 	} MESUREITEM;
 

@@ -613,7 +613,7 @@ void MeasureCnt(void)
 
 	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++)
 	{
-		if(weight[i].read_cnt){ weight[i].read_cnt --; }
+		if(weight[i].read_cnt < HX711_DATA_MAX_WAIT_TIME_MS){ weight[i].read_cnt ++; }
 
 		if(weight[i].kg > settings.alarm_threshold_kg)
 		{

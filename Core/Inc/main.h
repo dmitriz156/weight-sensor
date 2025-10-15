@@ -143,7 +143,7 @@ typedef struct
 #define Number_Of_SoftUarts	 				2
 #define	SoftUartTxBufferSize				32
 #define	SoftUartRxBufferSize				32
-#define HX711_DATA_MAX_WAIT_TIME_MS			5000
+#define HX711_DATA_MAX_WAIT_TIME_MS			3000
 
 //SOFTWARE UART PINS
 #define TX1_Port			GPIOB

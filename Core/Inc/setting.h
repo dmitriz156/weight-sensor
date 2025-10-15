@@ -505,11 +505,13 @@ typedef enum {
   SETT_M_DATA_NORMALIZE_TIME,
 
   SETT_M_1_RX_PKT_CNT,
-  SETT_M_1_ERRORS_PKT_CNT,
   SETT_M_1_TX_PKT_CNT,
+  SETT_M_1_READ_CNT,
+  SETT_M_1_ERRORS_PKT_CNT,
   SETT_M_2_RX_PKT_CNT,
-  SETT_M_2_ERRORS_PKT_CNT,
   SETT_M_2_TX_PKT_CNT,
+  SETT_M_2_READ_CNT,
+  SETT_M_2_ERRORS_PKT_CNT,
 
   // last element of enumeration. Used as total number of enumeration.
   // !!! Don't use it directly in code
@@ -564,11 +566,13 @@ typedef enum {
   SETT_TEXT_DATA_NORMALIZE_TIME,
 
   SETT_TEXT_1_RX_PKT_CNT,
-  SETT_TEXT_1_ERRORS_PKT_CNT,
   SETT_TEXT_1_TX_PKT_CNT,
+  SETT_TEXT_1_ERRORS_PKT_CNT,
+  SETT_TEST_1_READ_CNT,
   SETT_TEXT_2_RX_PKT_CNT,
-  SETT_TEXT_2_ERRORS_PKT_CNT,
   SETT_TEXT_2_TX_PKT_CNT,
+  SETT_TEXT_2_ERRORS_PKT_CNT,
+  SETT_TEXT_2_READ_CNT,
 
   SETT_TEXT_OFF,
   SETT_TEXT_ON,
@@ -606,7 +610,8 @@ typedef enum {
   SETT_CONV_POS_MIRR,    // convert like position parameters (*10/2) with negative mirror over Zero
   SETT_CONV_POS,         // convert like position parameters (*10/2)
   SETT_CONV_BITMAP,      // convert like bitmap (according to textValue)
-  SETT_CONV_COEFFICIENT  // convert value range from [0; 100] => [-1; 0] U [100; 200] => [0; 1]
+  SETT_CONV_COEFFICIENT, // convert value range from [0; 100] => [-1; 0] U [100; 200] => [0; 1]
+  SETT_CONV_INVERT_CNT   // convert counter decrease value to increase => MAX - cnt
 } SETTCONV;
 
 #define SETT_PARSTR_LEN 16

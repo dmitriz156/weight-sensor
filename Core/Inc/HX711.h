@@ -56,9 +56,9 @@ typedef struct {
 	uint8_t rx_index;
 	uint8_t rx_len;
 	uint8_t buf[HX711_UART_BUF_SIZE];
-	uint16_t rx_pkt_cnt; //Counter of received packets
-	uint16_t tx_pkt_cnt; //Counter of transmited packets
-	uint16_t error_pkt_cnt; //Counter of ERRORs packets
+	uint16_t rx_pkt_cnt; 		//Counter of received packets
+	uint16_t tx_pkt_cnt; 		//Counter of transmited packets
+	uint16_t error_pkt_cnt; 	//Counter of ERRORs packets
 } uart_data_t;
 
 typedef struct {
@@ -82,6 +82,7 @@ typedef struct
 	float	 max_kg;
 	bool	 COM_ERR_flag; //communication error flag
 	uint16_t read_cnt;
+	uint16_t missed_pkt_cnt; //Counter of missed packets
 
 	bool	 signal_state;
 	bool	 signal_switch_flag;

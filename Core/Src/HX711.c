@@ -239,8 +239,10 @@ int32_t HX711ReadData (weight_t *weight, uint8_t channel)
 		if(HX711_read_raw(&value, HX711_GAIN_PULSES, channel)) {
 			weight->COM_ERR_flag = 0;
 			weight->measure_cnt ++;
+			weight->uart_data.rx_pkt_cnt ++; //crutch for display
 		} else {
 			weight->COM_ERR_flag = 1; //read err
+			weight->uart_data.error_pkt_cnt ++; //crutch for display
 			return 0;
 		}
 	} else {
@@ -256,6 +258,10 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 
 	if(weight->read_cnt >= HX711_DATA_RATE_TIME_MS || HX711_DOUT_READ(channel) == GPIO_PIN_RESET) {
 
+		if(weight->read_cnt >= HX711_DATA_RATE_TIME_MS) {
+			weight->read_cnt = 0;
+			weight->missed_pkt_cnt ++;
+		}
 		if(HX711_DOUT_READ(channel) == GPIO_PIN_RESET && weight->before_read_cnt == 0) {
 			weight->read_cnt = 0;
 			weight->before_read_cnt = (HX711_TIME_BEFORE_READ + 1);
@@ -367,6 +373,7 @@ bool HX711GetDataTask(void)
 			if (weight[sens_channel].read_cnt == HX711_DATA_MAX_WAIT_TIME_MS && weight[sens_channel].uart_data.tx_flag == 1) {
 				weight[sens_channel].uart_data.tx_flag = 0;
 				weight[sens_channel].read_cnt = 0;
+				weight[sens_channel].missed_pkt_cnt ++;
 				HX711TransmitCommand_UART(sens_channel, weight[sens_channel].uart_data.command, 2);
 			}
 		} else {

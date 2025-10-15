@@ -224,12 +224,12 @@ void SettInit(void)
   //data transfer info (not saving)
   SettSetParam(SETT_M_1_RX_PKT_CNT,			&weight[0].uart_data.rx_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_M_1_TX_PKT_CNT,			&weight[0].uart_data.tx_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_1_READ_CNT,			&weight[0].read_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_1_MISSED_PKT_CNT,		&weight[0].missed_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_M_1_ERRORS_PKT_CNT,		&weight[0].uart_data.error_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
   SettSetParam(SETT_M_2_RX_PKT_CNT,			&weight[1].uart_data.rx_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_M_2_TX_PKT_CNT,			&weight[1].uart_data.tx_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_2_READ_CNT,			&weight[1].read_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_2_MISSED_PKT_CNT,		&weight[1].missed_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_M_2_ERRORS_PKT_CNT,		&weight[1].uart_data.error_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
   //set default settings value
@@ -242,11 +242,11 @@ void SettInit(void)
 
   SettSetDef(SETT_M_1_RX_PKT_CNT, 		0);
   SettSetDef(SETT_M_1_TX_PKT_CNT, 		0);
-  SettSetDef(SETT_M_1_READ_CNT, 		0);
+  SettSetDef(SETT_M_1_MISSED_PKT_CNT, 	0);
   SettSetDef(SETT_M_1_ERRORS_PKT_CNT, 	0);
   SettSetDef(SETT_M_2_RX_PKT_CNT, 		0);
   SettSetDef(SETT_M_2_TX_PKT_CNT, 		0);
-  SettSetDef(SETT_M_2_READ_CNT, 		0);
+  SettSetDef(SETT_M_2_MISSED_PKT_CNT, 	0);
   SettSetDef(SETT_M_2_ERRORS_PKT_CNT, 	0);
 
 

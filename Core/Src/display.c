@@ -485,9 +485,6 @@ void DispPushBtn(void)
 			indx = SETT_M_SYNCHRO_MODE + Menu.linePos + Menu.lineSel;   // param index
 			Menu.lineNum = SETT_M_DATA_NORMALIZE_TIME - SETT_M_SYNCHRO_MODE + 1;
 
-//			if (BtnBackToMain()) {
-//				MenuGoToPage(MENU_PAGE_MEASURE);
-//			}
 			if (!Menu.valueEdit) {
 				if(BtnSelect()) {
 					if (indx >= SETT_M_SYNCHRO_MODE && indx <= SETT_M_DATA_NORMALIZE_TIME) {
@@ -721,7 +718,7 @@ void DispTask(void)
 						SetListSelLine(Menu.lineSel);
 						SetListValueEdit(Menu.valueEdit);
 						SetListValueExist(DISP_LIST_VALUE_YES);
-						SetListSymbMode(DISP_LIST_SYMB_L);
+						SetListSymbMode(DISP_LIST_SYMB_R);
 						SetListLineShow();
 						break;
 
@@ -737,11 +734,8 @@ void DispTask(void)
 
 						indx = (GetListPos(DISP_PACK_STR_1) + SETT_DUMMY + 1);
 
-						if(GetListPos(DISP_PACK_STR_1) <= MEASURE_OFFSETT_S2) {
-							SetListSymbL(DISP_LISTMSG_SYMB_INFO);
-						}
 						if(GetListPos(DISP_PACK_STR_1) >= SETT_CONFIG_PARAM && GetListPos(DISP_PACK_STR_1) <= SETT_INTERFACE_INFO) {
-							SetListSymbL(DISP_LISTMSG_SYMB_ARROW);
+							SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
 						}
 
 						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
@@ -789,7 +783,6 @@ void DispTask(void)
 						}
 						else;
 
-
 						break;		
 						
 					default:
@@ -806,12 +799,12 @@ void DispTask(void)
 					SetListSelLine(Menu.lineSel);
 					SetListValueEdit(Menu.valueEdit);
 					SetListValueExist(DISP_LIST_VALUE_YES);
-					SetListSymbMode(DISP_LIST_SYMB_L);
+					SetListSymbMode(DISP_LIST_SYMB_NO);
 					SetListLineShow();
 					break;
 
 				case DISP_PACK_STR_0:
-					SetListName("CONFIG PARAM");
+					SetListName("CONFIG PARAMETERS");
 					break;
 				case DISP_PACK_STR_1:
 				case DISP_PACK_STR_2:
@@ -822,7 +815,7 @@ void DispTask(void)
 					indx = SETT_M_SYNCHRO_MODE + GetListPos(DISP_PACK_STR_1);
 					// Settings parameters
 					if (indx >= SETT_M_SYNCHRO_MODE && indx <= SETT_M_DATA_NORMALIZE_TIME) {
-						SetListSymbL(DISP_LISTMSG_SYMB_CHECK_FILL);
+						//SetListSymbL(DISP_LISTMSG_SYMB_CHECK_FILL);
 						SetListParam(SettGetParamName(indx));
 						SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
 					}

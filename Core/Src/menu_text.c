@@ -54,11 +54,11 @@ const char *MenuTextBlock[] = {
 	// --- UNIT-3. Interface info
 	"Ch1 RX pkt cnt",
 	"Ch1 TX pkt cnt",
-	"Ch1 read cnt",
+	"Ch1 missed pkt cnt",
 	"Ch1 ERR pkt cnt",
 	"Ch2 RX pkt cnt",
 	"Ch2 TX pkt cnt",
-	"Ch2 read cnt",
+	"Ch2 missed pkt cnt",
 	"Ch2 ERR pkt cnt",
 
 	"OFF",

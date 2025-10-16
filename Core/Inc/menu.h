@@ -10,8 +10,8 @@ typedef enum
 	MENU_PAGE_MAIN,         		// main working page
 	MENU_PAGE_MEASURE = 2,			// weight sensors measurements list //MENU_PAGE_SETT_PARAM earlier
 	MENU_PAGE_EMPTY,				// empty page. For system message
-	MENU_PAGE_MODE,         		// page of selecting gate mode
-	MENU_PAGE_PROC,					// processing page
+	MENU_PAGE_CONFIG,         		// config parameter page
+	MENU_PAGE_INT_INFO,				// interface info page
 	MENU_PAGE_NUM,
 	MENU_PAGE_FREE = 0xFF,
 } MENUPAGE;
@@ -33,6 +33,8 @@ typedef struct{
 	u16 param_6;
 	u16 param_7;
 	u16 param_8;
+	u16 param_9;
+	u16 param_10;
 } dummy_t;
 
 typedef enum
@@ -227,12 +229,6 @@ typedef struct
 		MENU_MOD_NUM
 	} MENUSEL;
 	
-	static char* MenuModName[]=
-	{
-		"OFF",
-		"ON"
-	};
-
 
 	typedef enum
 	{
@@ -244,32 +240,23 @@ typedef struct
 		MEASURE_RAW_S2,
 		MEASURE_OFFSETT_S1,
 		MEASURE_OFFSETT_S2,
+		SETT_CONFIG_PARAM,
+		SETT_INTERFACE_INFO,
 		SETT_SYNCHRO_MODE,
+		SETT_DATA_TRANSFER_MODE,
 		SETT_THRESHOLD_WEIGHT,
 		SETT_AVRG_NUMBER,
 		SETT_BUZZER_TIME,
 		SETT_DATA_NORMALIZE_TIME,
+		SETT_1_RX_PKT_CNT,
+		SETT_1_TX_PKT_CNT,
+		SETT_1_ERRORS_PKT_CNT,
+		SETT_1_READ_CNT,
+		SETT_2_RX_PKT_CNT,
+		SETT_2_TX_PKT_CNT,
+		SETT_2_ERRORS_PKT_CNT,
+		SETT_2_READ_CNT,
 		MEASURE_ITEM_NUM
 	} MESUREITEM;
 
-
-	static char* measure_name [] =
-	{
-		"S1 WEIGHT kg",
-		"S1 MAX kg",
-		"S2 WEIGHT kg",
-		"S2 MAX kg",
-		"S1 RAW",
-		"OFFSET",
-		"S2 RAW",
-		"OFFSET",
-		"SYNCHRO MODE",
-		"THRESHOLD kg",
-		"AVERAGING NUM",
-		"BUZZER TIME",
-		"DATA NORMALIZE TIME",
-
-		"OFF",
-		"ON"
-	};
 	

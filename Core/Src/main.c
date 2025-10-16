@@ -22,7 +22,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,6 +40,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart3;
@@ -54,6 +54,7 @@ extern MenuTypeDef Menu;
 extern DispUartTypeDef DispUart;
 weight_t weight [NUM_OF_WEIGHT_SENSOR];
 save_flash_t settings = {0};
+
 uint16_t UART_TX_counter = 0;
 button_t btn = {0};
 
@@ -74,6 +75,7 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 
 
@@ -124,15 +126,19 @@ int main(void)
   MX_DMA_Init();
   MX_USART3_UART_Init();
   MX_TIM3_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_Delay(100);
   HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_Base_Start_IT(&htim2);
   HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
   DispInit();
   SettInit();
   offsett_time_cnt = MAX_OFFSETT_TIME_MS;
   MovingAvg_InitAll();
+  HX711Init_UART();
+  ptr_hx711_change_transfer_mode = HX711ChangeTransferMode;
 
   /* USER CODE END 2 */
 
@@ -146,8 +152,11 @@ int main(void)
 	  if (settings.flash_write_flag) {
 		  MovingAvg_InitAll();
 	  }
+	  if (settings.sett_change_flag) {
+		  settings.sett_change_flag = 0;
+		  HX711Init_UART();
+	  }
 	  FlashConfigWrite();
-
 	  OffsettStatusCheck();
 	  HX711GetDataTask();
 	  ButtonsHandler();
@@ -195,6 +204,51 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 71-1;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 21-1;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
 }
 
 /**
@@ -558,7 +612,7 @@ void MeasureCnt(void)
 
 	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++)
 	{
-		if(weight[i].read_cnt){ weight[i].read_cnt --; }
+		if(weight[i].read_cnt < HX711_DATA_MAX_WAIT_TIME_MS){ weight[i].read_cnt ++; }
 
 		if(weight[i].kg > settings.alarm_threshold_kg)
 		{
@@ -607,6 +661,15 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	if(huart->Instance == USART1)
+	{
+		//weight[0].uart_data.rx_flag = 1;
+		//__HAL_UART_CLEAR_FLAG(&huart1, USART_ICR_ORECF_Msk);
+		//UART_status = HAL_UARTEx_ReceiveToIdle_IT(&huart1, weight[0].uart_data.buf, HX711_UART_BUF_SIZE);
+	}
+}
 
 //   1 ms timer
 //---------------------------------------------------------
@@ -614,14 +677,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim->Instance == TIM3) {
 
-
 		if (UART_TX_counter){
 			UART_TX_counter--;
 		} else {
 			DispUart.pauseTmr = 0;
 			HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
 		}
-
 		DispTmr1ms();
 
 		if(one_sec_counter < 1000) {one_sec_counter++;}
@@ -638,10 +699,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			}
 
 			DispTmr1sec();
+			HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
 		}
-
 		ButtonsCnt();
 		MeasureCnt();
+	}
+	if (htim->Instance == TIM2) {
+		if (settings.data_transfer_mode == 1){
+			SoftUartHandler();
+		}
 	}
 }
 

@@ -83,6 +83,7 @@ typedef struct
 	bool	 COM_ERR_flag; //communication error flag
 	uint16_t read_cnt;
 	uint16_t missed_pkt_cnt; //Counter of missed packets
+	uint8_t  COM_ERR_cnt;  //Used for reset measurement to zero if communication is fail
 
 	bool	 signal_state;
 	bool	 signal_switch_flag;

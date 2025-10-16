@@ -261,9 +261,11 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 		if(weight->read_cnt >= HX711_DATA_RATE_TIME_MS) {
 			weight->read_cnt = 0;
 			weight->missed_pkt_cnt ++;
+			weight->COM_ERR_cnt ++;
 		}
 		if(HX711_DOUT_READ(channel) == GPIO_PIN_RESET && weight->before_read_cnt == 0) {
-			weight->read_cnt = 0;
+			weight->read_cnt        = 0;
+			weight->COM_ERR_cnt     = 0;
 			weight->before_read_cnt = (HX711_TIME_BEFORE_READ + 1);
 		}
 
@@ -294,16 +296,20 @@ bool HX711GetData(weight_t *weight, uint8_t channel)
 				}
 				weight->prev_kg = weight->kg;
 			}
-
-			if (weight->COM_ERR_flag) //if there was an ERR while reading
-			{
-				weight->measure_cnt = 0;
-				weight->raw_sum = 0;
-				weight->kg = 0;
-			}
 		}
 
 		status = weight->COM_ERR_flag;
+
+		if (weight->COM_ERR_flag || weight->COM_ERR_cnt > 10) //if there was an ERR while reading
+		{
+			weight->COM_ERR_cnt  = 0;
+			weight->COM_ERR_flag = 0;
+			weight->measure_cnt  = 0;
+			weight->raw_sum      = 0;
+			weight->kg           = 0;
+			weight->max_kg       = 0;
+		}
+
 	}
 	if(weight->kg < 0) { weight->kg = 0.001f; }
 	if(weight->kg > weight->max_kg) {
@@ -369,11 +375,19 @@ bool HX711GetDataTask(void)
 			if (HX711DataValidate_UART(&weight[sens_channel].uart_data, sens_channel) == true) {
 				status = HX711GetData_UART(&weight[sens_channel], sens_channel);
 				weight[sens_channel].read_cnt = 0;
+				weight[sens_channel].COM_ERR_cnt = 0;
 			}
 			if (weight[sens_channel].read_cnt == HX711_DATA_MAX_WAIT_TIME_MS && weight[sens_channel].uart_data.tx_flag == 1) {
 				weight[sens_channel].uart_data.tx_flag = 0;
 				weight[sens_channel].read_cnt = 0;
 				weight[sens_channel].missed_pkt_cnt ++;
+				if(++weight[sens_channel].COM_ERR_cnt > 5){
+					weight[sens_channel].COM_ERR_cnt  = 0;
+					weight[sens_channel].measure_cnt  = 0;
+					weight[sens_channel].raw_sum      = 0;
+					weight[sens_channel].kg           = 0;
+					weight[sens_channel].max_kg       = 0;
+				}
 				HX711TransmitCommand_UART(sens_channel, weight[sens_channel].uart_data.command, 2);
 			}
 		} else {

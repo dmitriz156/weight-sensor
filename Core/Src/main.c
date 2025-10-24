@@ -107,8 +107,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-
-	HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -363,17 +362,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, STATUS_LED_Pin|OUT_1_Pin|OUT_2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, STATUS_LED_Pin|OUT_1_Pin|OUT_2_Pin|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_8, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : STATUS_LED_Pin */
-  GPIO_InitStruct.Pin = STATUS_LED_Pin;
+  /*Configure GPIO pins : STATUS_LED_Pin PA8 */
+  GPIO_InitStruct.Pin = STATUS_LED_Pin|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(STATUS_LED_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : BTN_R_Pin */
   GPIO_InitStruct.Pin = BTN_R_Pin;

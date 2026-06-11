@@ -35,12 +35,12 @@ extern "C" {
 #include <stdint.h>
 
 #include "typedef.h"
-//#include "kalman.h"
-#include "HX711.h"
+//#include "HX711.h"
 #include "menu.h"
 #include "setting.h"
 #include "display.h"
 #include "menu_text.h"
+#include "rtc.h"
 
 
 /* USER CODE END Includes */
@@ -207,6 +207,8 @@ extern void ButtonsReset(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define RE_DE_2_Pin GPIO_PIN_1
+#define RE_DE_2_GPIO_Port GPIOA
 #define STATUS_LED_Pin GPIO_PIN_4
 #define STATUS_LED_GPIO_Port GPIOA
 #define BTN_R_Pin GPIO_PIN_5

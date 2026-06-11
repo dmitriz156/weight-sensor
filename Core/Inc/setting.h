@@ -473,36 +473,45 @@ typedef enum {
   SETT_WEIGHT_INDX,   // P - weight of settings block
   SETT_SETT_NUM_INDX,
   SETT_UNIT_NUM_INDX,
-  SETT_UNIT0_INDX,  	//Weight measurement
-  SETT_UNIT1_INDX,  	//Config parameters
-  SETT_UNIT2_INDX,  	//Interface info
-//  SETT_UNIT3_INDX,  // Current consumption
-//  SETT_UNIT4_INDX,  // Motor settings
-//  SETT_UNIT5_INDX,  // Interfaces
+  SETT_UNIT0_INDX,  	//Run time
+  SETT_UNIT1_INDX,  	//Set absolute time
+  SETT_UNIT2_INDX,  	//Set test start time
+  SETT_UNIT3_INDX,    //Set test stop time
+  SETT_UNIT4_INDX,    //Interface info
+//  SETT_UNIT5_INDX,  
 //  SETT_UNIT6_INDX,
 //  SETT_UNIT7_INDX,
 
   SETT_DUMMY,       // P - dummy parameters. Contains temporary value for Menu parameters changing
                     // config words -> they CAN be changed via special Display menu
                     // --- UNIT-1. SETTINGS and MEASUREMENTS ITEMS
-  SETT_M_KG_S1,
-  SETT_M_KG_MAX_S1,
-  SETT_M_KG_S2,
-  SETT_M_KG_MAX_S2,
-  SETT_M_RAW_S1,
-  SETT_M_OFFSETT_S1,
-  SETT_M_RAW_S2,
-  SETT_M_OFFSETT_S2,
+  
+  
+  SETT_M_INTERVAL_RISE,//"S1 WEIGHT kg",
+	SETT_M_INTERVAL_LOW,//"S1 MAX kg",
+	SETT_M_second,
+	SETT_M_MINUTE,
+	SETT_M_HOURS,
+	SETT_M_DAY,
+	SETT_M_MOUNTS,
+	SETT_M_YEAR,
+	SETT_M_TIME,
+	SETT_M_TEST_MODE,
+	SETT_M_START_TEST,
+	SETT_M_STOP_TEST,
+	SETT_M_INTERFACE_INFO,
 
-  SETT_M_CONFIG_PARAM,
-  SETT_M_INTERFACE_INFO,
+  SETT_M_MINUTES,
+	SETT_M_HOURS,
+	SETT_M_DAY,
+	SETT_M_MONTH,
+	SETT_M_YEAR,
 
-  SETT_M_SYNCHRO_MODE,
-  SETT_M_DATA_TRANSFER_MODE,
-  SETT_M_THRESHOLD_WEIGHT,
-  SETT_M_AVRG_NUMBER,
-  SETT_M_BUZZER_TIME,
-  SETT_M_DATA_NORMALIZE_TIME,
+	SETT_M_MINUTES,
+	SETT_M_HOURS,
+
+	SETT_M_MINUTES,
+	SETT_M_HOURS,
 
   SETT_M_1_RX_PKT_CNT,
   SETT_M_1_TX_PKT_CNT,
@@ -661,7 +670,7 @@ typedef struct
   } flag;
 
   // --- for external control (via Modbus, etc)
-  u8 mdlNum[MEASURE_ITEM_NUM];  // number of models for each types
+  u8 mdlNum[MENU_ITEM_NUM];  // number of models for each types
   u16 tbLen;                // total len of MenuTextBlock[]
 } SettCtrlDef;
 

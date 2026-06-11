@@ -16,9 +16,9 @@ const char *MenuTextBlock[] = {
     "Unit0",
     "Unit1",
     "Unit2",
-//    "Unit3",
-//    "Unit4",
-//    "Unit5",
+    "Unit3",
+    "Unit4",
+    "Unit5",
 //    "Unit6",
 //    "Unit7",
     //"Unit8",
@@ -31,27 +31,36 @@ const char *MenuTextBlock[] = {
 //    "Cnfg3",
 //    "SettGroup",
 
-    // --- UNIT-1. Weight measurements
-	"S1 WEIGHT kg",
-	"S1 MAX kg",
-	"S2 WEIGHT kg",
-	"S2 MAX kg",
-	"S1 RAW",
-	"OFFSET",
-	"S2 RAW",
-	"OFFSET",
 
-	"CONFIG PARAMETERS",
+    // --- UNIT-1. run time
+	"INTERVAL RISE",//"S1 WEIGHT kg",
+	"INTERVAL LOW",//"S1 MAX kg",
+	"second",
+	"minaute",
+	"hour",
+	"day",
+	"month",
+	"year",
+	"SET TIME",
+	"TEST MODE"
+	"SET START TEST",
+	"SET STOP TEST",
 	"INTERFACE INFO",
 
-	// --- UNIT-2. Config parameters
-	"SYNCHRO MODE",
-	"TRANSFER MODE",
-	"THRESHOLD kg",
-	"AVERAGING NUM",
-	"BUZZER TIME",
-	"DATA NORMALIZE TIME",
-	// --- UNIT-3. Interface info
+	// --- UNIT-2. SET TIME
+	"SET minutes",
+	"SET hours",
+	"SET day",
+	"SET month",
+	"SET year",
+	// --- UNIT-3. SET_START_TEST
+	"SET minutes",
+	"SET hours",
+	// --- UNIT-4. SET_STOP_TEST
+	"SET minutes",
+	"SET hours",
+
+	// --- UNIT-5. Interface info
 	"Ch1 RX pkt cnt",
 	"Ch1 TX pkt cnt",
 	"Ch1 missed pkt cnt",
@@ -62,9 +71,6 @@ const char *MenuTextBlock[] = {
 	"Ch2 ERR pkt cnt",
 
 	"OFF",
-	"ON",
-
-	"special protocol",
-	"UART protocol"
+	"ON"
 };
 

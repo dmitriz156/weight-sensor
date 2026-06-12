@@ -35,7 +35,6 @@ extern "C" {
 #include <stdint.h>
 
 #include "typedef.h"
-//#include "HX711.h"
 #include "menu.h"
 #include "setting.h"
 #include "display.h"
@@ -48,23 +47,15 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-typedef enum {
-	ALARM_ST_ALONE = 0,
-	ALARM_SYNCHRO  = 1
-} sensors_mod_t;
-
 typedef struct {
-	uint16_t mod_config;
-	uint16_t data_transfer_mode;
-	uint16_t alarm_threshold_kg;
+	uint16_t rs485_command_interval_s;
+	uint16_t test_mode;
+	uint16_t test_start_hours;
+	uint16_t test_start_minutes;
+	uint16_t test_stop_hours;
+	uint16_t test_stop_minutes;
 
-	uint16_t avrg_measure_num;
-	uint16_t buzzer_time;
-	uint16_t data_normalize_time;
-
-	bool flash_read_flag;
 	bool flash_write_flag;
-	bool sett_change_flag;
 } save_flash_t;
 
 
@@ -108,6 +99,16 @@ typedef struct
 } button_t;
 #define DEBOUNCE_TIME_MS		60
 
+typedef enum {
+	STOPED,
+	MOVE_UP,
+	MOVE_DOWN,
+	SET_UP,
+	SET_DOWN,
+	EFO_MOVE_UP
+} status_t;
+
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -117,80 +118,27 @@ typedef struct
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define FW_NAME_VERSION						"WEIGHT SENS v1.7"
-
-#define NUM_OF_WEIGHT_SENSOR    			2
+#define FW_NAME_VERSION						"RB TEST RC"
 #define ADDR_FLASH   						(0x08010000)//page 64
 
-//#define BUZZER_ACTIV_WEIGHT_KG				5 // weight limit in KG
-#define HX711_GAIN_PULSES 					1 // for example: 1 = 128x, 2 = 64x, 3 = 32x
-#define KG_DIV								45000.0f
-//#define BUZZER_ACTIVE_TIME_S				3.0f
 #define ONE_SEC								1000.0f
-#define AVRG_MEASURE_NUMBER					2 //number of measurements for averaging
-#define AVRG_OFFSETT_MEASURE_NUM			10
-#define MAX_WEIGHT_RESET_TIME_S				30
-#define MAX_DATA_NORMALIZ_TIME_MS			400 //time to detect and confirm threshold reaching
-
-#define HX711_DATA_RATE_TIME_MS				110 // 10 SPS (from HX711 datasheet)
-#define HX711_TIME_BEFORE_READ				5
-
-#define MAX_OFFSETT_TIME_MS					(HX711_DATA_RATE_TIME_MS + 50) * AVRG_OFFSETT_MEASURE_NUM * NUM_OF_WEIGHT_SENSOR
 
 #define BTN_LONG_PRESS_TIME_MS				800
-
-//SOFTWARE UART
-#define Number_Of_SoftUarts	 				2
-#define	SoftUartTxBufferSize				32
-#define	SoftUartRxBufferSize				32
-#define HX711_DATA_MAX_WAIT_TIME_MS			1000
-
-//SOFTWARE UART PINS
-#define TX1_Port			GPIOB
-#define TX1_Pin				GPIO_PIN_8
-#define RX1_Port			GPIOB
-#define RX1_Pin				GPIO_PIN_9
-
-#define TX2_Port			GPIOB
-#define TX2_Pin				GPIO_PIN_6
-#define RX2_Port			GPIOB
-#define RX2_Pin				GPIO_PIN_7
-
-#define UART_RX_1()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) //pin 23
-#define UART_RX_2()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) //pin 25
-
-#define UART_TX_1(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 24
-#define UART_TX_2(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 26
-//------------------
 
 #define BTN_R_READ()			HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) //pin 16
 #define BTN_L_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12)//pin 13
 #define BTN_UP_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13)//pin 14
 #define BTN_DOWN_READ()			HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_14)//pin 15
 
-#define STATUS_IN()     		HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) //pin 30
-
-#define DOUT_READ_1()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) //pin 23
-#define DOUT_READ_2()       	HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) //pin 25
-
-#define PD_SCK_1(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 24
-#define PD_SCK_2(state)     	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 26
-
-#define BUZZER_OUT(state) 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 6 //OUT1
-#define STATUS_OUT(state) 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//pin 7 //OUT2
 #define LED_BLUE(state)   		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4,  (state) ? GPIO_PIN_SET : GPIO_PIN_RESET)//LED OPERATE
 
-//extern weight_t weight[NUM_OF_WEIGHT_SENSOR];
-extern bool ready_to_read;
-extern uint16_t offsett_time_cnt;
 extern save_flash_t settings;
 extern uint8_t rx_flag;
 
 extern button_t btn;
-extern char SwNewName[];
-extern char SwCurrName[];
 extern dummy_t dummy;
-extern uint16_t start_reading_data_cnt;
+extern status_t status_RB;
+extern volatile uint32_t one_sec_counter;
 
 /* USER CODE END EM */
 
@@ -200,6 +148,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 extern void ButtonsResetLong(void);
 extern void ButtonsReset(void);
+void RoadBlockerTestProcesing(void);
 //extern void Flash_WriteData(uint32_t addr, uint16_t data);
 //extern uint16_t FlashGetData(uint32_t addr);
 //extern void ConfigReadWrite(void);

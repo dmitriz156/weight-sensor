@@ -1,15 +1,13 @@
 
 #include "display.h"
 #include "main.h"
-//#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <math.h>
 
 
 extern TIM_HandleTypeDef htim3;
 extern UART_HandleTypeDef huart3;
-//extern weight_t weight [NUM_OF_WEIGHT_SENSOR];
-
 extern SettParamDef SettParam[];
 extern uint16_t *pSettReg[];  // pointer to settings value
 
@@ -114,17 +112,232 @@ char dStr4[DISP_LISTPARAM_LEN];
 char *DispFloatToStr(float data, u8 dot);
 
 const uint8_t measure_item [] = {
-		INTERVAL_RISE_CMD,
-		INTERVAL_LOW_CMD,
-		YEAR,
-		MONTH,
-		DAY,
-		HOURS,
-		MINATES,
+		CMD_INTERVAL,
+		CURRENT_TIME_H_M,
 		SECONDS,
+		DAY,
+		MONTH,
+		YEAR,
 		SETT_TIME,
-		MENU_ITEM_NUM
+		SETT_TEST_MODE,
+		SETT_START_TEST,
+		SETT_STOP_TEST
 };
+
+static const uint16_t time_setting_item[] = {
+		SETT_M_MINUTES,
+		SETT_M_HOURS,
+		SETT_M_DAY,
+		SETT_M_MONTH,
+		SETT_M_YEAR
+};
+
+static const uint16_t start_test_setting_item[] = {
+		SETT_M_START_TEST_HOURS,
+		SETT_M_START_TEST_MINUTES
+};
+
+static const uint16_t stop_test_setting_item[] = {
+		SETT_M_STOP_TEST_HOURS,
+		SETT_M_STOP_TEST_MINUTES
+};
+
+#define MEASURE_ITEM_COUNT      ((uint8_t)(sizeof(measure_item) / sizeof(measure_item[0])))
+#define TIME_SETTING_ITEM_COUNT ((uint8_t)(sizeof(time_setting_item) / sizeof(time_setting_item[0])))
+#define TEST_TIME_ITEM_COUNT    ((uint8_t)(sizeof(start_test_setting_item) / sizeof(start_test_setting_item[0])))
+
+static uint16_t MainMenuSettingIndex(MENU_ITEM item)
+{
+	switch (item) {
+	case CMD_INTERVAL:
+		return SETT_M_CMD_INTERVAL;
+	case CURRENT_TIME_H_M:
+		return SETT_M_CURRENT_HOURS;
+	case SECONDS:
+		return SETT_M_CURRENT_SECONDS;
+	case DAY:
+		return SETT_M_CURRENT_DAY;
+	case MONTH:
+		return SETT_M_CURRENT_MONTH;
+	case YEAR:
+		return SETT_M_CURRENT_YEAR;
+	case SETT_TIME:
+		return SETT_M_TIME;
+	case SETT_TEST_MODE:
+		return SETT_M_TEST_MODE;
+	case SETT_START_TEST:
+		return SETT_M_START_TEST;
+	case SETT_STOP_TEST:
+		return SETT_M_STOP_TEST;
+	default:
+		return SETT_BUFF_LEN;
+	}
+}
+
+static rtc_time_field_t MainMenuTimeField(MENU_ITEM item)
+{
+	switch (item) {
+	case SECONDS:
+		return RTC_TIME_FIELD_SECONDS;
+	case DAY:
+		return RTC_TIME_FIELD_DAY;
+	case MONTH:
+		return RTC_TIME_FIELD_MONTH;
+	case YEAR:
+		return RTC_TIME_FIELD_YEAR;
+	default:
+		return RTC_TIME_FIELD_INVALID;
+	}
+}
+
+static rtc_time_field_t TimeSettingField(uint16_t item)
+{
+	switch (item) {
+	case SETT_M_MINUTES:
+		return RTC_TIME_FIELD_MINUTES;
+	case SETT_M_HOURS:
+		return RTC_TIME_FIELD_HOURS;
+	case SETT_M_DAY:
+		return RTC_TIME_FIELD_DAY;
+	case SETT_M_MONTH:
+		return RTC_TIME_FIELD_MONTH;
+	case SETT_M_YEAR:
+		return RTC_TIME_FIELD_YEAR;
+	default:
+		return RTC_TIME_FIELD_INVALID;
+	}
+}
+
+static bool IsIntervalSetting(uint16_t index)
+{
+	return index == SETT_M_CMD_INTERVAL;
+}
+
+static void IntervalSettingBeginEdit(uint16_t index)
+{
+	if (IsIntervalSetting(index)) {
+		Menu.paramRealIndx = index;
+		SettCopyToDummy(index);
+		Menu.valueEdit = 1U;
+	}
+}
+
+static void IntervalSettingCommitEdit(void)
+{
+	if (IsIntervalSetting(Menu.paramRealIndx)) {
+		uint16_t previous_value = SettGetData(Menu.paramRealIndx);
+
+		SettSetData(Menu.paramRealIndx, SettGetData(SETT_DUMMY));
+		if (SettGetData(Menu.paramRealIndx) != previous_value) {
+			settings.flash_write_flag = 1;
+		}
+	}
+
+	Menu.valueEdit = 0U;
+	Menu.paramRealIndx = SETT_DUMMY;
+}
+
+static uint16_t IntervalSettingDisplayValue(uint16_t index)
+{
+	if (Menu.valueEdit && Menu.paramRealIndx == index) {
+		return SettGetData(SETT_DUMMY);
+	}
+
+	return SettGetData(index);
+}
+
+static uint16_t TestTimeSettingIndex(MENUPAGE page, uint8_t item_pos)
+{
+	if (item_pos >= TEST_TIME_ITEM_COUNT) {
+		return SETT_BUFF_LEN;
+	}
+
+	return page == MENU_PAGE_START_TEST ?
+			start_test_setting_item[item_pos] : stop_test_setting_item[item_pos];
+}
+
+static bool IsTestTimeSetting(uint16_t index)
+{
+	return index == SETT_M_START_TEST_HOURS ||
+			index == SETT_M_START_TEST_MINUTES ||
+			index == SETT_M_STOP_TEST_HOURS ||
+			index == SETT_M_STOP_TEST_MINUTES;
+}
+
+static bool TestTimeSettingValueIsValid(uint16_t index, uint16_t value)
+{
+	uint16_t start_hours = settings.test_start_hours;
+	uint16_t start_minutes = settings.test_start_minutes;
+	uint16_t stop_hours = settings.test_stop_hours;
+	uint16_t stop_minutes = settings.test_stop_minutes;
+
+	switch (index) {
+	case SETT_M_START_TEST_HOURS:
+		start_hours = value;
+		break;
+	case SETT_M_START_TEST_MINUTES:
+		start_minutes = value;
+		break;
+	case SETT_M_STOP_TEST_HOURS:
+		stop_hours = value;
+		break;
+	case SETT_M_STOP_TEST_MINUTES:
+		stop_minutes = value;
+		break;
+	default:
+		return false;
+	}
+
+	return RTC_IsTimeRangeValid(start_hours, start_minutes, stop_hours, stop_minutes);
+}
+
+static void TestTimeSettingBeginEdit(uint16_t index)
+{
+	if (IsTestTimeSetting(index)) {
+		Menu.paramRealIndx = index;
+		SettCopyToDummy(index);
+		Menu.valueEdit = 1U;
+	}
+}
+
+static void TestTimeSettingCommitEdit(void)
+{
+	if (IsTestTimeSetting(Menu.paramRealIndx) &&
+			TestTimeSettingValueIsValid(Menu.paramRealIndx, SettGetData(SETT_DUMMY))) {
+		uint16_t previous_value = SettGetData(Menu.paramRealIndx);
+
+		SettSetData(Menu.paramRealIndx, SettGetData(SETT_DUMMY));
+		if (SettGetData(Menu.paramRealIndx) != previous_value) {
+			settings.flash_write_flag = 1;
+		}
+	}
+
+	Menu.valueEdit = 0U;
+	Menu.paramRealIndx = SETT_DUMMY;
+}
+
+static void TestTimeSettingChange(bool increase)
+{
+	if (!IsTestTimeSetting(Menu.paramRealIndx)) {
+		return;
+	}
+
+	uint16_t previous_value = SettGetData(SETT_DUMMY);
+	SettRegChange(SETT_DUMMY, increase ? SETT_REG_UP : SETT_REG_DN);
+
+	if (!TestTimeSettingValueIsValid(Menu.paramRealIndx, SettGetData(SETT_DUMMY))) {
+		Menu.paramDummy = previous_value;
+	}
+}
+
+static uint16_t TestTimeSettingDisplayValue(uint16_t index)
+{
+	if (Menu.valueEdit && Menu.paramRealIndx == index) {
+		return SettGetData(SETT_DUMMY);
+	}
+
+	return SettGetData(index);
+}
 
 struct
 {
@@ -375,6 +588,7 @@ void MenuSysMsgFill(uint8_t type, char* str0, char* str1, char* str2, char* str3
 void DispPushBtn(void)
 {
 	u16 indx;
+	u8 item_pos;
 
 	if (BtnAny()) {
 		Menu.toutMainPage = 0;
@@ -386,31 +600,19 @@ void DispPushBtn(void)
 		case MENU_SM_SETT_WIND:
 			if (Menu.valueEdit) {
 				if (BtnSelect()) {
-					Menu.valueEdit = 0;
-					switch (Menu.paramRealIndx) {
+					uint16_t previous_value = SettGetData(Menu.paramRealIndx);
 
-					case SETT_M_SYNCHRO_MODE:
-						 if (Menu.paramDummy != SettGetData(Menu.paramRealIndx)){
-							 SettSetData(Menu.paramRealIndx, Menu.paramDummy);
-							 settings.flash_write_flag = 1;
-						 }
-						break;
-					case SETT_M_DATA_TRANSFER_MODE:
-						if (Menu.paramDummy != SettGetData(Menu.paramRealIndx)){
-							SettSetData(Menu.paramRealIndx, Menu.paramDummy);
-							settings.flash_write_flag = 1;
-							settings.sett_change_flag = 1;
-							HX711ChangeTransferMode();
-						}
-						break;
-					default:
-						SettSetData(Menu.paramRealIndx, Menu.paramDummy);
-						MenuDelSysMsg();
-						break;
+					Menu.valueEdit = 0;
+					SettSetData(Menu.paramRealIndx, Menu.paramDummy);
+					if (SettGetData(Menu.paramRealIndx) != previous_value) {
+						settings.flash_write_flag = 1;
 					}
+					Menu.paramRealIndx = SETT_DUMMY;
+					MenuDelSysMsg();
 
 				} else if (BtnBack()) {
 					Menu.valueEdit = 0;
+					Menu.paramRealIndx = SETT_DUMMY;
 					MenuDelSysMsg();
 				} else if (BtnDown()) {
 					SettRegChange(SETT_DUMMY, SETT_REG_UP);
@@ -436,82 +638,126 @@ void DispPushBtn(void)
 
 		switch(Menu.pageIndx){
 		case MENU_PAGE_HELLO:
-			if(Menu.startTmr == 0 && (ready_to_read || offsett_time_cnt == 0)) {
+			if(Menu.startTmr == 0) {
 				MenuGoToPage(MENU_PAGE_MEASURE);
 			} else {
-				//while run weight sensors offset definition process
 				MenuGoToPage(MENU_PAGE_HELLO);
 				Menu.sysMsg		= MENU_SM_NO;
 			}
 			break;
 //--
 		case MENU_PAGE_MEASURE:
-			indx = SETT_M_KG_S1 + Menu.linePos + Menu.lineSel;   // param index
-			Menu.lineNum = SETT_INTERFACE_INFO + 1;
+			Menu.lineNum = MEASURE_ITEM_COUNT;
+			item_pos = Menu.linePos + Menu.lineSel;
+			if (item_pos >= MEASURE_ITEM_COUNT) {
+				break;
+			}
+			indx = MainMenuSettingIndex(measure_item[item_pos]);
 
 			if (!Menu.valueEdit) {
 				if(BtnSelect()) {
-					if (indx == SETT_M_CONFIG_PARAM) {
-						MenuGoToPage(MENU_PAGE_CONFIG);
-					}
-					if (indx == SETT_M_INTERFACE_INFO) {
-						MenuGoToPage(MENU_PAGE_INT_INFO);
+					switch (measure_item[item_pos]) {
+					case CMD_INTERVAL:
+						IntervalSettingBeginEdit(indx);
+						break;
+					case SETT_TIME:
+						RTC_BeginTimeEdit();
+						MenuGoToPage(MENU_PAGE_UNIT);
+						break;
+					case SETT_TEST_MODE:
+						Menu.paramRealIndx = SETT_M_TEST_MODE;
+						SettCopyToDummy(SETT_M_TEST_MODE);
+						Menu.valueEdit = 1U;
+						MenuMakeSysMsg(MENU_SM_SETT_WIND, 0U);
+						break;
+					case SETT_START_TEST:
+						MenuGoToPage(MENU_PAGE_START_TEST);
+						break;
+					case SETT_STOP_TEST:
+						MenuGoToPage(MENU_PAGE_STOP_TEST);
+						break;
+					default:
+						break;
 					}
 				}
 			} else {
 				if (BtnBack()) {
-
+					IntervalSettingCommitEdit();
 				} else if (BtnDown()) {
-					SettRegChange(indx, SETT_REG_UP);
+					SettRegChange(SETT_DUMMY, SETT_REG_UP);
 				} else if (BtnUp()) {
-					SettRegChange(indx, SETT_REG_DN);
+					SettRegChange(SETT_DUMMY, SETT_REG_DN);
+				}
+			}
+
+			break;
+//--
+		case MENU_PAGE_UNIT:
+			Menu.lineNum = TIME_SETTING_ITEM_COUNT;
+			item_pos = Menu.linePos + Menu.lineSel;
+			if (item_pos >= TIME_SETTING_ITEM_COUNT) {
+				Menu.linePos = 0U;
+				Menu.lineSel = 0U;
+				item_pos = 0U;
+			}
+			indx = time_setting_item[item_pos];
+
+			if (!Menu.valueEdit) {
+				if (BtnSelect()) {
+					Menu.valueEdit = 1;
+				} else if (BtnBack()) {
+					RTC_ApplyEditedTime();
+					MenuGoBack();
+				}
+			} else {
+				if (BtnBack()) {
+					Menu.valueEdit = 0;
+				} else if (BtnDown()) {
+					RTC_ChangeEditedTimeField(TimeSettingField(indx), true);
+				} else if (BtnUp()) {
+					RTC_ChangeEditedTimeField(TimeSettingField(indx), false);
+				}
+			}
+
+			break;
+//--
+		case MENU_PAGE_START_TEST:
+		case MENU_PAGE_STOP_TEST:
+			Menu.lineNum = TEST_TIME_ITEM_COUNT;
+			item_pos = Menu.linePos + Menu.lineSel;
+			if (item_pos >= TEST_TIME_ITEM_COUNT) {
+				Menu.linePos = 0U;
+				Menu.lineSel = 0U;
+				item_pos = 0U;
+			}
+			indx = TestTimeSettingIndex(Menu.pageIndx, item_pos);
+
+			if (!Menu.valueEdit) {
+				if (BtnSelect()) {
+					TestTimeSettingBeginEdit(indx);
+				} else if (BtnBack()) {
+					MenuGoBack();
+				}
+			} else {
+				if (BtnBack()) {
+					TestTimeSettingCommitEdit();
+				} else if (BtnDown()) {
+					TestTimeSettingChange(true);
+				} else if (BtnUp()) {
+					TestTimeSettingChange(false);
 				}
 			}
 
 			break;
 //--
 		case MENU_PAGE_CONFIG:
-			indx = SETT_M_SYNCHRO_MODE + Menu.linePos + Menu.lineSel;   // param index
-			Menu.lineNum = SETT_M_DATA_NORMALIZE_TIME - SETT_M_SYNCHRO_MODE + 1;
-
-			if (!Menu.valueEdit) {
-				if(BtnSelect()) {
-					if (indx >= SETT_M_SYNCHRO_MODE && indx <= SETT_M_DATA_NORMALIZE_TIME) {
-						if (SettParam[indx].pText != SETT_TEXT_NO)		// setting contains string value
-						{
-							MenuMakeSysMsg(MENU_SM_SETT_WIND, 0);		// open additional window for setting
-							Menu.paramRealIndx = indx;
-						}
-						Menu.valueEdit = 1;
-						SettCopyToDummy(indx);
-					}
-				} else if (BtnBack()) {
-					MenuGoToPage(MENU_PAGE_MEASURE);
-				}
-			} else {
-				if (BtnBack()) {
-					Menu.valueEdit = 0;
-					if (SettGetData(indx) != SettGetData(SETT_DUMMY))
-					{
-						settings.flash_write_flag = 1;
-					}
-				} else if (BtnDown()) {
-					SettRegChange(indx, SETT_REG_UP);
-				} else if (BtnUp()) {
-					SettRegChange(indx, SETT_REG_DN);
-				}
-			}
-
-			break;
-
-		case MENU_PAGE_INT_INFO:
-			indx = SETT_M_1_RX_PKT_CNT + Menu.linePos + Menu.lineSel;   // param index
-			Menu.lineNum = SETT_M_2_ERRORS_PKT_CNT - SETT_M_1_RX_PKT_CNT + 1;
+			Menu.lineNum = 0U;
 			if (BtnBack()) {
-				MenuGoToPage(MENU_PAGE_MEASURE);
+				MenuGoBack();
 			}
 
 			break;
+
 		default:
 			Menu.pageIndx = MENU_PAGE_EMPTY;
 			Menu.sysMsg   = MENU_SM_MSG_NEW_ERR;
@@ -713,7 +959,7 @@ void DispTask(void)
 
 					// DISP_PACKTYPE_STR_0		- name of list (upper bar)
 					case DISP_PACK_STR_0:
-						SetListName("MEASUREMENTS");
+						SetListName("MAIN");
 						break;
 					case DISP_PACK_STR_1:
 					case DISP_PACK_STR_2:
@@ -721,49 +967,48 @@ void DispTask(void)
 					case DISP_PACK_STR_4:
 					case DISP_PACK_STR_5:
 
-						indx = (GetListPos(DISP_PACK_STR_1) + SETT_DUMMY + 1);
-
-						if(GetListPos(DISP_PACK_STR_1) >= SETT_CONFIG_PARAM && GetListPos(DISP_PACK_STR_1) <= SETT_INTERFACE_INFO) {
-							SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
-						}
-
 						if(GetListPos(DISP_PACK_STR_1) < Menu.lineNum)
 						{
+							indx = MainMenuSettingIndex(measure_item[GetListPos(DISP_PACK_STR_1)]);
 							SetListParam(SettGetParamName(indx));
-							// weight sensors measurements
 							switch(measure_item[GetListPos(DISP_PACK_STR_1)])
 							{
-							case MEASURE_KG_S1:
-								if(weight[0].offsett_status == true) {
-									SetListValue(FloatToString(weight[0].kg, 0));
-								} else {
-									SetListParam("S1 ZERO SETTING");
-								}
+							case CMD_INTERVAL:
+								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
+								SetListValue(DispIntToStr(IntervalSettingDisplayValue(SETT_M_CMD_INTERVAL), 0, " s"));
 								break;
-							case MEASURE_KG_MAX_S1:
-								SetListValue(FloatToString(weight[0].max_kg, 0));
+							case CURRENT_TIME_H_M:
+								RTC_FormatTimeOfDay(str_item_value, sizeof(str_item_value),
+										RTC_GetCurrentTimeField(RTC_TIME_FIELD_HOURS),
+										RTC_GetCurrentTimeField(RTC_TIME_FIELD_MINUTES));
+								SetListValue(str_item_value);
 								break;
-							case MEASURE_KG_S2:
-								if(weight[1].offsett_status == true) {
-									SetListValue(FloatToString(weight[1].kg, 0));
-								} else {
-									SetListParam("S2 ZERO SETTING");
-								}
+							case SECONDS:
+							case DAY:
+							case MONTH:
+							case YEAR:
+								SetListValue(DispIntToStr(RTC_GetCurrentTimeField(MainMenuTimeField(measure_item[GetListPos(DISP_PACK_STR_1)])), 0, 0));
 								break;
-							case MEASURE_KG_MAX_S2:
-								SetListValue(FloatToString(weight[1].max_kg, 0));
+							case SETT_TIME:
+								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
 								break;
-							case MEASURE_RAW_S1:
-								SetListValue(DispIntToStr(weight[0].raw_data, 0, 0));
+							case SETT_TEST_MODE:
+								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
+								SetListValue(DispSettParamToStr(DISP_SETT_VAL, SETT_M_TEST_MODE));
 								break;
-							case MEASURE_OFFSETT_S1:
-								SetListValue(DispIntToStr(weight[0].raw_zero_offset, 0, 0));
+							case SETT_START_TEST:
+								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
+								RTC_FormatTimeOfDay(str_item_value, sizeof(str_item_value),
+										settings.test_start_hours, settings.test_start_minutes);
+								SetListValue(str_item_value);
 								break;
-							case MEASURE_RAW_S2:
-								SetListValue(DispIntToStr(weight[1].raw_data, 0, 0));
+							case SETT_STOP_TEST:
+								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
+								RTC_FormatTimeOfDay(str_item_value, sizeof(str_item_value),
+										settings.test_stop_hours, settings.test_stop_minutes);
+								SetListValue(str_item_value);
 								break;
-							case MEASURE_OFFSETT_S2:
-								SetListValue(DispIntToStr(weight[1].raw_zero_offset, 0, 0));
+							default:
 								break;
 							}
 
@@ -778,7 +1023,71 @@ void DispTask(void)
 						break;						
 				}					
 				break;
-			
+
+			case MENU_PAGE_UNIT:
+				switch(DispUart.txPackPnt)
+				{
+				case DISP_PACK_DATA_0:
+					DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
+					SetListSelLine(Menu.lineSel);
+					SetListValueEdit(Menu.valueEdit);
+					SetListValueExist(DISP_LIST_VALUE_YES);
+					SetListSymbMode(DISP_LIST_SYMB_NO);
+					SetListLineShow();
+					break;
+
+				case DISP_PACK_STR_0:
+					SetListName("SET TIME");
+					break;
+
+				case DISP_PACK_STR_1:
+				case DISP_PACK_STR_2:
+				case DISP_PACK_STR_3:
+				case DISP_PACK_STR_4:
+				case DISP_PACK_STR_5:
+					if (GetListPos(DISP_PACK_STR_1) < TIME_SETTING_ITEM_COUNT) {
+						indx = time_setting_item[GetListPos(DISP_PACK_STR_1)];
+						SetListParam(SettGetParamName(indx));
+						SetListValue(DispIntToStr(RTC_GetEditedTimeField(TimeSettingField(indx)), 0, 0));
+					}
+					break;
+
+				default:
+					break;
+				}
+				break;
+
+			case MENU_PAGE_START_TEST:
+			case MENU_PAGE_STOP_TEST:
+				switch(DispUart.txPackPnt)
+				{
+				case DISP_PACK_DATA_0:
+					DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
+					SetListSelLine(Menu.lineSel);
+					SetListValueEdit(Menu.valueEdit);
+					SetListValueExist(DISP_LIST_VALUE_YES);
+					SetListSymbMode(DISP_LIST_SYMB_NO);
+					SetListLineShow();
+					break;
+
+				case DISP_PACK_STR_0:
+					SetListName(Menu.pageIndx == MENU_PAGE_START_TEST ? "SET START TEST" : "SET STOP TEST");
+					break;
+
+				case DISP_PACK_STR_1:
+				case DISP_PACK_STR_2:
+					indx = TestTimeSettingIndex(Menu.pageIndx, GetListPos(DISP_PACK_STR_1));
+					if (IsTestTimeSetting(indx)) {
+						SetListParam(SettGetParamName(indx));
+						SetListValue(DispIntToStr(TestTimeSettingDisplayValue(indx), 0, 0));
+					}
+					break;
+
+				default:
+					break;
+				}
+				break;
+
 			case MENU_PAGE_CONFIG:
 				switch(DispUart.txPackPnt)
 				{
@@ -800,55 +1109,12 @@ void DispTask(void)
 				case DISP_PACK_STR_3:
 				case DISP_PACK_STR_4:
 				case DISP_PACK_STR_5:
-
-					indx = SETT_M_SYNCHRO_MODE + GetListPos(DISP_PACK_STR_1);
-					// Settings parameters
-					if (indx >= SETT_M_SYNCHRO_MODE && indx <= SETT_M_DATA_NORMALIZE_TIME) {
-						//SetListSymbL(DISP_LISTMSG_SYMB_CHECK_FILL);
-						SetListParam(SettGetParamName(indx));
-						SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
-					}
 					break;
 
 				default:
 					break;
 				}
 				break;
-
-			case MENU_PAGE_INT_INFO:
-				switch(DispUart.txPackPnt)
-				{
-				// DISP_PACKTYPE_DATA_0 - common data
-				case DISP_PACK_DATA_0:
-					DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
-					SetListSelLine(Menu.lineSel);
-					SetListValueEdit(Menu.valueEdit);
-					SetListValueExist(DISP_LIST_VALUE_YES);
-					SetListSymbMode(DISP_LIST_SYMB_NO);
-					SetListLineShow();
-					break;
-
-				case DISP_PACK_STR_0:
-					SetListName("INTERFACE INFO");
-					break;
-				case DISP_PACK_STR_1:
-				case DISP_PACK_STR_2:
-				case DISP_PACK_STR_3:
-				case DISP_PACK_STR_4:
-				case DISP_PACK_STR_5:
-
-					indx = SETT_M_1_RX_PKT_CNT + GetListPos(DISP_PACK_STR_1);
-					if (indx >= SETT_M_1_RX_PKT_CNT && indx <= SETT_M_2_ERRORS_PKT_CNT) {
-						SetListParam(SettGetParamName(indx));
-						SetListValue(DispSettParamToStr(DISP_SETT_VAL, indx));
-					}
-					break;
-
-				default:
-					break;
-				}
-				break;
-
 
 				default:
 					break;
@@ -920,6 +1186,7 @@ void DispTmr1sec(void)
 	  Menu.linePos = 0;
 	  Menu.lineSel = 0;
 	  Menu.valueEdit = 0;
+	  Menu.paramRealIndx = SETT_DUMMY;
   }
 
 }

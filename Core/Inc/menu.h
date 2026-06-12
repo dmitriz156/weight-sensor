@@ -8,10 +8,12 @@ typedef enum
 {
 	MENU_PAGE_HELLO = 0,			// greating page
 	MENU_PAGE_MAIN,         		// main working page
-	MENU_PAGE_MEASURE = 2,			// weight sensors measurements list //MENU_PAGE_SETT_PARAM earlier
+	MENU_PAGE_MEASURE = 2,			// main parameters list
 	MENU_PAGE_EMPTY,				// empty page. For system message
+	MENU_PAGE_UNIT,					// unit settings page
+	MENU_PAGE_START_TEST,			// test start time
+	MENU_PAGE_STOP_TEST,			// test stop time
 	MENU_PAGE_CONFIG,         		// config parameter page
-	MENU_PAGE_INT_INFO,				// interface info page
 	MENU_PAGE_NUM,
 	MENU_PAGE_FREE = 0xFF,
 } MENUPAGE;
@@ -176,7 +178,6 @@ typedef struct
 	//GATEMODE gateMode;  // ... of gate
 	u16 paramDummy;
 	u16 paramRealIndx;
-	u16 paramPrev;
 	// string shifting (for info message)
 	u16 strPos;
 	u16 strLen;
@@ -224,48 +225,9 @@ typedef struct
 // --- MENU_PAGE_PROC
 	typedef enum
 	{
-		MENU_ALARM_ST_ALONE = 0,
-		MENU_ALARM_SYNCHRO = 1,
-		MENU_MOD_NUM
-	} MENUSEL;
-	
-
-	// typedef enum
-	// {
-	// 	MEASURE_KG_S1 = 0,
-	// 	MEASURE_KG_MAX_S1,
-	// 	MEASURE_KG_S2,
-	// 	MEASURE_KG_MAX_S2,
-	// 	MEASURE_RAW_S1,
-	// 	MEASURE_RAW_S2,
-	// 	MEASURE_OFFSETT_S1,
-	// 	MEASURE_OFFSETT_S2,
-	// 	SETT_CONFIG_PARAM,
-	// 	SETT_INTERFACE_INFO,
-	// 	SETT_SYNCHRO_MODE,
-	// 	SETT_DATA_TRANSFER_MODE,
-	// 	SETT_THRESHOLD_WEIGHT,
-	// 	SETT_AVRG_NUMBER,
-	// 	SETT_BUZZER_TIME,
-	// 	SETT_DATA_NORMALIZE_TIME,
-	// 	SETT_1_RX_PKT_CNT,
-	// 	SETT_1_TX_PKT_CNT,
-	// 	SETT_1_ERRORS_PKT_CNT,
-	// 	SETT_1_READ_CNT,
-	// 	SETT_2_RX_PKT_CNT,
-	// 	SETT_2_TX_PKT_CNT,
-	// 	SETT_2_ERRORS_PKT_CNT,
-	// 	SETT_2_READ_CNT,
-	// 	MEASURE_ITEM_NUM
-	// } MESUREITEM;
-
-	typedef enum
-	{
-		INTERVAL_RISE_CMD = 0,
-		INTERVAL_LOW_CMD,
+		CMD_INTERVAL = 0,
+		CURRENT_TIME_H_M,
 		SECONDS,
-		MINATES,
-		HOURS,
 		DAY,
 		MONTH,
 		YEAR,
@@ -273,28 +235,18 @@ typedef struct
 		SETT_TEST_MODE,
 		SETT_START_TEST,
 		SETT_STOP_TEST,
-		SETT_INTERFACE_INFO,
-
 		SETT_MINUTES,
 		SETT_HOURS,
 		SETT_DAY,
 		SETT_MONTH,
 		SETT_YEAR,
 
-		SETT_MINUTES,
-		SETT_HOURS,
+		SETT_START_TEST_MINUTES,
+		SETT_START_TEST_HOURS,
 
-		SETT_MINUTES,
-		SETT_HOURS,
+		SETT_STOP_TEST_MINUTES,
+		SETT_STOP_TEST_HOURS,
 
-		SETT_1_RX_PKT_CNT,
-		SETT_1_TX_PKT_CNT,
-		SETT_1_ERRORS_PKT_CNT,
-		SETT_1_READ_CNT,
-		SETT_2_RX_PKT_CNT,
-		SETT_2_TX_PKT_CNT,
-		SETT_2_ERRORS_PKT_CNT,
-		SETT_2_READ_CNT,
 		MENU_ITEM_NUM
 	} MENU_ITEM;
 	

@@ -5,7 +5,7 @@
 
 
 // total number of supported road blocker (sum all models together)
-#define RB_MDL_TTL_NUM  SETT_UNIT_NUM
+#define RB_MDL_TTL_NUM  1U
 
 #define SettIsProt(a)                   SettParam[a].flag.bProt
 #define SettIsAvail(a)                  SettParam[a].flag.bAvail
@@ -438,6 +438,19 @@ typedef enum {
 #define RS485_ADDR_MAX            255
 #define RS485_ADDR_STEP           1
 
+// RS485 command intervals, seconds
+#define RS485_INTERVAL_DEF_S      10U
+#define RS485_INTERVAL_MIN_S      6U
+#define RS485_INTERVAL_MAX_S      3600U
+#define RS485_INTERVAL_STEP_S     2U
+
+#define TEST_MODE_OFF             0U
+#define TEST_MODE_ON              1U
+#define TEST_START_HOURS_DEF      0U
+#define TEST_START_MINUTES_DEF    0U
+#define TEST_STOP_HOURS_DEF       23U
+#define TEST_STOP_MINUTES_DEF     59U
+
 // controller Bluetooth address
 #define BT_ADDR_MIN               1
 #define BT_ADDR_MAX               9
@@ -470,73 +483,56 @@ typedef enum {
 typedef enum {
   // --- UNIT-0. Hidden. Internal  parameters of settings.
   SETT_CRC_INDX = 0,  // P - CRC of buffer after SETT_CRC_INDX
-  SETT_WEIGHT_INDX,   // P - weight of settings block
   SETT_SETT_NUM_INDX,
   SETT_UNIT_NUM_INDX,
   SETT_UNIT0_INDX,  	//Run time
   SETT_UNIT1_INDX,  	//Set absolute time
   SETT_UNIT2_INDX,  	//Set test start time
   SETT_UNIT3_INDX,    //Set test stop time
-  SETT_UNIT4_INDX,    //Interface info
-//  SETT_UNIT5_INDX,  
-//  SETT_UNIT6_INDX,
-//  SETT_UNIT7_INDX,
-
   SETT_DUMMY,       // P - dummy parameters. Contains temporary value for Menu parameters changing
                     // config words -> they CAN be changed via special Display menu
                     // --- UNIT-1. SETTINGS and MEASUREMENTS ITEMS
   
   
-  SETT_M_INTERVAL_RISE,//"S1 WEIGHT kg",
-	SETT_M_INTERVAL_LOW,//"S1 MAX kg",
-	SETT_M_second,
-	SETT_M_MINUTE,
-	SETT_M_HOURS,
-	SETT_M_DAY,
-	SETT_M_MOUNTS,
-	SETT_M_YEAR,
+  SETT_M_CMD_INTERVAL,
+	SETT_M_CURRENT_SECONDS,
+	SETT_M_CURRENT_MINUTES,
+	SETT_M_CURRENT_HOURS,
+	SETT_M_CURRENT_DAY,
+	SETT_M_CURRENT_MONTH,
+	SETT_M_CURRENT_YEAR,
 	SETT_M_TIME,
 	SETT_M_TEST_MODE,
 	SETT_M_START_TEST,
 	SETT_M_STOP_TEST,
-	SETT_M_INTERFACE_INFO,
-
   SETT_M_MINUTES,
 	SETT_M_HOURS,
 	SETT_M_DAY,
 	SETT_M_MONTH,
 	SETT_M_YEAR,
 
-	SETT_M_MINUTES,
-	SETT_M_HOURS,
+	SETT_M_START_TEST_MINUTES,
+	SETT_M_START_TEST_HOURS,
 
-	SETT_M_MINUTES,
-	SETT_M_HOURS,
-
-  SETT_M_1_RX_PKT_CNT,
-  SETT_M_1_TX_PKT_CNT,
-  SETT_M_1_MISSED_PKT_CNT,
-  SETT_M_1_ERRORS_PKT_CNT,
-  SETT_M_2_RX_PKT_CNT,
-  SETT_M_2_TX_PKT_CNT,
-  SETT_M_2_MISSED_PKT_CNT,
-  SETT_M_2_ERRORS_PKT_CNT,
+	SETT_M_STOP_TEST_MINUTES,
+	SETT_M_STOP_TEST_HOURS,
 
   // last element of enumeration. Used as total number of enumeration.
   // !!! Don't use it directly in code
   SETT_BUFF_LEN  // !!! must be <= SETT_BUFF_LEN_MAX
 } SETREGINDX;
 
-#define SETT_MAIN_BUFF_LEN  (SETT_M_DATA_NORMALIZE_TIME + 1)
+#define SETT_MAIN_BUFF_LEN  (SETT_M_STOP_TEST_HOURS + 1U)
 
 #define SETT_UNIT_MAX 9
 
 // real start index of unit set in SettInit()->Preset[cnt].settDef[...]
 typedef enum {
   SETT_UNIT_INT = 0,
-  SETT_UNIT_MEASUREMENTS,
-  SETT_UNIT_CONFIG_PARAM,
-  SETT_UNIT_INTERFACE_INFO,
+  SETT_UNIT_MAIN,
+  SETT_UNIT_TIME,
+  SETT_UNIT_START_TEST,
+  SETT_UNIT_STOP_TEST,
   SETT_UNIT_NUM,
 } SETTUNIT;
 #if SETT_UNIT_NUM > SETT_UNIT_MAX
@@ -554,47 +550,10 @@ typedef enum {
 // List of texted value
 // Strings are placed in MenuTextBlock[]
 typedef enum {
-
-  SETT_TEXT_KG_S1 = SETT_DUMMY + 1,
-  SETT_TEXT_KG_MAX_S1,
-  SETT_TEXT_KG_S2,
-  SETT_TEXT_KG_MAX_S2,
-  SETT_TEXT_RAW_S1,
-  SETT_TEXT_OFFSETT_S1,
-  SETT_TEXT_RAW_S2,
-  SETT_TEXT_OFFSETT_S2,
-
-  SETT_TEXT_CONFIG_PARAM,
-  SETT_TEXT_INTERFACE_INFO,
-
-  SETT_TEXT_SYNCHRO_MODE,
-  SETT_TEXT_DATA_TRANSFER_MODE,
-  SETT_TEXT_THRESHOLD_WEIGHT,
-  SETT_TEXT_AVRG_NUMBER,
-  SETT_TEXT_BUZZER_TIME,
-  SETT_TEXT_DATA_NORMALIZE_TIME,
-
-  SETT_TEXT_1_RX_PKT_CNT,
-  SETT_TEXT_1_TX_PKT_CNT,
-  SETT_TEST_1_MISSED_PKT_CNT,
-  SETT_TEXT_1_ERRORS_PKT_CNT,
-  SETT_TEXT_2_RX_PKT_CNT,
-  SETT_TEXT_2_TX_PKT_CNT,
-  SETT_TEXT_2_MISSED_PKT_CNT,
-  SETT_TEXT_2_ERRORS_PKT_CNT,
-
-  SETT_TEXT_OFF,
+  SETT_TEXT_OFF = SETT_BUFF_LEN,
   SETT_TEXT_ON,
-
-  SETT_TEXT_SPECIAL_PROT,
-  SETT_TEXT_UART_PROT,
-
   SETT_TEXT_NUM
 } SETTTEXTVAL;
-#define SETT_WEIGHT_ERR  0x0000
-#define SETT_WEIGHT_DEF  0x0001
-#define SETT_WEIGHT_FREE 0xFFFF
-#define SETT_WEIGHT_MAX  512  // 1024 - for DEBUG
 #define SETT_CRC_DEF     0x0000
 
 // bitmap of settings Flash errors / warnings
@@ -656,7 +615,6 @@ typedef struct
 {
   u16 errMap;   // map of errors
   u16 wrnMap;   // map of warnings
-  u16 weight;   // weight of setting block
   u16 block;    // index of last used block
   u16 crcRd;    // CRC of settings buffer. Read/Write to flash
   u16 crcCalc;  // CRC of settings buffer. Calculated

@@ -42,7 +42,6 @@
 /* Private variables ---------------------------------------------------------*/
 RTC_HandleTypeDef hrtc;
 
-TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart2;
@@ -51,11 +50,8 @@ DMA_HandleTypeDef hdma_usart3_tx;
 
 /* USER CODE BEGIN PV */
 
-bool ready_to_read = 0;
-uint16_t offsett_time_cnt = 0;
 extern MenuTypeDef Menu;
 extern DispUartTypeDef DispUart;
-weight_t weight [NUM_OF_WEIGHT_SENSOR];
 save_flash_t settings = {0};
 
 uint16_t UART_TX_counter = 0;
@@ -63,12 +59,9 @@ button_t btn = {0};
 
 dummy_t dummy = {0};
 
-uint16_t one_sec_counter = 0;
+volatile uint32_t one_sec_counter = 0U;
 
-char SwNewName[32];
-char SwCurrName[32];
-
-uint16_t start_reading_data_cnt = (uint16_t)(ONE_SEC * 2); // 2 sec
+status_t status_RB = STOPED;
 
 /* USER CODE END PV */
 
@@ -78,18 +71,15 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_TIM3_Init(void);
-static void MX_TIM2_Init(void);
 static void MX_RTC_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 
-void OutHandler(void);
 void ButtonsReset(void);
 void ButtonsResetLong(void);
 void ButtonsHandler(void);
 void ButtonsCnt(void);
-void MeasureCnt(void);
 
 /* USER CODE END PFP */
 
@@ -130,21 +120,15 @@ int main(void)
   MX_DMA_Init();
   MX_USART3_UART_Init();
   MX_TIM3_Init();
-  MX_TIM2_Init();
   MX_RTC_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_Delay(100);
   HAL_TIM_Base_Start_IT(&htim3);
-  HAL_TIM_Base_Start_IT(&htim2);
   HAL_UART_Transmit_DMA(&huart3, DispUart.txBuff, DISP_TX_BUFF);
   DispInit();
   SettInit();
-  offsett_time_cnt = MAX_OFFSETT_TIME_MS;
-  MovingAvg_InitAll();
-  HX711Init_UART();
-  ptr_hx711_change_transfer_mode = HX711ChangeTransferMode;
   RS485_Init(&huart2);
 
   /* USER CODE END 2 */
@@ -156,21 +140,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if (settings.flash_write_flag) {
-		  MovingAvg_InitAll();
-	  }
-	  if (settings.sett_change_flag) {
-		  settings.sett_change_flag = 0;
-		  HX711Init_UART();
-	  }
 	  FlashConfigWrite();
-	  //OffsettStatusCheck();
-	  //HX711GetDataTask();
 	  ButtonsHandler();
 	  DispPushBtn();
+	  RTC_Process();
+	  RoadBlockerTestProcesing();
 	  DispTask();
-	  OutHandler();
-	  RS485_Process();
   }
   /* USER CODE END 3 */
 }
@@ -252,51 +227,6 @@ static void MX_RTC_Init(void)
   /* USER CODE BEGIN RTC_Init 2 */
 
   /* USER CODE END RTC_Init 2 */
-
-}
-
-/**
-  * @brief TIM2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM2_Init(void)
-{
-
-  /* USER CODE BEGIN TIM2_Init 0 */
-
-  /* USER CODE END TIM2_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM2_Init 1 */
-
-  /* USER CODE END TIM2_Init 1 */
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 71-1;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 21-1;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM2_Init 2 */
-
-  /* USER CODE END TIM2_Init 2 */
 
 }
 
@@ -504,54 +434,9 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void OutHandler(void)
+void RoadBlockerTestProcesing(void)
 {
-	// BUZZER activate condition start
-	if(STATUS_IN() == 0){
-		alarm_status = 1;
-	} else {
-		alarm_status = 0;
-	}
-	//----
-	if (settings.mod_config == ALARM_ST_ALONE)
-	{
-		//split alarm mode
-		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-			if (weight[i].signal_state) {
-				buzzer_flag = 1;
-				break;
-			} else {
-				buzzer_flag = 0;
-			}
-		}
-		if(buzzer_flag) {
-			if (alarm_status == 0) { //to prevent cyclic OUT reseting
-				alarm_out_cnt = (uint16_t)ONE_SEC;
-			}
-		} else {
-			if (alarm_status) { buzzer_flag = 1; }
-		}
-	}
-	else if (settings.mod_config == ALARM_SYNCHRO)
-	{
-		//synchronized alarm mode
-		for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-			if(weight[i].signal_state) {
-				alarm_out_cnt = (uint16_t)ONE_SEC;
-				break;
-			}
-		}
-		if(alarm_status && alarm_out_cnt == ((uint16_t)ONE_SEC)) {
-			buzzer_flag = 1;
-		} else {
-			buzzer_flag = 0;
-		}
-	}
-	if(buzzer_flag) {
-		buzzer_counter = (uint16_t)(ONE_SEC * settings.buzzer_time); //BUZZER_ACTIVE_TIME_S
-	}
-	//----
-	// BUZZER activate condition end
+	RS485_RemoteControlProcesing();
 }
 
 void ButtonsReset(void)
@@ -688,53 +573,6 @@ void ButtonsCnt(void)
 	// buttons cnt end
 }
 
-void MeasureCnt(void)
-{
-	if (offsett_time_cnt) {
-		offsett_time_cnt --; //maximum zero setting time decrement
-	}
-
-	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++)
-	{
-		if(weight[i].read_cnt < HX711_DATA_MAX_WAIT_TIME_MS){ weight[i].read_cnt ++; }
-
-		if(weight[i].kg > settings.alarm_threshold_kg)
-		{
-			if(weight[i].active_state_cnt) {
-				weight[i].active_state_cnt --;
-			} else {
-				weight[i].signal_state = 1; ////Threshold reached!
-			}
-		} else {
-			weight[i].active_state_cnt = 0;
-			weight[i].signal_state = 0; ////Threshold not reached!
-		}
-	}
-
-	if(calibr_cnt){ calibr_cnt --; }
-
-	if(alarm_out_cnt) {
-		alarm_out_cnt--;
-		STATUS_OUT(1);
-	} else {
-		STATUS_OUT(0);
-	}
-
-	if(buzzer_counter) {
-		buzzer_counter--;
-		BUZZER_OUT(1);
-		LED_BLUE(1);
-	} else {
-		BUZZER_OUT(0);
-		LED_BLUE(0);
-	}
-
-	for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-		if(weight[i].before_read_cnt > 1) { weight[i].before_read_cnt--; }
-	}
-	if(start_reading_data_cnt) { start_reading_data_cnt--; }
-}
-
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
 	RS485_UART_TxCpltCallback(huart);
@@ -747,25 +585,22 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	RS485_UART_RxEventCallback(huart, Size);
+}
+
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
 	RS485_UART_ErrorCallback(huart);
-}
-
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
-{
-	if(huart->Instance == USART1)
-	{
-		//weight[0].uart_data.rx_flag = 1;
-		//__HAL_UART_CLEAR_FLAG(&huart1, USART_ICR_ORECF_Msk);
-		//UART_status = HAL_UARTEx_ReceiveToIdle_IT(&huart1, weight[0].uart_data.buf, HX711_UART_BUF_SIZE);
-	}
 }
 
 //   1 ms timer
 //---------------------------------------------------------
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+	static uint16_t one_second_divider = 0U;
+
 	if (htim->Instance == TIM3) {
 
 		if (UART_TX_counter){
@@ -776,29 +611,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 		DispTmr1ms();
 
-		if(one_sec_counter < 1000) {one_sec_counter++;}
-		else
-		{
-			one_sec_counter = 0;
-			if(max_weight_rst_counter){
-				if(max_weight_rst_counter == 1) {
-					for(uint8_t i = 0; i < NUM_OF_WEIGHT_SENSOR; i++) {
-						weight[i].max_kg = 0;
-					}
-				}
-				max_weight_rst_counter--;
-			}
-
+		one_sec_counter++;
+		one_second_divider++;
+		if (one_second_divider >= 1000U) {
+			one_second_divider = 0U;
 			DispTmr1sec();
 			HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
 		}
 		ButtonsCnt();
-		MeasureCnt();
-	}
-	if (htim->Instance == TIM2) {
-		if (settings.data_transfer_mode == 1){
-			SoftUartHandler();
-		}
 	}
 }
 

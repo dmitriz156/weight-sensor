@@ -1,5 +1,7 @@
 #include "main.h"
 //#include "menu.h"
+#include <string.h>
+
 #include "menu_text.h"
 
 //#define LOG_SETT LOG_S_SETT
@@ -8,7 +10,7 @@ SettCtrlDef SettCtrl;          // control registers of settings
 SettUnitDef SettUnit;          // unit parameters definition read from settings
 u16 *pSettReg[SETT_BUFF_LEN];  // pointer to settings value
 // u16 SettBuffTemp[SETT_BUFF_LEN_MAX];		// for temporary calculation
-PresetDef Preset[1]; ///PresetDef Preset[GATE_MDL_TTL_NUM];     // preset buffer def
+PresetDef Preset[RB_MDL_TTL_NUM];
 SettParamDef SettParam[SETT_BUFF_LEN];  // min,max,def,step of parameters
 u16 SettingsValue = 0; //settings parameter value
 extern MenuTypeDef Menu;
@@ -32,9 +34,7 @@ void SettSetParam(u16 indx, u16 *pnt, u16 min, u16 max, u16 step, u16 indxText, 
       pSettReg[indx] = pnt;
     }
 
-    if (indxText != NULL) {
-      SettParam[indx].pText = indxText;
-    }
+    SettParam[indx].pText = indxText;
 
     SettParam[indx].min = min;
     SettParam[indx].max = max;
@@ -113,8 +113,10 @@ void FlashConfigWrite(void)
 		Flash_ErasePage(ADDR_FLASH);
 
 		index = 0;
-		while (index < SETT_M_1_RX_PKT_CNT) {//SETT_BUFF_LEN
-			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, (ADDR_FLASH + (index * 2)), *pSettReg[index]);
+		while (index < SETT_MAIN_BUFF_LEN) {
+			if (pSettReg[index] != NULL) {
+				HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, (ADDR_FLASH + (index * 2)), *pSettReg[index]);
+			}
 			index++;
 		}
 
@@ -134,33 +136,8 @@ void FlashConfigWrite(void)
  */
 void SettInit(void)
 {
-  u16 cnt    = 0;
-  u16 cntMax = 0;
-  //u16 weight;
-  u16 weightMax;
-  u16 weightLimit;
-  u16 weightTemp;
-  u16 cntBlock;
-  u16 cntBlockMax;
+  u16 cnt = 0;
   u32 addr;
-  u16 mdlPos;
-  u16 errMap;
-  u16 cntBlockExit;
-  u16 lenEst;
-  u16 cntOld;
-  u16 cntUnit;
-
-  union {
-    u8 byte;
-
-    struct
-    {
-      u8 bRestoreOldSett: 1;
-      u8 bRestoreNewSett: 1;
-    } bit;
-  } flag;
-
-  flag.byte = 0;
 
   cnt = 0;
   while (cnt < SETT_BUFF_LEN) {
@@ -178,76 +155,61 @@ void SettInit(void)
   cnt = 0;
   while (cnt < RB_MDL_TTL_NUM) {///<GATE_MDL_TTL_NUM
     // common presets for all types of turnstiles
-    Preset[cnt].settDef[SETT_CRC_INDX]    = SETT_CRC_DEF;
-    Preset[cnt].settDef[SETT_WEIGHT_INDX] = SETT_WEIGHT_DEF;
+    Preset[cnt].settDef[SETT_CRC_INDX] = SETT_CRC_DEF;
 
     // structure of settings. It is copied for each preset
     Preset[cnt].settDef[SETT_SETT_NUM_INDX] = SETT_BUFF_LEN;
     Preset[cnt].settDef[SETT_UNIT_NUM_INDX] = SETT_UNIT_NUM;
-    Preset[cnt].settDef[SETT_UNIT0_INDX]    = SETT_M_KG_S1;
-    Preset[cnt].settDef[SETT_UNIT1_INDX]    = SETT_M_SYNCHRO_MODE;
-    Preset[cnt].settDef[SETT_UNIT2_INDX]    = SETT_M_1_RX_PKT_CNT;
+    Preset[cnt].settDef[SETT_UNIT0_INDX]    = SETT_M_CMD_INTERVAL;
+    Preset[cnt].settDef[SETT_UNIT1_INDX]    = SETT_M_MINUTES;
+    Preset[cnt].settDef[SETT_UNIT2_INDX]    = SETT_M_START_TEST_MINUTES;
+    Preset[cnt].settDef[SETT_UNIT3_INDX]    = SETT_M_STOP_TEST_MINUTES;
 
     cnt++;
   }
 
 
   SettSetParam(SETT_CRC_INDX, 				&SettCtrl.crcRd, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_WEIGHT_INDX, 			&SettCtrl.weight, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_SETT_NUM_INDX, 			&SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_UNIT_NUM_INDX, 			&SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_UNIT0_INDX, 			&SettUnit.unitIndx[0], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_UNIT1_INDX, 			&SettUnit.unitIndx[1], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_UNIT2_INDX, 			&SettUnit.unitIndx[2], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT3_INDX, 			&SettUnit.unitIndx[3], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
   SettSetParam(SETT_DUMMY, 					&Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_KG_S1,				&dummy.param_1, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO); 		//&weight[0].kg
-  SettSetParam(SETT_M_KG_MAX_S1,			&dummy.param_2, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO); 		//&weight[0].max_kg
-  SettSetParam(SETT_M_KG_S2,				&dummy.param_3, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO); 		//&weight[1].kg
-  SettSetParam(SETT_M_KG_MAX_S2,			&dummy.param_4, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO); 		//&weight[1].max_kg
-  SettSetParam(SETT_M_RAW_S1,				&dummy.param_5, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO); 		//&weight[0].raw_data
-  SettSetParam(SETT_M_OFFSETT_S1,	    	&dummy.param_6, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO); 		//&weight[0].raw_zero_offset
-  SettSetParam(SETT_M_RAW_S2,				&dummy.param_7, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO); 		//&weight[1].raw_data
-  SettSetParam(SETT_M_OFFSETT_S2,	    	&dummy.param_8, 0, 1, 1, SETT_TEXT_NO, SETT_CONV_NO); 		//&weight[1].raw_zero_offset
+  SettSetParam(SETT_M_CMD_INTERVAL,			&settings.rs485_command_interval_s, RS485_INTERVAL_MIN_S, RS485_INTERVAL_MAX_S, RS485_INTERVAL_STEP_S, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_CONFIG_PARAM,			&dummy.param_9, 0, 1, 1, SETT_TEXT_CONFIG_PARAM, SETT_CONV_NO);
-  SettSetParam(SETT_M_INTERFACE_INFO,	    &dummy.param_10, 0, 1, 1, SETT_TEXT_INTERFACE_INFO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_SECONDS,		NULL, 0, 59, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_MINUTES,		NULL, 0, 59, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_HOURS,		NULL, 0, 23, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_DAY,			NULL, 1, 31, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_MONTH,		NULL, 1, 12, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_YEAR,			NULL, 2000, 2099, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_SYNCHRO_MODE,			&settings.mod_config, ALARM_ST_ALONE, ALARM_SYNCHRO, 1, SETT_TEXT_OFF, SETT_CONV_NO);
-  SettSetParam(SETT_M_DATA_TRANSFER_MODE,	&settings.data_transfer_mode, 0, 1, 1, SETT_TEXT_SPECIAL_PROT, SETT_CONV_NO);
-  SettSetParam(SETT_M_THRESHOLD_WEIGHT, 	&settings.alarm_threshold_kg, 1, 50, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_AVRG_NUMBER, 			&settings.avrg_measure_num, 1, 10, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_BUZZER_TIME,			&settings.buzzer_time, 1, 20, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_DATA_NORMALIZE_TIME,  &settings.data_normalize_time, 100, 1000, 10, SETT_TEXT_NO, SETT_CONV_NO); //time to detect and confirm threshold reaching
+  SettSetParam(SETT_M_TIME,					NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_TEST_MODE,			&settings.test_mode, TEST_MODE_OFF, TEST_MODE_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_START_TEST,			NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST,			NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_MINUTES,				NULL, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_HOURS,				NULL, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_DAY,					NULL, 1, 31, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_MONTH,				NULL, 1, 12, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_YEAR,					NULL, 2000, 2099, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
-  //data transfer info (not saving)
-  SettSetParam(SETT_M_1_RX_PKT_CNT,			&weight[0].uart_data.rx_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_1_TX_PKT_CNT,			&weight[0].uart_data.tx_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_1_MISSED_PKT_CNT,		&weight[0].missed_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_1_ERRORS_PKT_CNT,		&weight[0].uart_data.error_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-
-  SettSetParam(SETT_M_2_RX_PKT_CNT,			&weight[1].uart_data.rx_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_2_TX_PKT_CNT,			&weight[1].uart_data.tx_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_2_MISSED_PKT_CNT,		&weight[1].missed_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_2_ERRORS_PKT_CNT,		&weight[1].uart_data.error_pkt_cnt, 0, SETT_LIM_MAX, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_START_TEST_MINUTES,	&settings.test_start_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_START_TEST_HOURS,		&settings.test_start_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST_MINUTES,	&settings.test_stop_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST_HOURS,		&settings.test_stop_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
   //set default settings value
-  SettSetDef(SETT_M_SYNCHRO_MODE, ALARM_ST_ALONE);
-  SettSetDef(SETT_M_DATA_TRANSFER_MODE, 1);
-  SettSetDef(SETT_M_THRESHOLD_WEIGHT, 10);
-  SettSetDef(SETT_M_AVRG_NUMBER, 5);
-  SettSetDef(SETT_M_BUZZER_TIME, 4);
-  SettSetDef(SETT_M_DATA_NORMALIZE_TIME, 400);
-
-  SettSetDef(SETT_M_1_RX_PKT_CNT, 		0);
-  SettSetDef(SETT_M_1_TX_PKT_CNT, 		0);
-  SettSetDef(SETT_M_1_MISSED_PKT_CNT, 	0);
-  SettSetDef(SETT_M_1_ERRORS_PKT_CNT, 	0);
-  SettSetDef(SETT_M_2_RX_PKT_CNT, 		0);
-  SettSetDef(SETT_M_2_TX_PKT_CNT, 		0);
-  SettSetDef(SETT_M_2_MISSED_PKT_CNT, 	0);
-  SettSetDef(SETT_M_2_ERRORS_PKT_CNT, 	0);
+  SettSetDef(SETT_M_CMD_INTERVAL, RS485_INTERVAL_DEF_S);
+  SettSetDef(SETT_M_TEST_MODE, TEST_MODE_OFF);
+  SettSetDef(SETT_M_START_TEST_MINUTES, TEST_START_MINUTES_DEF);
+  SettSetDef(SETT_M_START_TEST_HOURS, TEST_START_HOURS_DEF);
+  SettSetDef(SETT_M_STOP_TEST_MINUTES, TEST_STOP_MINUTES_DEF);
+  SettSetDef(SETT_M_STOP_TEST_HOURS, TEST_STOP_HOURS_DEF);
 
 
 #define SettMemGetData(a) (*(__IO u16 *)(addr + a * 2))
@@ -255,9 +217,9 @@ void SettInit(void)
 
   addr = ADDR_FLASH;
   cnt = 0;
-  while (cnt < SETT_MAIN_BUFF_LEN) { //SETT_BUFF_LEN
-	  (*pSettReg[cnt]) = SettMemGetData(cnt);
+  while (cnt < SETT_MAIN_BUFF_LEN) {
 	  if (pSettReg[cnt] != NULL) {
+		  (*pSettReg[cnt]) = SettMemGetData(cnt);
 		  if ((*pSettReg[cnt]) > SettParam[cnt].max){
 			  (*pSettReg[cnt]) = SettParam[cnt].def;
 			  settings.flash_write_flag = 1;
@@ -268,6 +230,13 @@ void SettInit(void)
 		  }
 	  }
 	  cnt ++;
+  }
+
+  if (!RTC_IsTimeRangeValid(settings.test_start_hours, settings.test_start_minutes,
+                            settings.test_stop_hours, settings.test_stop_minutes)) {
+	  settings.test_stop_hours = settings.test_start_hours;
+	  settings.test_stop_minutes = settings.test_start_minutes;
+	  settings.flash_write_flag = 1;
   }
 
 }
@@ -348,15 +317,12 @@ void SettRegChange(u16 indx, u8 dir)
  */
 void SettBitChange(u16 indx, u8 bit)
 {
-  if ((indx < SETT_BUFF_LEN) && (pSettReg[indx] != NULL) && (SettParam[indx].conv == SETT_CONV_BITMAP)) {
+  if ((indx < SETT_BUFF_LEN) && (bit < 16U) && (pSettReg[indx] != NULL) && (SettParam[indx].conv == SETT_CONV_BITMAP)) {
+    u16 mask = (u16)(1U << bit);
+
     SettParam[indx].flag.bChng = 1;
     SettCtrl.flag.bWasChng     = 1;
-
-    if (!ReadU16Bit(pSettReg[indx], bit)) {
-      SetU16Bit(pSettReg[indx], bit);
-    } else {
-      ClearU16Bit(pSettReg[indx], bit);
-    }
+    *pSettReg[indx] ^= mask;
 
     SettRfrParam();
   }

@@ -9,43 +9,27 @@
 const char *MenuTextBlock[] = {
     // --- Strings for SETREGINDX.START.
     // --- UNIT-0. Internal  parameters of settings.
-    "Sys0",  //"SettDataCrc",
-    "Sys1",  //"SettWeight",
+    "Sys0",
     "SettNum",
     "UnitNum",
     "Unit0",
     "Unit1",
     "Unit2",
     "Unit3",
-    "Unit4",
-    "Unit5",
-//    "Unit6",
-//    "Unit7",
-    //"Unit8",
-
     "SysTemp",
-    // config words -> they CAN be changed via special Display menu
-//    "Cnfg0",
-//    "Cnfg1",
-//    "Cnfg2",
-//    "Cnfg3",
-//    "SettGroup",
-
 
     // --- UNIT-1. run time
-	"INTERVAL RISE",//"S1 WEIGHT kg",
-	"INTERVAL LOW",//"S1 MAX kg",
+	"CMD INTERVAL",
 	"second",
-	"minaute",
-	"hour",
+	"minute",
+	"CURRENT TIME H:M",
 	"day",
 	"month",
 	"year",
 	"SET TIME",
-	"TEST MODE"
+	"TEST MODE",
 	"SET START TEST",
 	"SET STOP TEST",
-	"INTERFACE INFO",
 
 	// --- UNIT-2. SET TIME
 	"SET minutes",
@@ -59,16 +43,6 @@ const char *MenuTextBlock[] = {
 	// --- UNIT-4. SET_STOP_TEST
 	"SET minutes",
 	"SET hours",
-
-	// --- UNIT-5. Interface info
-	"Ch1 RX pkt cnt",
-	"Ch1 TX pkt cnt",
-	"Ch1 missed pkt cnt",
-	"Ch1 ERR pkt cnt",
-	"Ch2 RX pkt cnt",
-	"Ch2 TX pkt cnt",
-	"Ch2 missed pkt cnt",
-	"Ch2 ERR pkt cnt",
 
 	"OFF",
 	"ON"

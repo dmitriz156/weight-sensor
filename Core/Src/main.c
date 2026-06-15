@@ -56,7 +56,7 @@ save_flash_t settings = {0};
 
 uint16_t UART_TX_counter = 0;
 button_t btn = {0};
-RB_button_t rb_btn = {0};
+volatile RB_button_t rb_btn = {0};
 
 dummy_t dummy = {0};
 
@@ -468,6 +468,7 @@ void IOHandler (void)
 	} else {
 		rb_btn.TEST_ON_flag = false;
 	}
+
 	if(RB_BTN_UP_READ() == 0 && rb_btn.UP_flag == 0) {
 		rb_btn.UP_flag = 1;
 		rb_btn.UP_debounce_cnt = DEBOUNCE_TIME_MS;

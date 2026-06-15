@@ -163,7 +163,7 @@ extern save_flash_t settings;
 extern uint8_t rx_flag;
 
 extern button_t btn;
-extern RB_button_t rb_btn;
+extern volatile RB_button_t rb_btn;
 extern dummy_t dummy;
 extern status_t status_RB;
 extern volatile uint32_t one_sec_counter;

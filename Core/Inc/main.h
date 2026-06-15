@@ -97,6 +97,27 @@ typedef struct
   cur_btn_state_t cur_state;
 
 } button_t;
+
+typedef struct
+{
+  bool UP_flag;
+  bool STOP_flag;
+  bool DOWN_flag;
+
+  bool TEST_ON_flag;
+
+  btn_state_t UP_state;
+  btn_state_t STOP_state;
+  btn_state_t DOWN_state;
+
+  uint8_t UP_debounce_cnt;
+  uint8_t STOP_debounce_cnt;
+  uint8_t DOWN_debounce_cnt;
+
+  cur_btn_state_t cur_state;
+
+} RB_button_t;
+
 #define DEBOUNCE_TIME_MS		60
 
 typedef enum {
@@ -119,6 +140,12 @@ typedef enum {
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 #define FW_NAME_VERSION						"RB TEST RC"
+
+#define RB_BTN_UP_READ()                    HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5)
+#define RB_BTN_STOP_READ()                  HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4)
+#define RB_BTN_DOWN_READ()                  HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_3)
+#define RB_BTN_TEST_ON_READ()               HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15)
+
 #define ADDR_FLASH   						(0x08010000)//page 64
 
 #define ONE_SEC								1000.0f
@@ -136,6 +163,7 @@ extern save_flash_t settings;
 extern uint8_t rx_flag;
 
 extern button_t btn;
+extern RB_button_t rb_btn;
 extern dummy_t dummy;
 extern status_t status_RB;
 extern volatile uint32_t one_sec_counter;

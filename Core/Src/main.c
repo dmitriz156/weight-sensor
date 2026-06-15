@@ -56,6 +56,7 @@ save_flash_t settings = {0};
 
 uint16_t UART_TX_counter = 0;
 button_t btn = {0};
+RB_button_t rb_btn = {0};
 
 dummy_t dummy = {0};
 
@@ -80,6 +81,8 @@ void ButtonsReset(void);
 void ButtonsResetLong(void);
 void ButtonsHandler(void);
 void ButtonsCnt(void);
+void IOHandler(void);
+void IOCnt(void);
 
 /* USER CODE END PFP */
 
@@ -142,6 +145,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  FlashConfigWrite();
 	  ButtonsHandler();
+	  IOHandler();
 	  DispPushBtn();
 	  RTC_Process();
 	  RoadBlockerTestProcesing();
@@ -224,6 +228,7 @@ static void MX_RTC_Init(void)
   /* USER CODE BEGIN Check_RTC_BKUP */
 
   /* USER CODE END Check_RTC_BKUP */
+
   /* USER CODE BEGIN RTC_Init 2 */
 
   /* USER CODE END RTC_Init 2 */
@@ -380,7 +385,7 @@ static void MX_GPIO_Init(void)
                           |GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : RE_DE_2_Pin STATUS_LED_Pin PA8 */
   GPIO_InitStruct.Pin = RE_DE_2_Pin|STATUS_LED_Pin|GPIO_PIN_8;
@@ -414,14 +419,16 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB3 PB5 PB7 PB9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_5|GPIO_PIN_7|GPIO_PIN_9;
+  /*Configure GPIO pins : PB3 PB4 PB5 PB7
+                           PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_7
+                          |GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB4 PB6 PB8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_6|GPIO_PIN_8;
+  /*Configure GPIO pins : PB6 PB8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -452,6 +459,70 @@ void ButtonsResetLong(void)
 	if (btn.UP_state    == BTN_LONG_PRESS) btn.UP_state    = BTN_IDLE;
 	if (btn.RIGHT_state == BTN_LONG_PRESS) btn.RIGHT_state = BTN_IDLE;
 	if (btn.LEFT_state  == BTN_LONG_PRESS) btn.LEFT_state  = BTN_IDLE;
+}
+
+void IOHandler (void)
+{
+	if(RB_BTN_TEST_ON_READ() == 0) {
+		rb_btn.TEST_ON_flag = true;
+	} else {
+		rb_btn.TEST_ON_flag = false;
+	}
+	if(RB_BTN_UP_READ() == 0 && rb_btn.UP_flag == 0) {
+		rb_btn.UP_flag = 1;
+		rb_btn.UP_debounce_cnt = DEBOUNCE_TIME_MS;
+	}
+	if(rb_btn.UP_debounce_cnt == 1) {
+		if(RB_BTN_UP_READ() == 0) {
+			rs485_command_btn = RS485_COMMAND_UP_1;
+		}
+		rb_btn.UP_debounce_cnt = 0;
+	}
+	if(RB_BTN_UP_READ() != 0 && rb_btn.UP_debounce_cnt == 0) {
+		rb_btn.UP_flag = 0;
+	}
+
+	if(RB_BTN_STOP_READ() == 0 && rb_btn.STOP_flag == 0) {
+		rb_btn.STOP_flag = 1;
+		rb_btn.STOP_debounce_cnt = DEBOUNCE_TIME_MS;
+	}
+	if(rb_btn.STOP_debounce_cnt == 1) {
+		if(RB_BTN_STOP_READ() == 0) {
+			rs485_command_btn = RS485_COMMAND_STOP_1;
+		}
+		rb_btn.STOP_debounce_cnt = 0;
+	}
+	if(RB_BTN_STOP_READ() != 0 && rb_btn.STOP_debounce_cnt == 0) {
+		rb_btn.STOP_flag = 0;
+	}
+
+	if(RB_BTN_DOWN_READ() == 0 && rb_btn.DOWN_flag == 0) {
+		rb_btn.DOWN_flag = 1;
+		rb_btn.DOWN_debounce_cnt = DEBOUNCE_TIME_MS;
+	}
+	if(rb_btn.DOWN_debounce_cnt == 1) {
+		if(RB_BTN_DOWN_READ() == 0) {
+			rs485_command_btn = RS485_COMMAND_DOWN_1;
+		}
+		rb_btn.DOWN_debounce_cnt = 0;
+	}
+	if(RB_BTN_DOWN_READ() != 0 && rb_btn.DOWN_debounce_cnt == 0) {
+		rb_btn.DOWN_flag = 0;
+	}
+}
+
+void IOCnt(void)
+{
+	//buttons cnt begin
+	if(rb_btn.UP_debounce_cnt > 1) {
+		rb_btn.UP_debounce_cnt --;
+	}
+	if(rb_btn.STOP_debounce_cnt > 1) {
+		rb_btn.STOP_debounce_cnt --;
+	}
+	if(rb_btn.DOWN_debounce_cnt > 1) {
+		rb_btn.DOWN_debounce_cnt --;
+	}
 }
 
 void ButtonsHandler(void)
@@ -611,6 +682,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 		DispTmr1ms();
 
+		RS485_Timer1msCallback();
+
 		one_sec_counter++;
 		one_second_divider++;
 		if (one_second_divider >= 1000U) {
@@ -619,6 +692,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
 		}
 		ButtonsCnt();
+		IOCnt();
 	}
 }
 

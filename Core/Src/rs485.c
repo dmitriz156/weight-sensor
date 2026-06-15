@@ -1,14 +1,13 @@
 #include "rs485.h"
 
-#include <stdbool.h>
+#include <string.h>
 
 #include "main.h"
 
-#define RS485_FRAME_ADDRESS              2U
-#define RS485_FRAME_TAG                  2U
-#define RS485_COMMAND_CONFIRM_TIMEOUT_MS 25U
-#define RS485_TEST_COMMAND_UP             RS485_COMMAND_UP_1
-#define RS485_TEST_COMMAND_DOWN           RS485_COMMAND_DOWN_1
+#define RS485_FRAME_ADDRESS       2U
+#define RS485_FRAME_TAG           2U
+#define RS485_TEST_COMMAND_UP     RS485_COMMAND_UP_1
+#define RS485_TEST_COMMAND_DOWN   RS485_COMMAND_DOWN_1
 
 typedef enum {
     RS485_TEST_IDLE = 0,
@@ -19,25 +18,27 @@ typedef enum {
 } rs485_test_state_t;
 
 static UART_HandleTypeDef *rs485_uart = NULL;
-static volatile bool rs485_tx_busy = false;
-static volatile bool rs485_status_valid = false;
-static volatile uint8_t rs485_status = 0U;
-static volatile uint32_t rs485_status_sequence = 0U;
-static volatile uint8_t rs485_command = RS485_COMMAND_NONE;
-static volatile bool rs485_response_pending = false;
-static volatile bool rs485_tx_was_completed = false;
-static volatile uint32_t rs485_last_tx_counter = 0U;
-static volatile uint8_t rs485_last_sent_command = RS485_COMMAND_NONE;
-static volatile uint32_t rs485_command_tx_sequence = 0U;
 
-static uint16_t tx_buffer[RS485_TX_FRAME_SIZE];
-static uint16_t rx_buffer[RS485_RX_FRAME_SIZE];
-static uint16_t rx_idle_buffer[RS485_RX_IDLE_BUFFER_SIZE];
-static uint8_t rx_index = 0U;
-uint8_t tx_complate_flag = 0;
-uint8_t rx_complate_flag = 0;
-volatile uint16_t interval_counter = 0;
-volatile uint16_t min_send_interval = 0;
+static volatile bool rs485_tx_busy = false;
+static volatile bool rs485_rx_complete = false;
+static volatile bool rs485_response_pending = false;
+static volatile uint16_t rs485_received_size = 0U;
+static volatile uint32_t interval_counter = 5000U;
+static volatile uint16_t min_send_interval = RS485_TX_MIN_INTERVAL_MS;
+
+static uint8_t rs485_command = RS485_COMMAND_NONE;
+volatile uint8_t rs485_command_btn = RS485_COMMAND_NONE;
+static uint8_t rs485_status = 0U;
+static uint32_t rs485_status_sequence = 0U;
+static bool rs485_status_valid = false;
+
+static uint8_t tx_frame[RS485_TX_FRAME_SIZE];
+static uint16_t tx_frame_9bit[RS485_TX_FRAME_SIZE];
+
+static uint16_t rx_idle_buffer_9bit[RS485_RX_IDLE_BUFFER_SIZE];
+static uint8_t rx_idle_buffer[RS485_RX_IDLE_BUFFER_SIZE];
+static uint8_t rx_processing_buffer[RS485_RX_IDLE_BUFFER_SIZE];
+static bool rx_processing_address_bit = false;
 
 static void RS485_EnableReceiver(void)
 {
@@ -49,12 +50,13 @@ static void RS485_EnableTransmitter(void)
     HAL_GPIO_WritePin(RE_DE_2_GPIO_Port, RE_DE_2_Pin, GPIO_PIN_SET);
 }
 
-static uint8_t RS485_CalculateCrc(const uint16_t *frame)
+static uint8_t RS485_CalculateCrc(const uint8_t *frame)
 {
     uint8_t crc = 0U;
 
     for (uint8_t byte_index = 0U; byte_index < 3U; byte_index++) {
-        uint8_t data = (uint8_t)frame[byte_index];
+        uint8_t data = frame[byte_index];
+
         for (uint8_t bit_index = 0U; bit_index < 8U; bit_index++) {
             uint8_t mix = (uint8_t)((data ^ crc) & 0x01U);
             crc >>= 1U;
@@ -73,101 +75,49 @@ static void RS485_StartReceive(void)
     if ((rs485_uart != NULL) && (rs485_uart->RxState == HAL_UART_STATE_READY)) {
         (void)HAL_UARTEx_ReceiveToIdle_IT(
                 rs485_uart,
-                (uint8_t *)rx_idle_buffer,
+                (uint8_t *)rx_idle_buffer_9bit,
                 RS485_RX_IDLE_BUFFER_SIZE);
     }
 }
 
-static bool RS485_ProcessReceivedWord(uint16_t received_word)
+static bool RS485_ProcessReceivedFrame(void)
 {
-    if ((received_word & RS485_ADDRESS_BIT) != 0U) {
-        rx_index = 0U;
-        if ((uint8_t)received_word == RS485_FRAME_ADDRESS) {
-            rx_buffer[rx_index++] = received_word;
-        }
-        return false;
-    }
+    uint8_t frame[RS485_RX_FRAME_SIZE];
+    uint16_t size;
+    bool address_bit;
 
-    if (rx_index == 0U) {
-        return false;
-    }
-
-    rx_buffer[rx_index++] = received_word;
-    if (rx_index < RS485_RX_FRAME_SIZE) {
-        return false;
-    }
-
-    bool frame_valid =
-            ((uint8_t)rx_buffer[1] == RS485_FRAME_TAG) &&
-            (RS485_CalculateCrc(rx_buffer) == (uint8_t)rx_buffer[3]);
-
-    if (frame_valid) {
-        rs485_status = (uint8_t)rx_buffer[2];
-        rs485_status_sequence++;
-        rs485_status_valid = true;
-    }
-
-    rx_index = 0U;
-    return frame_valid;
-}
-
-static HAL_StatusTypeDef RS485_Transmit(const uint16_t *data, uint16_t size)
-{
-    if ((rs485_uart == NULL) || (data == NULL) || (size == 0U) || rs485_tx_busy) {
-        return HAL_BUSY;
-    }
-
-    uint32_t current_counter = one_sec_counter;
-    if (rs485_tx_was_completed &&
-        ((uint32_t)(current_counter - rs485_last_tx_counter) <
-         RS485_TX_MIN_INTERVAL_MS)) {
-        return HAL_BUSY;
-    }
-
-    rs485_tx_busy = true;
-    RS485_EnableTransmitter();
-
-    HAL_StatusTypeDef status = HAL_UART_Transmit_IT(rs485_uart, (const uint8_t *)data, size);
-    if (status != HAL_OK) {
-        rs485_tx_busy = false;
-        RS485_EnableReceiver();
-    }
-
-    return status;
-}
-
-static void RS485_TrySendPendingResponse(void)
-{
     uint32_t primask = __get_PRIMASK();
     __disable_irq();
 
-    if (rs485_response_pending) {
-        if (RS485_SendCommand(rs485_command) == HAL_OK) {
-            rs485_response_pending = false;
+    if (!rs485_rx_complete) {
+        if (primask == 0U) {
+            __enable_irq();
         }
+        return false;
     }
+
+    size = rs485_received_size;
+    address_bit = rx_processing_address_bit;
+    memcpy(frame, rx_processing_buffer, sizeof(frame));
+    rs485_rx_complete = false;
 
     if (primask == 0U) {
         __enable_irq();
     }
-}
 
-void RS485_Init(UART_HandleTypeDef *huart)
-{
-    rs485_uart = huart;
-    rs485_tx_busy = false;
-    rs485_status_valid = false;
-    rs485_status = 0U;
-    rs485_status_sequence = 0U;
-    rs485_command = RS485_COMMAND_NONE;
-    rs485_response_pending = false;
-    rs485_tx_was_completed = false;
-    rs485_last_tx_counter = 0U;
-    rs485_last_sent_command = RS485_COMMAND_NONE;
-    rs485_command_tx_sequence = 0U;
-    rx_index = 0U;
-    RS485_EnableReceiver();
-    RS485_StartReceive();
+    if ((size < RS485_RX_FRAME_SIZE) ||
+        !address_bit ||
+        (frame[0] != RS485_FRAME_ADDRESS) ||
+        (frame[1] != RS485_FRAME_TAG) ||
+        (RS485_CalculateCrc(frame) != frame[3])) {
+        return false;
+    }
+
+    rs485_status = frame[2];
+    rs485_status_sequence++;
+    rs485_status_valid = true;
+    rs485_response_pending = true;
+    return true;
 }
 
 HAL_StatusTypeDef RS485_SendCommand(uint8_t command)
@@ -176,18 +126,67 @@ HAL_StatusTypeDef RS485_SendCommand(uint8_t command)
         return HAL_BUSY;
     }
 
-    tx_buffer[0] = RS485_ADDRESS_BIT | RS485_FRAME_ADDRESS;
-    tx_buffer[1] = RS485_FRAME_TAG;
-    tx_buffer[2] = command;
-    tx_buffer[3] = RS485_CalculateCrc(tx_buffer);
+    tx_frame[0] = RS485_FRAME_ADDRESS;
+    tx_frame[1] = RS485_FRAME_TAG;
+    tx_frame[2] = command;
+    tx_frame[3] = RS485_CalculateCrc(tx_frame);
 
-    HAL_StatusTypeDef status = RS485_Transmit(tx_buffer, RS485_TX_FRAME_SIZE);
-    if (status == HAL_OK) {
-        rs485_last_sent_command = command;
-        rs485_command_tx_sequence++;
+    if (intfx_9bit_compose(tx_frame_9bit, tx_frame, RS485_TX_FRAME_SIZE, 0U) != INTFX_OK) {
+        return HAL_ERROR;
     }
 
+    rs485_tx_busy = true;
+    RS485_EnableTransmitter();
+
+    HAL_StatusTypeDef status = HAL_UART_Transmit_IT(rs485_uart, (const uint8_t *)tx_frame_9bit, RS485_TX_FRAME_SIZE);
+
+    if (status != HAL_OK) {
+        rs485_tx_busy = false;
+        RS485_EnableReceiver();
+    }
     return status;
+}
+
+static void RS485_TrySendNextCommand(void)
+{
+    uint8_t command;
+
+    if (rs485_tx_busy || (min_send_interval != 0 && rs485_command_btn == RS485_COMMAND_NONE)) {
+        return;
+    }
+
+    if (rs485_command_btn != RS485_COMMAND_NONE) {
+        command = rs485_command_btn;
+        rs485_command_btn = RS485_COMMAND_NONE;
+    } else {
+        if (!rs485_response_pending) {
+            return;
+        }
+        command = rs485_command;
+    }
+
+    if (RS485_SendCommand(command) == HAL_OK) {
+        rs485_response_pending = false;
+    }
+}
+
+void RS485_Init(UART_HandleTypeDef *huart)
+{
+    rs485_uart = huart;
+    rs485_tx_busy = false;
+    rs485_rx_complete = false;
+    rs485_response_pending = false;
+    rs485_received_size = 0U;
+    interval_counter = 2000U;
+    min_send_interval = RS485_TX_MIN_INTERVAL_MS;
+    rs485_command = RS485_COMMAND_NONE;
+    rs485_command_btn = RS485_COMMAND_NONE;
+    rs485_status = 0U;
+    rs485_status_sequence = 0U;
+    rs485_status_valid = false;
+
+    RS485_EnableReceiver();
+    RS485_StartReceive();
 }
 
 bool RS485_GetStatus(uint8_t *status, uint32_t *sequence)
@@ -210,19 +209,6 @@ bool RS485_GetStatus(uint8_t *status, uint32_t *sequence)
     return valid;
 }
 
-static void RS485_GetLastTransmission(uint8_t *command, uint32_t *sequence)
-{
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-
-    *command = rs485_last_sent_command;
-    *sequence = rs485_command_tx_sequence;
-
-    if (primask == 0U) {
-        __enable_irq();
-    }
-}
-
 void RS485_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     if ((rs485_uart == NULL) || (huart != rs485_uart)) {
@@ -231,8 +217,7 @@ void RS485_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
     RS485_EnableReceiver();
     rs485_tx_busy = false;
-    rs485_last_tx_counter = one_sec_counter;
-    rs485_tx_was_completed = true;
+    min_send_interval = RS485_TX_MIN_INTERVAL_MS;
 }
 
 void RS485_UART_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
@@ -241,23 +226,21 @@ void RS485_UART_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
         return;
     }
 
-    bool frame_received = false;
-
     if (size > RS485_RX_IDLE_BUFFER_SIZE) {
         size = RS485_RX_IDLE_BUFFER_SIZE;
     }
 
-    for (uint16_t index = 0U; index < size; index++) {
-        if (RS485_ProcessReceivedWord(rx_idle_buffer[index])) {
-            frame_received = true;
+    if (size >= RS485_RX_FRAME_SIZE) {
+        if (intfx_9bit_decompose(rx_idle_buffer, rx_idle_buffer_9bit, (uint8_t)size) == INTFX_OK) {
+            memcpy(rx_processing_buffer, rx_idle_buffer, size);
+            rx_processing_address_bit = (rx_idle_buffer_9bit[0] & RS485_ADDRESS_BIT) != 0U;
+            rs485_received_size = size;
+            rs485_rx_complete = true;
         }
     }
 
+    __HAL_UART_CLEAR_OREFLAG(huart);
     RS485_StartReceive();
-
-    if (frame_received) {
-        rs485_response_pending = true;
-    }
 }
 
 void RS485_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -268,20 +251,32 @@ void RS485_UART_ErrorCallback(UART_HandleTypeDef *huart)
 
     RS485_EnableReceiver();
     rs485_tx_busy = false;
-    rs485_last_tx_counter = one_sec_counter;
-    rs485_tx_was_completed = true;
-    rx_index = 0U;
+    rs485_rx_complete = false;
+    min_send_interval = RS485_TX_MIN_INTERVAL_MS;
+
+    (void)HAL_UART_AbortReceive(huart);
+    __HAL_UART_CLEAR_OREFLAG(huart);
     RS485_StartReceive();
 }
 
-void RS485_RemoteControlProcesing (void)
+void RS485_Timer1msCallback(void)
+{
+    if (interval_counter > 0) {
+        interval_counter--;
+    }
+
+    if (min_send_interval > 0) {
+        min_send_interval--;
+    }
+}
+
+void RS485_RemoteControlProcesing(void)
 {
     static rs485_test_state_t test_state = RS485_TEST_IDLE;
-    // static uint8_t status_before_command = 0U;
-    // static uint32_t last_status_sequence = 0U;
-    // static uint32_t state_started_counter = 0U;
-    // static uint32_t command_tx_sequence_reference = 0U;
-    // static bool command_was_sent = false;
+    static uint8_t status_before_command = 0U;
+
+    bool new_status_received = RS485_ProcessReceivedFrame();
+    uint8_t current_position = rs485_status & RS485_STATUS_POSITION_MASK;
 
     bool time_is_allowed = RTC_IsCurrentTimeInRange(
             settings.test_start_hours,
@@ -289,127 +284,70 @@ void RS485_RemoteControlProcesing (void)
             settings.test_stop_hours,
             settings.test_stop_minutes);
 
-    if ((settings.test_mode != TEST_MODE_ON) || !time_is_allowed) {
-        RS485_SetCommand(RS485_COMMAND_NONE);
+    if ((settings.test_mode != TEST_MODE_ON) || !time_is_allowed || rb_btn.TEST_ON_flag == false) {
+        rs485_command = RS485_COMMAND_NONE;
+        interval_counter = 1000U;
         test_state = RS485_TEST_IDLE;
-        RS485_TrySendPendingResponse();
+        RS485_TrySendNextCommand();
         return;
     }
 
-    uint8_t current_status = 0U;
-    uint32_t current_sequence = 0U;
-    if (!RS485_GetStatus(&current_status, &current_sequence)) {
-        RS485_SetCommand(RS485_COMMAND_NONE);
-        RS485_TrySendPendingResponse();
+    if (!rs485_status_valid) {
+        RS485_TrySendNextCommand();
         return;
     }
-
-    uint32_t current_counter = one_sec_counter;
-    uint8_t current_position = current_status & RS485_STATUS_POSITION_MASK;
-    uint8_t last_sent_command = RS485_COMMAND_NONE;
-    uint32_t command_tx_sequence = 0U;
-    RS485_GetLastTransmission(&last_sent_command, &command_tx_sequence);
 
     switch (test_state) {
     case RS485_TEST_IDLE:
+        status_before_command = current_position;
         rs485_command = RS485_TEST_COMMAND_UP;
         test_state = RS485_TEST_SEND_UP;
-        min_send_interval = RS485_TX_MIN_INTERVAL_MS;
         break;
 
     case RS485_TEST_SEND_UP:
-        if (!min_send_interval && !interval_counter) {
-            rs485_command = RS485_COMMAND_UP_1;
+        rs485_command = RS485_TEST_COMMAND_UP;
+        if (new_status_received && (current_position != status_before_command)) {
+            rs485_command = RS485_COMMAND_NONE;
+            interval_counter =
+                    (uint32_t)settings.rs485_command_interval_s * 1000U;
+            test_state = RS485_TEST_WAIT_AFTER_UP;
         }
+        break;
 
-        if (command_was_sent && (current_sequence != last_status_sequence)) {
-            last_status_sequence = current_sequence;
-            if (current_position != status_before_command) {
-                rs485_command = RS485_COMMAND_NONE;
-                state_started_counter = current_counter;
-                test_state = RS485_TEST_WAIT_AFTER_UP;
-                break;
-            }
-        }
-
-        if (command_was_sent &&
-            ((uint32_t)(current_counter - state_started_counter) >=
-             RS485_COMMAND_CONFIRM_TIMEOUT_MS)) {
+    case RS485_TEST_WAIT_AFTER_UP:
+        rs485_command = RS485_COMMAND_NONE;
+        if (interval_counter == 0U) {
             status_before_command = current_position;
-            last_status_sequence = current_sequence;
-            state_started_counter = current_counter;
-            command_tx_sequence_reference = command_tx_sequence;
-            command_was_sent = false;
             rs485_command = RS485_TEST_COMMAND_DOWN;
             test_state = RS485_TEST_SEND_DOWN;
         }
         break;
 
-    case RS485_TEST_WAIT_AFTER_UP:
-        if ((uint32_t)(current_counter - state_started_counter) >=
-            ((uint32_t)settings.rs485_command_interval_s * 1000U)) {
-            status_before_command = current_position;
-            last_status_sequence = current_sequence;
-            state_started_counter = current_counter;
-            command_tx_sequence_reference = command_tx_sequence;
-            command_was_sent = false;
-            RS485_SetCommand(RS485_TEST_COMMAND_DOWN);
-            test_state = RS485_TEST_SEND_DOWN;
-        }
-        break;
-
     case RS485_TEST_SEND_DOWN:
-        if (!command_was_sent &&
-            (command_tx_sequence != command_tx_sequence_reference) &&
-            (last_sent_command == RS485_TEST_COMMAND_DOWN)) {
-            command_was_sent = true;
-            status_before_command = current_position;
-            last_status_sequence = current_sequence;
-            state_started_counter = current_counter;
-        }
-
-        if (command_was_sent && (current_sequence != last_status_sequence)) {
-            last_status_sequence = current_sequence;
-            if (current_position != status_before_command) {
-                RS485_SetCommand(RS485_COMMAND_NONE);
-                state_started_counter = current_counter;
-                test_state = RS485_TEST_WAIT_AFTER_DOWN;
-                break;
-            }
-        }
-
-        if (command_was_sent &&
-            ((uint32_t)(current_counter - state_started_counter) >=
-             RS485_COMMAND_CONFIRM_TIMEOUT_MS)) {
-            status_before_command = current_position;
-            last_status_sequence = current_sequence;
-            state_started_counter = current_counter;
-            command_tx_sequence_reference = command_tx_sequence;
-            command_was_sent = false;
-            RS485_SetCommand(RS485_TEST_COMMAND_UP);
-            test_state = RS485_TEST_SEND_UP;
+        rs485_command = RS485_TEST_COMMAND_DOWN;
+        if (new_status_received && (current_position != status_before_command)) {
+            rs485_command = RS485_COMMAND_NONE;
+            interval_counter =
+                    (uint32_t)settings.rs485_command_interval_s * 1000U;
+            test_state = RS485_TEST_WAIT_AFTER_DOWN;
         }
         break;
 
     case RS485_TEST_WAIT_AFTER_DOWN:
-        if ((uint32_t)(current_counter - state_started_counter) >=
-            ((uint32_t)settings.rs485_command_interval_s * 1000U)) {
+        rs485_command = RS485_COMMAND_NONE;
+        if (interval_counter == 0U) {
             status_before_command = current_position;
-            last_status_sequence = current_sequence;
-            state_started_counter = current_counter;
-            command_tx_sequence_reference = command_tx_sequence;
-            command_was_sent = false;
-            RS485_SetCommand(RS485_TEST_COMMAND_UP);
+            rs485_command = RS485_TEST_COMMAND_UP;
             test_state = RS485_TEST_SEND_UP;
         }
         break;
 
     default:
-        RS485_SetCommand(RS485_COMMAND_NONE);
+        rs485_command = RS485_COMMAND_NONE;
+        interval_counter = 0U;
         test_state = RS485_TEST_IDLE;
-        command_was_sent = false;
         break;
     }
 
-    RS485_TrySendPendingResponse();
+    RS485_TrySendNextCommand();
 }

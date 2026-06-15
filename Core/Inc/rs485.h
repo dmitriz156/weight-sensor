@@ -8,6 +8,7 @@ extern "C" {
 #include <stdbool.h>
 
 #include "stm32f1xx_hal.h"
+#include "intfx/intfx.h"
 
 #define RS485_TX_FRAME_SIZE     4U
 #define RS485_RX_FRAME_SIZE     4U
@@ -31,14 +32,13 @@ extern "C" {
 #define RS485_STATUS_STOP_2     0x20U
 #define RS485_STATUS_POSITION_MASK  0x3FU
 
-
-extern volatile uint16_t interval_counter;
-extern volatile uint16_t min_send_interval;
+extern volatile uint8_t rs485_command_btn;
 
 void RS485_Init(UART_HandleTypeDef *huart);
 HAL_StatusTypeDef RS485_SendCommand(uint8_t command);
 bool RS485_GetStatus(uint8_t *status, uint32_t *sequence);
 void RS485_RemoteControlProcesing(void);
+void RS485_Timer1msCallback(void);
 void RS485_UART_TxCpltCallback(UART_HandleTypeDef *huart);
 void RS485_UART_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size);
 void RS485_UART_ErrorCallback(UART_HandleTypeDef *huart);

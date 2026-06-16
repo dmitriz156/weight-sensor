@@ -306,8 +306,11 @@ void RS485_RemoteControlProcesing(void)
     switch (test_state) {
     case RS485_TEST_IDLE:
         tx_command_cnt = 0U;
-        rs485_command = RS485_COMMAND_UP;
-        test_state = RS485_TEST_SEND_UP;
+        if (interval_counter == 0U) {
+            tx_command_cnt = 0U;
+            rs485_command = RS485_COMMAND_NONE;
+            test_state = RS485_TEST_SEND_UP;
+        }
         break;
 
     case RS485_TEST_SEND_UP:

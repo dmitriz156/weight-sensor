@@ -288,7 +288,7 @@ static bool TestTimeSettingValueIsValid(uint16_t index, uint16_t value)
 		return false;
 	}
 
-	return RTC_IsTimeRangeValid(start_hours, start_minutes, stop_hours, stop_minutes);
+	return RTC_IsTimeRangeValid(&settings);
 }
 
 static void TestTimeSettingBeginEdit(uint16_t index)

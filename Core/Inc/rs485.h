@@ -10,28 +10,34 @@ extern "C" {
 #include "stm32f1xx_hal.h"
 #include "intfx/intfx.h"
 
-#define RS485_TX_FRAME_SIZE     4U
-#define RS485_RX_FRAME_SIZE     4U
-#define RS485_RX_IDLE_BUFFER_SIZE 16U
-#define RS485_ADDRESS_BIT       0x0100U
-#define RS485_TX_MIN_INTERVAL_MS 70U
-#define RS485_TX_FRAME_MAX_NUM   5U
+#define RS485_TX_FRAME_SIZE        4U
+#define RS485_RX_FRAME_SIZE        4U
+#define RS485_RX_IDLE_BUFFER_SIZE  16U
+#define RS485_ADDRESS_BIT          0x0100U
+#define RS485_TX_MIN_INTERVAL_MS   70U
+#define RS485_TX_FRAME_MAX_NUM     5U
 
-#define RS485_COMMAND_NONE      0x00U
-#define RS485_COMMAND_UP_1      0x01U
-#define RS485_COMMAND_UP_2      0x02U
-#define RS485_COMMAND_DOWN_1    0x04U
-#define RS485_COMMAND_DOWN_2    0x08U
-#define RS485_COMMAND_STOP_1    0x10U
-#define RS485_COMMAND_STOP_2    0x20U
+#define RS485_COMMAND_NONE         0x00U
+#define RS485_COMMAND_UP_1         0x01U
+#define RS485_COMMAND_UP_2         0x02U
+#define RS485_COMMAND_DOWN_1       0x04U
+#define RS485_COMMAND_DOWN_2       0x08U
+#define RS485_COMMAND_STOP_1       0x10U
+#define RS485_COMMAND_STOP_2       0x20U
 
-#define RS485_STATUS_TOP_1      0x01U
-#define RS485_STATUS_TOP_2      0x02U
-#define RS485_STATUS_BOTTOM_1   0x04U
-#define RS485_STATUS_BOTTOM_2   0x08U
-#define RS485_STATUS_STOP_1     0x10U
-#define RS485_STATUS_STOP_2     0x20U
-#define RS485_STATUS_POSITION_MASK  0x3FU
+#define RS485_STATUS_TOP_1         0x01U
+#define RS485_STATUS_TOP_2         0x02U
+#define RS485_STATUS_BOTTOM_1      0x04U
+#define RS485_STATUS_BOTTOM_2      0x08U
+#define RS485_STATUS_STOP_1        0x10U
+#define RS485_STATUS_STOP_2        0x20U
+#define RS485_STATUS_POSITION_MASK 0x3FU
+
+#define RS485_FRAME_ADDRESS        2U
+#define RS485_FRAME_TAG            2U
+#define RS485_COMMAND_UP           RS485_COMMAND_UP_1 //| RS485_COMMAND_UP_2
+#define RS485_COMMAND_DOWN         RS485_COMMAND_DOWN_1 //| RS485_COMMAND_DOWN_2
+#define RS485_COMMAND_STOP         RS485_COMMAND_STOP_1 | RS485_COMMAND_STOP_2
 
 extern volatile uint8_t rs485_command_btn;
 

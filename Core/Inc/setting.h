@@ -439,10 +439,10 @@ typedef enum {
 #define RS485_ADDR_STEP           1
 
 // RS485 command intervals, seconds
-#define RS485_INTERVAL_DEF_S      10U
-#define RS485_INTERVAL_MIN_S      6U
-#define RS485_INTERVAL_MAX_S      3600U
-#define RS485_INTERVAL_STEP_S     2U
+#define RS485_INTERVAL_DEF_S      10
+#define RS485_INTERVAL_MIN_S      5
+#define RS485_INTERVAL_MAX_S      3600
+#define RS485_INTERVAL_STEP_S     5
 
 #define TEST_MODE_OFF             0U
 #define TEST_MODE_ON              1U
@@ -660,6 +660,17 @@ typedef struct
 // ex: 1.5rps -> 1500 0.01rps
 #define SettSetSpd(a) (a * 100)
 
+
+typedef struct {
+	uint16_t rs485_command_interval_s;
+	uint16_t test_mode;
+	uint16_t test_start_hours;
+	uint16_t test_start_minutes;
+	uint16_t test_stop_hours;
+	uint16_t test_stop_minutes;
+
+	bool flash_write_flag;
+} save_flash_t;
 
 extern SettCtrlDef SettCtrl;
 extern u16 *pSettReg[];

@@ -169,39 +169,39 @@ void SettInit(void)
   }
 
 
-  SettSetParam(SETT_CRC_INDX, 				&SettCtrl.crcRd, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_SETT_NUM_INDX, 			&SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_UNIT_NUM_INDX, 			&SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_UNIT0_INDX, 			&SettUnit.unitIndx[0], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_UNIT1_INDX, 			&SettUnit.unitIndx[1], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_UNIT2_INDX, 			&SettUnit.unitIndx[2], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_UNIT3_INDX, 			&SettUnit.unitIndx[3], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_CRC_INDX,             &SettCtrl.crcRd, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_SETT_NUM_INDX,        &SettUnit.settNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT_NUM_INDX,        &SettUnit.unitNum, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT0_INDX,           &SettUnit.unitIndx[0], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT1_INDX,           &SettUnit.unitIndx[1], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT2_INDX,           &SettUnit.unitIndx[2], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT3_INDX,           &SettUnit.unitIndx[3], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_DUMMY, 					&Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_DUMMY,                &Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_CMD_INTERVAL,			&settings.rs485_command_interval_s, RS485_INTERVAL_MIN_S, RS485_INTERVAL_MAX_S, RS485_INTERVAL_STEP_S, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CMD_INTERVAL,			  &settings.rs485_command_interval_s, RS485_INTERVAL_MIN_S, RS485_INTERVAL_MAX_S, RS485_INTERVAL_STEP_S, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_CURRENT_SECONDS,		NULL, 0, 59, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_MINUTES,		NULL, 0, 59, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_HOURS,		NULL, 0, 23, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_DAY,			NULL, 1, 31, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_MONTH,		NULL, 1, 12, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_YEAR,			NULL, 2000, 2099, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_SECONDS,    NULL, 0, 59, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_MINUTES,    NULL, 0, 59, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_HOURS,		  NULL, 0, 23, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_DAY,			  NULL, 1, 31, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_MONTH,		  NULL, 1, 12, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_YEAR,			  NULL, 2000, 2099, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_TIME,					NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_TEST_MODE,			&settings.test_mode, TEST_MODE_OFF, TEST_MODE_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
-  SettSetParam(SETT_M_START_TEST,			NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_STOP_TEST,			NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_MINUTES,				NULL, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_HOURS,				NULL, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_DAY,					NULL, 1, 31, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_MONTH,				NULL, 1, 12, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_YEAR,					NULL, 2000, 2099, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_TIME,		            NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_TEST_MODE,			    &settings.test_mode, TEST_MODE_OFF, TEST_MODE_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_START_TEST,			    NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST,			    NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_MINUTES,				    NULL, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_HOURS,				      NULL, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_DAY,					      NULL, 1, 31, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_MONTH,				      NULL, 1, 12, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_YEAR,				    	  NULL, 2000, 2099, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_START_TEST_MINUTES,	&settings.test_start_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_START_TEST_HOURS,		&settings.test_start_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_STOP_TEST_MINUTES,	&settings.test_stop_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_STOP_TEST_HOURS,		&settings.test_stop_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_START_TEST_MINUTES,	  &settings.test_start_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_START_TEST_HOURS,		  &settings.test_start_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST_MINUTES,	  &settings.test_stop_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST_HOURS,		  &settings.test_stop_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
   //set default settings value
   SettSetDef(SETT_M_CMD_INTERVAL, RS485_INTERVAL_DEF_S);
@@ -232,8 +232,7 @@ void SettInit(void)
 	  cnt ++;
   }
 
-  if (!RTC_IsTimeRangeValid(settings.test_start_hours, settings.test_start_minutes,
-                            settings.test_stop_hours, settings.test_stop_minutes)) {
+  if (!RTC_IsTimeRangeValid(&settings)) {
 	  settings.test_stop_hours = settings.test_start_hours;
 	  settings.test_stop_minutes = settings.test_start_minutes;
 	  settings.flash_write_flag = 1;

@@ -9,6 +9,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
+#include "setting.h"
 #include "stm32f1xx_hal.h"
 
 #define RTC_SECONDS_PER_MINUTE    60U
@@ -60,10 +61,8 @@ void RTC_ChangeEditedTimeField(rtc_time_field_t field, bool increase);
 HAL_StatusTypeDef RTC_ApplyEditedTime(void);
 
 uint16_t RTC_TimeOfDayToMinutes(uint16_t hours, uint16_t minutes);
-bool RTC_IsTimeRangeValid(uint16_t start_hours, uint16_t start_minutes,
-                          uint16_t stop_hours, uint16_t stop_minutes);
-bool RTC_IsCurrentTimeInRange(uint16_t start_hours, uint16_t start_minutes,
-                              uint16_t stop_hours, uint16_t stop_minutes);
+bool RTC_IsTimeRangeValid(save_flash_t *sett);
+bool RTC_IsCurrentTimeInRange(save_flash_t *sett);
 void RTC_FormatTimeOfDay(char *buffer, size_t buffer_size, uint16_t hours, uint16_t minutes);
 
 HAL_StatusTypeDef RTC_ResetPersistentTime(void);

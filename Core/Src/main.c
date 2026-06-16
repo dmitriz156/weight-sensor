@@ -475,7 +475,7 @@ void IOHandler (void)
 	}
 	if(rb_btn.UP_debounce_cnt == 1) {
 		if(RB_BTN_UP_READ() == 0) {
-			rs485_command_btn = RS485_COMMAND_UP_1;
+			rs485_command_btn = RS485_COMMAND_UP;
 		}
 		rb_btn.UP_debounce_cnt = 0;
 	}
@@ -489,7 +489,7 @@ void IOHandler (void)
 	}
 	if(rb_btn.STOP_debounce_cnt == 1) {
 		if(RB_BTN_STOP_READ() == 0) {
-			rs485_command_btn = RS485_COMMAND_STOP_1;
+			rs485_command_btn = RS485_COMMAND_STOP;
 		}
 		rb_btn.STOP_debounce_cnt = 0;
 	}
@@ -503,7 +503,7 @@ void IOHandler (void)
 	}
 	if(rb_btn.DOWN_debounce_cnt == 1) {
 		if(RB_BTN_DOWN_READ() == 0) {
-			rs485_command_btn = RS485_COMMAND_DOWN_1;
+			rs485_command_btn = RS485_COMMAND_DOWN;
 		}
 		rb_btn.DOWN_debounce_cnt = 0;
 	}

@@ -47,17 +47,6 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-typedef struct {
-	uint16_t rs485_command_interval_s;
-	uint16_t test_mode;
-	uint16_t test_start_hours;
-	uint16_t test_start_minutes;
-	uint16_t test_stop_hours;
-	uint16_t test_stop_minutes;
-
-	bool flash_write_flag;
-} save_flash_t;
-
 
 typedef enum {
 	BTN_IDLE = 0,
@@ -139,7 +128,7 @@ typedef enum {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define FW_NAME_VERSION						"RB TEST RC"
+#define FW_NAME_VERSION						"RB TEST RC v1.0"
 
 #define RB_BTN_UP_READ()                    HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5)
 #define RB_BTN_STOP_READ()                  HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4)

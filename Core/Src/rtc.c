@@ -1,5 +1,5 @@
+#include "main.h"
 #include "rtc.h"
-
 #include <stddef.h>
 #include <stdio.h>
 
@@ -430,28 +430,26 @@ uint16_t RTC_TimeOfDayToMinutes(uint16_t hours, uint16_t minutes)
     return (uint16_t)((hours * RTC_SECONDS_PER_MINUTE) + minutes);
 }
 
-bool RTC_IsTimeRangeValid(uint16_t start_hours, uint16_t start_minutes,
-                          uint16_t stop_hours, uint16_t stop_minutes)
+bool RTC_IsTimeRangeValid(save_flash_t *sett)
 {
-    if ((start_hours > 23U) || (stop_hours > 23U) ||
-        (start_minutes > 59U) || (stop_minutes > 59U)) {
+    if ((sett->test_start_hours > 23U) || (sett->test_stop_hours > 23U) || (sett->test_start_minutes > 59U) || (sett->test_stop_minutes > 59U)) {
         return false;
     }
-
-    return RTC_TimeOfDayToMinutes(stop_hours, stop_minutes) >=
-           RTC_TimeOfDayToMinutes(start_hours, start_minutes);
+    if ( RTC_TimeOfDayToMinutes(sett->test_stop_hours, sett->test_stop_minutes) <= RTC_TimeOfDayToMinutes(sett->test_start_hours, sett->test_start_minutes)) {
+        return false;
+    }
+    return true;
 }
 
-bool RTC_IsCurrentTimeInRange(uint16_t start_hours, uint16_t start_minutes,
-                              uint16_t stop_hours, uint16_t stop_minutes)
+bool RTC_IsCurrentTimeInRange(save_flash_t *sett)
 {
-    if (!RTC_IsTimeRangeValid(start_hours, start_minutes, stop_hours, stop_minutes)) {
+    if (!RTC_IsTimeRangeValid(sett)) {
         return false;
     }
 
     uint16_t current_minutes = RTC_TimeOfDayToMinutes(rtc_current_time.hours, rtc_current_time.minutes);
-    uint16_t start = RTC_TimeOfDayToMinutes(start_hours, start_minutes);
-    uint16_t stop = RTC_TimeOfDayToMinutes(stop_hours, stop_minutes);
+    uint16_t start = RTC_TimeOfDayToMinutes(sett->test_start_hours, sett->test_start_minutes);
+    uint16_t stop = RTC_TimeOfDayToMinutes(sett->test_stop_hours, sett->test_stop_minutes);
 
     return current_minutes >= start && current_minutes <= stop;
 }

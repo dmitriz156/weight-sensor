@@ -238,6 +238,45 @@ static void RTC_SecondsToElapsed(uint32_t total_seconds, rtc_elapsed_time_t *ela
     elapsed->seconds = (uint8_t)(total_seconds % RTC_SECONDS_PER_MINUTE);
 }
 
+static void RTC_SyncStoredWeekDay(save_flash_t *sett)
+{
+    if ((sett == NULL) || !rtc_ready) {
+        return;
+    }
+
+    uint16_t current_epoch_day =
+            (uint16_t)(RTC_TimeToEpochSeconds(&rtc_current_time) / RTC_SECONDS_PER_DAY);
+    bool changed = false;
+
+    if (sett->active_today_is >= RTC_WEEK_DAY_NUM) {
+        sett->active_today_is = ACTIVE_TODAY_IS_DEF;
+        changed = true;
+    }
+
+    if ((sett->active_today_epoch_day == 0U) ||
+        (sett->active_today_epoch_day > ACTIVE_TODAY_EPOCH_DAY_MAX)) {
+        sett->active_today_epoch_day = current_epoch_day;
+        changed = true;
+    } else if (sett->active_today_epoch_day != current_epoch_day) {
+        int32_t day_offset =
+                (int32_t)current_epoch_day - (int32_t)sett->active_today_epoch_day;
+
+        day_offset %= RTC_WEEK_DAY_NUM;
+        if (day_offset < 0) {
+            day_offset += RTC_WEEK_DAY_NUM;
+        }
+
+        sett->active_today_is =
+                (uint16_t)((sett->active_today_is + day_offset) % RTC_WEEK_DAY_NUM);
+        sett->active_today_epoch_day = current_epoch_day;
+        changed = true;
+    }
+
+    if (changed) {
+        sett->flash_write_flag = true;
+    }
+}
+
 HAL_StatusTypeDef RTC_Module_Init(RTC_HandleTypeDef *hrtc)
 {
     if (hrtc == NULL) {
@@ -328,6 +367,7 @@ void RTC_Process(void)
     if (current_rtc_second != previous_rtc_second) {
         previous_rtc_second = current_rtc_second;
         RTC_UpdateCurrentTime();
+        RTC_SyncStoredWeekDay(&settings);
     }
 }
 
@@ -430,18 +470,96 @@ uint16_t RTC_TimeOfDayToMinutes(uint16_t hours, uint16_t minutes)
     return (uint16_t)((hours * RTC_SECONDS_PER_MINUTE) + minutes);
 }
 
-bool RTC_IsTimeRangeValid(save_flash_t *sett)
+uint16_t RTC_GetCurrentEpochDay(void)
 {
-    if ((sett->test_start_hours > 23U) || (sett->test_stop_hours > 23U) || (sett->test_start_minutes > 59U) || (sett->test_stop_minutes > 59U)) {
-        return false;
+    if (!rtc_ready) {
+        return 0U;
     }
-    if ( RTC_TimeOfDayToMinutes(sett->test_stop_hours, sett->test_stop_minutes) <= RTC_TimeOfDayToMinutes(sett->test_start_hours, sett->test_start_minutes)) {
-        return false;
-    }
-    return true;
+
+    RTC_UpdateCurrentTime();
+    return (uint16_t)(RTC_TimeToEpochSeconds(&rtc_current_time) / RTC_SECONDS_PER_DAY);
 }
 
-bool RTC_IsCurrentTimeInRange(save_flash_t *sett)
+void RTC_SetWeekDayAnchor(save_flash_t *sett)
+{
+    if (sett == NULL) {
+        return;
+    }
+
+    if (sett->active_today_is >= RTC_WEEK_DAY_NUM) {
+        sett->active_today_is = ACTIVE_TODAY_IS_DEF;
+    }
+
+    sett->active_today_epoch_day = RTC_GetCurrentEpochDay();
+}
+
+uint8_t RTC_GetCurrentWeekDay(const save_flash_t *sett)
+{
+    uint8_t today_is = ACTIVE_TODAY_IS_DEF;
+    uint16_t current_epoch_day = RTC_GetCurrentEpochDay();
+    uint16_t anchor_epoch_day = current_epoch_day;
+
+    if ((sett != NULL) &&
+        (sett->active_today_is < RTC_WEEK_DAY_NUM)) {
+        today_is = (uint8_t)sett->active_today_is;
+    }
+
+    if ((sett != NULL) &&
+        (sett->active_today_epoch_day > 0U) &&
+        (sett->active_today_epoch_day <= ACTIVE_TODAY_EPOCH_DAY_MAX)) {
+        anchor_epoch_day = sett->active_today_epoch_day;
+    }
+
+    int32_t day_offset = (int32_t)current_epoch_day - (int32_t)anchor_epoch_day;
+    day_offset %= RTC_WEEK_DAY_NUM;
+    if (day_offset < 0) {
+        day_offset += RTC_WEEK_DAY_NUM;
+    }
+
+    return (uint8_t)((today_is + day_offset) % RTC_WEEK_DAY_NUM);
+}
+
+bool RTC_IsCurrentWeekDayAllowed(const save_flash_t *sett)
+{
+    if (sett == NULL) {
+        return false;
+    }
+
+    switch (RTC_GetCurrentWeekDay(sett)) {
+    case RTC_WEEK_DAY_MONDAY:
+        return sett->active_monday == ACTIVE_DAY_ON;
+    case RTC_WEEK_DAY_TUESDAY:
+        return sett->active_tuesday == ACTIVE_DAY_ON;
+    case RTC_WEEK_DAY_WEDNESDAY:
+        return sett->active_wednesday == ACTIVE_DAY_ON;
+    case RTC_WEEK_DAY_THURSDAY:
+        return sett->active_thursday == ACTIVE_DAY_ON;
+    case RTC_WEEK_DAY_FRIDAY:
+        return sett->active_friday == ACTIVE_DAY_ON;
+    case RTC_WEEK_DAY_SETURDAY:
+        return sett->active_seturday == ACTIVE_DAY_ON;
+    case RTC_WEEK_DAY_SUNDAY:
+        return sett->active_sunday == ACTIVE_DAY_ON;
+    default:
+        return false;
+    }
+}
+
+bool RTC_IsTimeRangeValid(const save_flash_t *sett)
+{
+    if ((sett == NULL) ||
+        (sett->test_start_hours > 23U) ||
+        (sett->test_stop_hours > 23U) ||
+        (sett->test_start_minutes > 59U) ||
+        (sett->test_stop_minutes > 59U)) {
+        return false;
+    }
+
+    return RTC_TimeOfDayToMinutes(sett->test_stop_hours, sett->test_stop_minutes) >=
+           RTC_TimeOfDayToMinutes(sett->test_start_hours, sett->test_start_minutes);
+}
+
+bool RTC_IsCurrentTimeInRange(const save_flash_t *sett)
 {
     if (!RTC_IsTimeRangeValid(sett)) {
         return false;

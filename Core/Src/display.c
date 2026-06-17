@@ -16,6 +16,7 @@ extern uint16_t *pSettReg[];  // pointer to settings value
 uint16_t Temp = 0;
 
 char *DispIntToStr(s32 data, u8 dot, const char *suffix);
+void MenuMakeSysMsg(MENUSM type, u16 tmr);
 
 
 uint16_t DispTout = 2;			// display timeout connection, sec
@@ -118,8 +119,11 @@ const uint8_t measure_item [] = {
 		DAY,
 		MONTH,
 		YEAR,
+		WEEK_DAY,
 		SETT_TIME,
+		SETT_ACTIVE_DAY,
 		SETT_TEST_MODE,
+		SETT_RB_STATUS_CHECK,
 		SETT_START_TEST,
 		SETT_STOP_TEST
 };
@@ -142,9 +146,42 @@ static const uint16_t stop_test_setting_item[] = {
 		SETT_M_STOP_TEST_MINUTES
 };
 
+static const uint16_t active_day_setting_item[] = {
+		SETT_M_MONDAY,
+		SETT_M_TUESDAY,
+		SETT_M_WEDNESDAY,
+		SETT_M_THURSDAY,
+		SETT_M_FRIDAY,
+		SETT_M_SETURDAY,
+		SETT_M_SUNDAY
+};
+
 #define MEASURE_ITEM_COUNT      ((uint8_t)(sizeof(measure_item) / sizeof(measure_item[0])))
 #define TIME_SETTING_ITEM_COUNT ((uint8_t)(sizeof(time_setting_item) / sizeof(time_setting_item[0])))
 #define TEST_TIME_ITEM_COUNT    ((uint8_t)(sizeof(start_test_setting_item) / sizeof(start_test_setting_item[0])))
+#define ACTIVE_DAY_ITEM_COUNT   ((uint8_t)(sizeof(active_day_setting_item) / sizeof(active_day_setting_item[0])))
+
+static const char *WeekDayName(uint8_t week_day)
+{
+	switch (week_day) {
+	case RTC_WEEK_DAY_MONDAY:
+		return "Monday";
+	case RTC_WEEK_DAY_TUESDAY:
+		return "Tuesday";
+	case RTC_WEEK_DAY_WEDNESDAY:
+		return "Wednesday";
+	case RTC_WEEK_DAY_THURSDAY:
+		return "Thursday";
+	case RTC_WEEK_DAY_FRIDAY:
+		return "Friday";
+	case RTC_WEEK_DAY_SETURDAY:
+		return "Saturday";
+	case RTC_WEEK_DAY_SUNDAY:
+		return "Sunday";
+	default:
+		return "-";
+	}
+}
 
 static uint16_t MainMenuSettingIndex(MENU_ITEM item)
 {
@@ -161,10 +198,16 @@ static uint16_t MainMenuSettingIndex(MENU_ITEM item)
 		return SETT_M_CURRENT_MONTH;
 	case YEAR:
 		return SETT_M_CURRENT_YEAR;
+	case WEEK_DAY:
+		return SETT_M_WEEK_DAY;
 	case SETT_TIME:
 		return SETT_M_TIME;
+	case SETT_ACTIVE_DAY:
+		return SETT_M_ACTIVE_DAY;
 	case SETT_TEST_MODE:
 		return SETT_M_TEST_MODE;
+	case SETT_RB_STATUS_CHECK:
+		return SETT_M_RB_STATUS_CHECK_MODE;
 	case SETT_START_TEST:
 		return SETT_M_START_TEST;
 	case SETT_STOP_TEST:
@@ -266,29 +309,26 @@ static bool IsTestTimeSetting(uint16_t index)
 
 static bool TestTimeSettingValueIsValid(uint16_t index, uint16_t value)
 {
-	uint16_t start_hours = settings.test_start_hours;
-	uint16_t start_minutes = settings.test_start_minutes;
-	uint16_t stop_hours = settings.test_stop_hours;
-	uint16_t stop_minutes = settings.test_stop_minutes;
+	save_flash_t test_settings = settings;
 
 	switch (index) {
 	case SETT_M_START_TEST_HOURS:
-		start_hours = value;
+		test_settings.test_start_hours = value;
 		break;
 	case SETT_M_START_TEST_MINUTES:
-		start_minutes = value;
+		test_settings.test_start_minutes = value;
 		break;
 	case SETT_M_STOP_TEST_HOURS:
-		stop_hours = value;
+		test_settings.test_stop_hours = value;
 		break;
 	case SETT_M_STOP_TEST_MINUTES:
-		stop_minutes = value;
+		test_settings.test_stop_minutes = value;
 		break;
 	default:
 		return false;
 	}
 
-	return RTC_IsTimeRangeValid(&settings);
+	return RTC_IsTimeRangeValid(&test_settings);
 }
 
 static void TestTimeSettingBeginEdit(uint16_t index)
@@ -337,6 +377,80 @@ static uint16_t TestTimeSettingDisplayValue(uint16_t index)
 	}
 
 	return SettGetData(index);
+}
+
+static uint16_t ActiveDaySettingIndex(uint8_t item_pos)
+{
+	if (item_pos >= ACTIVE_DAY_ITEM_COUNT) {
+		return SETT_BUFF_LEN;
+	}
+
+	return active_day_setting_item[item_pos];
+}
+
+static bool IsActiveDaySetting(uint16_t index)
+{
+	return index == SETT_M_MONDAY ||
+			index == SETT_M_TUESDAY ||
+			index == SETT_M_WEDNESDAY ||
+			index == SETT_M_THURSDAY ||
+			index == SETT_M_FRIDAY ||
+			index == SETT_M_SETURDAY ||
+			index == SETT_M_SUNDAY;
+}
+
+static void ActiveDaySettingBeginEdit(uint16_t index)
+{
+	if (IsActiveDaySetting(index)) {
+		Menu.paramRealIndx = index;
+		SettCopyToDummy(index);
+		Menu.valueEdit = 1U;
+		MenuMakeSysMsg(MENU_SM_SETT_WIND, 0U);
+	}
+}
+
+static void ActiveDaySettingCommitEdit(void)
+{
+	if (IsActiveDaySetting(Menu.paramRealIndx)) {
+		uint16_t previous_value = SettGetData(Menu.paramRealIndx);
+
+		SettSetData(Menu.paramRealIndx, SettGetData(SETT_DUMMY));
+		if (SettGetData(Menu.paramRealIndx) != previous_value) {
+			settings.flash_write_flag = 1;
+		}
+	}
+
+	Menu.valueEdit = 0U;
+	Menu.paramRealIndx = SETT_DUMMY;
+}
+
+static uint16_t ActiveDaySettingDisplayValue(uint16_t index)
+{
+	if (Menu.valueEdit && Menu.paramRealIndx == index) {
+		return SettGetData(SETT_DUMMY);
+	}
+
+	return SettGetData(index);
+}
+
+static const char *ActiveDaySettingValueToStr(uint16_t index)
+{
+	uint16_t value = ActiveDaySettingDisplayValue(index);
+
+	if ((index < SETT_BUFF_LEN) && (SettParam[index].pText != SETT_TEXT_NO)) {
+		return SettGetTextVal(SettParam[index].pText + value);
+	}
+
+	return DispIntToStr(value, 0, 0);
+}
+
+static void WeekDaySettingBeginEdit(void)
+{
+	Menu.paramRealIndx = SETT_M_WEEK_DAY;
+	Menu.paramDummy = RTC_GetCurrentWeekDay(&settings);
+	memcpy((void *)&SettParam[SETT_DUMMY], (void *)&SettParam[SETT_M_TODAY_IS], sizeof(SettParamDef));
+	Menu.valueEdit = 1U;
+	MenuMakeSysMsg(MENU_SM_SETT_WIND, 0U);
 }
 
 struct
@@ -600,11 +714,20 @@ void DispPushBtn(void)
 		case MENU_SM_SETT_WIND:
 			if (Menu.valueEdit) {
 				if (BtnSelect()) {
-					uint16_t previous_value = SettGetData(Menu.paramRealIndx);
+					uint16_t previous_value = (Menu.paramRealIndx == SETT_M_WEEK_DAY) ?
+							RTC_GetCurrentWeekDay(&settings) : SettGetData(Menu.paramRealIndx);
+					uint16_t previous_today_epoch_day = settings.active_today_epoch_day;
 
 					Menu.valueEdit = 0;
-					SettSetData(Menu.paramRealIndx, Menu.paramDummy);
-					if (SettGetData(Menu.paramRealIndx) != previous_value) {
+					if (Menu.paramRealIndx == SETT_M_WEEK_DAY) {
+						settings.active_today_is = Menu.paramDummy;
+						RTC_SetWeekDayAnchor(&settings);
+					} else {
+						SettSetData(Menu.paramRealIndx, Menu.paramDummy);
+					}
+					if (((Menu.paramRealIndx == SETT_M_WEEK_DAY ?
+							RTC_GetCurrentWeekDay(&settings) : SettGetData(Menu.paramRealIndx)) != previous_value) ||
+							(settings.active_today_epoch_day != previous_today_epoch_day)) {
 						settings.flash_write_flag = 1;
 					}
 					Menu.paramRealIndx = SETT_DUMMY;
@@ -660,13 +783,25 @@ void DispPushBtn(void)
 					case CMD_INTERVAL:
 						IntervalSettingBeginEdit(indx);
 						break;
+					case WEEK_DAY:
+						WeekDaySettingBeginEdit();
+						break;
 					case SETT_TIME:
 						RTC_BeginTimeEdit();
 						MenuGoToPage(MENU_PAGE_UNIT);
 						break;
+					case SETT_ACTIVE_DAY:
+						MenuGoToPage(MENU_PAGE_ACTIVE_DAY);
+						break;
 					case SETT_TEST_MODE:
 						Menu.paramRealIndx = SETT_M_TEST_MODE;
 						SettCopyToDummy(SETT_M_TEST_MODE);
+						Menu.valueEdit = 1U;
+						MenuMakeSysMsg(MENU_SM_SETT_WIND, 0U);
+						break;
+					case SETT_RB_STATUS_CHECK:
+						Menu.paramRealIndx = SETT_M_RB_STATUS_CHECK_MODE;
+						SettCopyToDummy(SETT_M_RB_STATUS_CHECK_MODE);
 						Menu.valueEdit = 1U;
 						MenuMakeSysMsg(MENU_SM_SETT_WIND, 0U);
 						break;
@@ -716,6 +851,34 @@ void DispPushBtn(void)
 					RTC_ChangeEditedTimeField(TimeSettingField(indx), true);
 				} else if (BtnUp()) {
 					RTC_ChangeEditedTimeField(TimeSettingField(indx), false);
+				}
+			}
+
+			break;
+//--
+		case MENU_PAGE_ACTIVE_DAY:
+			Menu.lineNum = ACTIVE_DAY_ITEM_COUNT;
+			item_pos = Menu.linePos + Menu.lineSel;
+			if (item_pos >= ACTIVE_DAY_ITEM_COUNT) {
+				Menu.linePos = 0U;
+				Menu.lineSel = 0U;
+				item_pos = 0U;
+			}
+			indx = ActiveDaySettingIndex(item_pos);
+
+			if (!Menu.valueEdit) {
+				if (BtnSelect()) {
+					ActiveDaySettingBeginEdit(indx);
+				} else if (BtnBack()) {
+					MenuGoBack();
+				}
+			} else {
+				if (BtnBack()) {
+					ActiveDaySettingCommitEdit();
+				} else if (BtnDown()) {
+					SettRegChange(SETT_DUMMY, SETT_REG_UP);
+				} else if (BtnUp()) {
+					SettRegChange(SETT_DUMMY, SETT_REG_DN);
 				}
 			}
 
@@ -989,12 +1152,23 @@ void DispTask(void)
 							case YEAR:
 								SetListValue(DispIntToStr(RTC_GetCurrentTimeField(MainMenuTimeField(measure_item[GetListPos(DISP_PACK_STR_1)])), 0, 0));
 								break;
+							case WEEK_DAY:
+								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
+								SetListValue(WeekDayName(RTC_GetCurrentWeekDay(&settings)));
+								break;
 							case SETT_TIME:
+								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
+								break;
+							case SETT_ACTIVE_DAY:
 								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
 								break;
 							case SETT_TEST_MODE:
 								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
 								SetListValue(DispSettParamToStr(DISP_SETT_VAL, SETT_M_TEST_MODE));
+								break;
+							case SETT_RB_STATUS_CHECK:
+								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
+								SetListValue(DispSettParamToStr(DISP_SETT_VAL, SETT_M_RB_STATUS_CHECK_MODE));
 								break;
 							case SETT_START_TEST:
 								SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
@@ -1049,6 +1223,40 @@ void DispTask(void)
 						indx = time_setting_item[GetListPos(DISP_PACK_STR_1)];
 						SetListParam(SettGetParamName(indx));
 						SetListValue(DispIntToStr(RTC_GetEditedTimeField(TimeSettingField(indx)), 0, 0));
+					}
+					break;
+
+				default:
+					break;
+				}
+				break;
+
+			case MENU_PAGE_ACTIVE_DAY:
+				switch(DispUart.txPackPnt)
+				{
+				case DISP_PACK_DATA_0:
+					DispUart.txBuff[DISP_PMD0_CONTRAST] = Menu.contrast;
+					SetListSelLine(Menu.lineSel);
+					SetListValueEdit(Menu.valueEdit);
+					SetListValueExist(DISP_LIST_VALUE_YES);
+					SetListSymbMode(DISP_LIST_SYMB_NO);
+					SetListLineShow();
+					break;
+
+				case DISP_PACK_STR_0:
+					SetListName("ACTIVE DAYS");
+					break;
+
+				case DISP_PACK_STR_1:
+				case DISP_PACK_STR_2:
+				case DISP_PACK_STR_3:
+				case DISP_PACK_STR_4:
+				case DISP_PACK_STR_5:
+					indx = ActiveDaySettingIndex(GetListPos(DISP_PACK_STR_1));
+					if (IsActiveDaySetting(indx)) {
+						SetListParam(SettGetParamName(indx));
+						SetListSymbR(DISP_LISTMSG_SYMB_ARROW);
+						SetListValue(ActiveDaySettingValueToStr(indx));
 					}
 					break;
 

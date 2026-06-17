@@ -43,6 +43,17 @@ typedef enum {
     RTC_TIME_FIELD_INVALID
 } rtc_time_field_t;
 
+typedef enum {
+    RTC_WEEK_DAY_MONDAY = 0,
+    RTC_WEEK_DAY_TUESDAY,
+    RTC_WEEK_DAY_WEDNESDAY,
+    RTC_WEEK_DAY_THURSDAY,
+    RTC_WEEK_DAY_FRIDAY,
+    RTC_WEEK_DAY_SETURDAY,
+    RTC_WEEK_DAY_SUNDAY,
+    RTC_WEEK_DAY_NUM
+} rtc_week_day_t;
+
 HAL_StatusTypeDef RTC_Module_Init(RTC_HandleTypeDef *hrtc);
 bool RTC_Module_IsReady(void);
 
@@ -61,8 +72,12 @@ void RTC_ChangeEditedTimeField(rtc_time_field_t field, bool increase);
 HAL_StatusTypeDef RTC_ApplyEditedTime(void);
 
 uint16_t RTC_TimeOfDayToMinutes(uint16_t hours, uint16_t minutes);
-bool RTC_IsTimeRangeValid(save_flash_t *sett);
-bool RTC_IsCurrentTimeInRange(save_flash_t *sett);
+uint16_t RTC_GetCurrentEpochDay(void);
+void RTC_SetWeekDayAnchor(save_flash_t *sett);
+uint8_t RTC_GetCurrentWeekDay(const save_flash_t *sett);
+bool RTC_IsCurrentWeekDayAllowed(const save_flash_t *sett);
+bool RTC_IsTimeRangeValid(const save_flash_t *sett);
+bool RTC_IsCurrentTimeInRange(const save_flash_t *sett);
 void RTC_FormatTimeOfDay(char *buffer, size_t buffer_size, uint16_t hours, uint16_t minutes);
 
 HAL_StatusTypeDef RTC_ResetPersistentTime(void);

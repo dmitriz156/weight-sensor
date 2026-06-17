@@ -16,6 +16,7 @@ const char *MenuTextBlock[] = {
     "Unit1",
     "Unit2",
     "Unit3",
+    "Unit4",
     "SysTemp",
 
     // --- UNIT-1. run time
@@ -26,7 +27,9 @@ const char *MenuTextBlock[] = {
 	"day",
 	"month",
 	"year",
+	"WEEK DAY",
 	"SET TIME",
+	"SET ACTIVE DAYS",
 	"TEST MODE",
 	"SET START TEST",
 	"SET STOP TEST",
@@ -37,14 +40,33 @@ const char *MenuTextBlock[] = {
 	"SET day",
 	"SET month",
 	"SET year",
-	// --- UNIT-3. SET_START_TEST
+
+	// --- UNIT-3. SET ACTIVE DAYS
+	"Today is?",
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+	"Sunday",
+
+	// --- UNIT-4. SET_START_TEST
 	"SET minutes",
 	"SET hours",
-	// --- UNIT-4. SET_STOP_TEST
+	// --- UNIT-5. SET_STOP_TEST
 	"SET minutes",
 	"SET hours",
+	"Today anchor",
+	"RB STATUS CHECK",
 
 	"OFF",
-	"ON"
+	"ON",
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+	"Sunday"
 };
-

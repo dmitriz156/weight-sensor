@@ -446,10 +446,18 @@ typedef enum {
 
 #define TEST_MODE_OFF             0U
 #define TEST_MODE_ON              1U
+#define RB_STATUS_CHECK_MODE_OFF  0U
+#define RB_STATUS_CHECK_MODE_ON   1U
+#define RB_STATUS_CHECK_MODE_DEF  RB_STATUS_CHECK_MODE_ON
 #define TEST_START_HOURS_DEF      0U
 #define TEST_START_MINUTES_DEF    0U
 #define TEST_STOP_HOURS_DEF       23U
 #define TEST_STOP_MINUTES_DEF     59U
+#define ACTIVE_TODAY_IS_DEF        0U
+#define ACTIVE_TODAY_EPOCH_DAY_DEF 0U
+#define ACTIVE_TODAY_EPOCH_DAY_MAX 36524U
+#define ACTIVE_DAY_OFF            0U
+#define ACTIVE_DAY_ON             1U
 
 // controller Bluetooth address
 #define BT_ADDR_MIN               1
@@ -489,6 +497,7 @@ typedef enum {
   SETT_UNIT1_INDX,  	//Set absolute time
   SETT_UNIT2_INDX,  	//Set test start time
   SETT_UNIT3_INDX,    //Set test stop time
+  SETT_UNIT4_INDX,    //Set active days
   SETT_DUMMY,       // P - dummy parameters. Contains temporary value for Menu parameters changing
                     // config words -> they CAN be changed via special Display menu
                     // --- UNIT-1. SETTINGS and MEASUREMENTS ITEMS
@@ -501,7 +510,9 @@ typedef enum {
 	SETT_M_CURRENT_DAY,
 	SETT_M_CURRENT_MONTH,
 	SETT_M_CURRENT_YEAR,
+  SETT_M_WEEK_DAY,
 	SETT_M_TIME,
+  SETT_M_ACTIVE_DAY,
 	SETT_M_TEST_MODE,
 	SETT_M_START_TEST,
 	SETT_M_STOP_TEST,
@@ -511,18 +522,29 @@ typedef enum {
 	SETT_M_MONTH,
 	SETT_M_YEAR,
 
+  SETT_M_TODAY_IS,
+  SETT_M_MONDAY,
+  SETT_M_TUESDAY,
+  SETT_M_WEDNESDAY,
+  SETT_M_THURSDAY,
+  SETT_M_FRIDAY,
+  SETT_M_SETURDAY,
+  SETT_M_SUNDAY,
+
 	SETT_M_START_TEST_MINUTES,
 	SETT_M_START_TEST_HOURS,
 
 	SETT_M_STOP_TEST_MINUTES,
 	SETT_M_STOP_TEST_HOURS,
+  SETT_M_TODAY_EPOCH_DAY,
+  SETT_M_RB_STATUS_CHECK_MODE,
 
   // last element of enumeration. Used as total number of enumeration.
   // !!! Don't use it directly in code
   SETT_BUFF_LEN  // !!! must be <= SETT_BUFF_LEN_MAX
 } SETREGINDX;
 
-#define SETT_MAIN_BUFF_LEN  (SETT_M_STOP_TEST_HOURS + 1U)
+#define SETT_MAIN_BUFF_LEN  (SETT_M_RB_STATUS_CHECK_MODE + 1U)
 
 #define SETT_UNIT_MAX 9
 
@@ -533,6 +555,7 @@ typedef enum {
   SETT_UNIT_TIME,
   SETT_UNIT_START_TEST,
   SETT_UNIT_STOP_TEST,
+  SETT_UNIT_ACTIVE_DAY,
   SETT_UNIT_NUM,
 } SETTUNIT;
 #if SETT_UNIT_NUM > SETT_UNIT_MAX
@@ -552,6 +575,13 @@ typedef enum {
 typedef enum {
   SETT_TEXT_OFF = SETT_BUFF_LEN,
   SETT_TEXT_ON,
+  SETT_TEXT_WEEK_DAY_MONDAY,
+  SETT_TEXT_WEEK_DAY_TUESDAY,
+  SETT_TEXT_WEEK_DAY_WEDNESDAY,
+  SETT_TEXT_WEEK_DAY_THURSDAY,
+  SETT_TEXT_WEEK_DAY_FRIDAY,
+  SETT_TEXT_WEEK_DAY_SETURDAY,
+  SETT_TEXT_WEEK_DAY_SUNDAY,
   SETT_TEXT_NUM
 } SETTTEXTVAL;
 #define SETT_CRC_DEF     0x0000
@@ -664,10 +694,20 @@ typedef struct
 typedef struct {
 	uint16_t rs485_command_interval_s;
 	uint16_t test_mode;
+  uint16_t rb_status_check_mode;
 	uint16_t test_start_hours;
 	uint16_t test_start_minutes;
 	uint16_t test_stop_hours;
 	uint16_t test_stop_minutes;
+  uint16_t active_today_is;
+  uint16_t active_monday;
+  uint16_t active_tuesday;
+  uint16_t active_wednesday;
+  uint16_t active_thursday;
+  uint16_t active_friday;
+  uint16_t active_seturday;
+  uint16_t active_sunday;
+  uint16_t active_today_epoch_day;
 
 	bool flash_write_flag;
 } save_flash_t;

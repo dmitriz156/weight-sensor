@@ -13,6 +13,7 @@ typedef enum
 	MENU_PAGE_UNIT,					// unit settings page
 	MENU_PAGE_START_TEST,			// test start time
 	MENU_PAGE_STOP_TEST,			// test stop time
+	MENU_PAGE_ACTIVE_DAY,			// active weekday settings
 	MENU_PAGE_CONFIG,         		// config parameter page
 	MENU_PAGE_NUM,
 	MENU_PAGE_FREE = 0xFF,
@@ -231,15 +232,28 @@ typedef struct
 		DAY,
 		MONTH,
 		YEAR,
+		WEEK_DAY,
 		SETT_TIME,
+		SETT_ACTIVE_DAY,
 		SETT_TEST_MODE,
+		SETT_RB_STATUS_CHECK,
 		SETT_START_TEST,
 		SETT_STOP_TEST,
+
 		SETT_MINUTES,
 		SETT_HOURS,
 		SETT_DAY,
 		SETT_MONTH,
 		SETT_YEAR,
+
+		TODAY_IS,
+		MONDAY,
+		TUESDAY,
+		WEDNESDAY,
+		THURSDAY,
+		FRIDAY,
+		SETURDAY,
+		SUNDAY,
 
 		SETT_START_TEST_MINUTES,
 		SETT_START_TEST_HOURS,

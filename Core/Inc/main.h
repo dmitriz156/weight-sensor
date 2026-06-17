@@ -128,7 +128,7 @@ typedef enum {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#define FW_NAME_VERSION						"RB TEST RC v1.0"
+#define FW_NAME_VERSION						"RB TEST RC v1.1"
 
 #define RB_BTN_UP_READ()                    HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5)
 #define RB_BTN_STOP_READ()                  HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4)

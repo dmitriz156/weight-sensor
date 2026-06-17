@@ -164,6 +164,7 @@ void SettInit(void)
     Preset[cnt].settDef[SETT_UNIT1_INDX]    = SETT_M_MINUTES;
     Preset[cnt].settDef[SETT_UNIT2_INDX]    = SETT_M_START_TEST_MINUTES;
     Preset[cnt].settDef[SETT_UNIT3_INDX]    = SETT_M_STOP_TEST_MINUTES;
+    Preset[cnt].settDef[SETT_UNIT4_INDX]    = SETT_M_MONDAY;
 
     cnt++;
   }
@@ -176,32 +177,46 @@ void SettInit(void)
   SettSetParam(SETT_UNIT1_INDX,           &SettUnit.unitIndx[1], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_UNIT2_INDX,           &SettUnit.unitIndx[2], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_UNIT3_INDX,           &SettUnit.unitIndx[3], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_UNIT4_INDX,           &SettUnit.unitIndx[4], SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
   SettSetParam(SETT_DUMMY,                &Menu.paramDummy, SETT_LIM_MIN, SETT_LIM_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_CMD_INTERVAL,			  &settings.rs485_command_interval_s, RS485_INTERVAL_MIN_S, RS485_INTERVAL_MAX_S, RS485_INTERVAL_STEP_S, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CMD_INTERVAL,       &settings.rs485_command_interval_s, RS485_INTERVAL_MIN_S, RS485_INTERVAL_MAX_S, RS485_INTERVAL_STEP_S, SETT_TEXT_NO, SETT_CONV_NO);
 
   SettSetParam(SETT_M_CURRENT_SECONDS,    NULL, 0, 59, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
   SettSetParam(SETT_M_CURRENT_MINUTES,    NULL, 0, 59, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_HOURS,		  NULL, 0, 23, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_DAY,			  NULL, 1, 31, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_MONTH,		  NULL, 1, 12, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_CURRENT_YEAR,			  NULL, 2000, 2099, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_HOURS,      NULL, 0, 23, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_DAY,        NULL, 1, 31, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_MONTH,      NULL, 1, 12, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_CURRENT_YEAR,       NULL, 2000, 2099, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_WEEK_DAY,           NULL, 0, 6, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_TIME,		            NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_TEST_MODE,			    &settings.test_mode, TEST_MODE_OFF, TEST_MODE_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
-  SettSetParam(SETT_M_START_TEST,			    NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_STOP_TEST,			    NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_MINUTES,				    NULL, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_HOURS,				      NULL, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_DAY,					      NULL, 1, 31, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_MONTH,				      NULL, 1, 12, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_YEAR,				    	  NULL, 2000, 2099, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_TIME,		          NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_ACTIVE_DAY,         NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_TEST_MODE,          &settings.test_mode, TEST_MODE_OFF, TEST_MODE_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_START_TEST,         NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST,          NULL, 0, 0, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_MINUTES,            NULL, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_HOURS,              NULL, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_DAY,                NULL, 1, 31, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_MONTH,              NULL, 1, 12, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_YEAR,               NULL, 2000, 2099, 1, SETT_TEXT_NO, SETT_CONV_NO);
 
-  SettSetParam(SETT_M_START_TEST_MINUTES,	  &settings.test_start_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_START_TEST_HOURS,		  &settings.test_start_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_STOP_TEST_MINUTES,	  &settings.test_stop_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
-  SettSetParam(SETT_M_STOP_TEST_HOURS,		  &settings.test_stop_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_TODAY_IS,           &settings.active_today_is, 0, 6, 1, SETT_TEXT_WEEK_DAY_MONDAY, SETT_CONV_NO);
+  SettSetParam(SETT_M_MONDAY,             &settings.active_monday, ACTIVE_DAY_OFF, ACTIVE_DAY_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_TUESDAY,            &settings.active_tuesday, ACTIVE_DAY_OFF, ACTIVE_DAY_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_WEDNESDAY,          &settings.active_wednesday, ACTIVE_DAY_OFF, ACTIVE_DAY_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_THURSDAY,           &settings.active_thursday, ACTIVE_DAY_OFF, ACTIVE_DAY_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_FRIDAY,             &settings.active_friday, ACTIVE_DAY_OFF, ACTIVE_DAY_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_SETURDAY,           &settings.active_seturday, ACTIVE_DAY_OFF, ACTIVE_DAY_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+  SettSetParam(SETT_M_SUNDAY,             &settings.active_sunday, ACTIVE_DAY_OFF, ACTIVE_DAY_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
+
+  SettSetParam(SETT_M_START_TEST_MINUTES, &settings.test_start_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_START_TEST_HOURS,   &settings.test_start_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST_MINUTES,  &settings.test_stop_minutes, 0, 59, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_STOP_TEST_HOURS,    &settings.test_stop_hours, 0, 23, 1, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_TODAY_EPOCH_DAY,    &settings.active_today_epoch_day, 0, ACTIVE_TODAY_EPOCH_DAY_MAX, SETT_PROT, SETT_TEXT_NO, SETT_CONV_NO);
+  SettSetParam(SETT_M_RB_STATUS_CHECK_MODE, &settings.rb_status_check_mode, RB_STATUS_CHECK_MODE_OFF, RB_STATUS_CHECK_MODE_ON, 1, SETT_TEXT_OFF, SETT_CONV_NO);
 
   //set default settings value
   SettSetDef(SETT_M_CMD_INTERVAL, RS485_INTERVAL_DEF_S);
@@ -210,6 +225,16 @@ void SettInit(void)
   SettSetDef(SETT_M_START_TEST_HOURS, TEST_START_HOURS_DEF);
   SettSetDef(SETT_M_STOP_TEST_MINUTES, TEST_STOP_MINUTES_DEF);
   SettSetDef(SETT_M_STOP_TEST_HOURS, TEST_STOP_HOURS_DEF);
+  SettSetDef(SETT_M_TODAY_IS, ACTIVE_TODAY_IS_DEF);
+  SettSetDef(SETT_M_MONDAY, ACTIVE_DAY_ON);
+  SettSetDef(SETT_M_TUESDAY, ACTIVE_DAY_ON);
+  SettSetDef(SETT_M_WEDNESDAY, ACTIVE_DAY_ON);
+  SettSetDef(SETT_M_THURSDAY, ACTIVE_DAY_ON);
+  SettSetDef(SETT_M_FRIDAY, ACTIVE_DAY_ON);
+  SettSetDef(SETT_M_SETURDAY, ACTIVE_DAY_ON);
+  SettSetDef(SETT_M_SUNDAY, ACTIVE_DAY_ON);
+  SettSetDef(SETT_M_TODAY_EPOCH_DAY, ACTIVE_TODAY_EPOCH_DAY_DEF);
+  SettSetDef(SETT_M_RB_STATUS_CHECK_MODE, RB_STATUS_CHECK_MODE_DEF);
 
 
 #define SettMemGetData(a) (*(__IO u16 *)(addr + a * 2))

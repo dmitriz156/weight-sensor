@@ -4,6 +4,8 @@
 
 #include "main.h"
 
+#define RS485_TEST_MAX_FAILED_ATTEMPTS 5U
+
 typedef enum {
     RS485_TEST_IDLE = 0,
     RS485_TEST_SEND_UP,
@@ -28,6 +30,12 @@ volatile uint8_t rs485_command_btn = RS485_COMMAND_NONE;
 static uint8_t rs485_status = 0U;
 static uint32_t rs485_status_sequence = 0U;
 static bool rs485_status_valid = false;
+
+bool top_position_flag = 0;
+bool bot_position_flag = 0;
+uint8_t failed_cnt_rising = 0;
+uint8_t failed_cnt_lowering = 0;
+static uint32_t wait_status_start_sequence = 0U;
 
 static uint8_t tx_frame[RS485_TX_FRAME_SIZE];
 static uint16_t tx_frame_9bit[RS485_TX_FRAME_SIZE];
@@ -71,6 +79,45 @@ static void RS485_StartReceive(void)
 {
     if ((rs485_uart != NULL) && (rs485_uart->RxState == HAL_UART_STATE_READY)) {
         (void)HAL_UARTEx_ReceiveToIdle_IT(rs485_uart, (uint8_t *)rx_idle_buffer_9bit, RS485_RX_IDLE_BUFFER_SIZE);
+    }
+}
+
+void RS485_ReceivedStatusCheck(uint8_t rx_rb_status, bool status_is_fresh)
+{
+    bool stop_received = status_is_fresh &&
+            ((rx_rb_status & (RS485_STATUS_STOP_1 | RS485_STATUS_STOP_2)) != 0U);
+
+    if (status_RB == MOVE_UP) {
+        if (status_is_fresh && ((rx_rb_status & (RS485_STATUS_TOP_1 | RS485_STATUS_TOP_2)) != 0U)) {
+            status_RB = SET_UP;
+            failed_cnt_rising = 0;
+        } else if (failed_cnt_rising < UINT8_MAX) {
+            failed_cnt_rising++;
+            if (stop_received) {
+                status_RB = STOPED;
+            }
+        }
+    } else if (status_RB == MOVE_DOWN) {
+        if (status_is_fresh && ((rx_rb_status & (RS485_STATUS_BOTTOM_1 | RS485_STATUS_BOTTOM_2)) != 0U)) {
+            status_RB = SET_DOWN;
+            failed_cnt_lowering = 0;
+        } else if (failed_cnt_lowering < UINT8_MAX) {
+            failed_cnt_lowering++;
+            if (stop_received) {
+                status_RB = STOPED;
+            }
+        }
+    } else if (stop_received) {
+        status_RB = STOPED;
+    }
+
+    if ((failed_cnt_rising >= RS485_TEST_MAX_FAILED_ATTEMPTS) ||
+        (failed_cnt_lowering >= RS485_TEST_MAX_FAILED_ATTEMPTS)) {
+        settings.test_mode = TEST_MODE_OFF;
+        settings.flash_write_flag = true;
+        failed_cnt_rising = 0;
+        failed_cnt_lowering = 0;
+        status_RB = STOPED;
     }
 }
 
@@ -190,6 +237,7 @@ void RS485_Init(UART_HandleTypeDef *huart)
     min_send_interval = RS485_TX_MIN_INTERVAL_MS;
     tx_command_cnt = 0U;
     tx_command_btn_cnt = 0U;
+    wait_status_start_sequence = 0U;
     rs485_command = RS485_COMMAND_NONE;
     rs485_command_btn = RS485_COMMAND_NONE;
     rs485_status = 0U;
@@ -288,14 +336,49 @@ void RS485_RemoteControlProcesing(void)
     (void)RS485_ProcessReceivedFrame();
 
     bool time_is_allowed = RTC_IsCurrentTimeInRange(&settings);
+    bool week_day_is_allowed = RTC_IsCurrentWeekDayAllowed(&settings);
+    bool status_check_enabled = settings.rb_status_check_mode == RB_STATUS_CHECK_MODE_ON;
 
-    if ((settings.test_mode != TEST_MODE_ON) || time_is_allowed == false || rb_btn.TEST_ON_flag == false) {
+    if ((settings.test_mode != TEST_MODE_ON) ||
+        (time_is_allowed == false) ||
+        (week_day_is_allowed == false) ||
+        (rb_btn.TEST_ON_flag == false)) {
         rs485_command = RS485_COMMAND_NONE;
         interval_counter = (RS485_INTERVAL_MIN_S * 1000);
         tx_command_cnt = 0U;
+        failed_cnt_rising = 0U;
+        failed_cnt_lowering = 0U;
+        status_RB = STOPED;
+        wait_status_start_sequence = rs485_status_sequence;
         test_state = RS485_TEST_IDLE;
         RS485_SendCommandBroker();
         return;
+    }
+
+    if (!status_check_enabled) {
+        failed_cnt_rising = 0U;
+        failed_cnt_lowering = 0U;
+    }
+
+    if (status_check_enabled &&
+        (((test_state == RS485_TEST_WAIT_AFTER_UP) && (status_RB == MOVE_UP)) ||
+         ((test_state == RS485_TEST_WAIT_AFTER_DOWN) && (status_RB == MOVE_DOWN))) &&
+        (interval_counter == 0U)) {
+        bool status_is_fresh = rs485_status_valid &&
+                (rs485_status_sequence != wait_status_start_sequence);
+
+        RS485_ReceivedStatusCheck(rs485_status, status_is_fresh);
+        wait_status_start_sequence = rs485_status_sequence;
+
+        if (settings.test_mode != TEST_MODE_ON) {
+            rs485_command = RS485_COMMAND_NONE;
+            interval_counter = (RS485_INTERVAL_MIN_S * 1000);
+            tx_command_cnt = 0U;
+            wait_status_start_sequence = rs485_status_sequence;
+            test_state = RS485_TEST_IDLE;
+            RS485_SendCommandBroker();
+            return;
+        }
     }
 
     if (rs485_command_btn != RS485_COMMAND_NONE) {
@@ -318,6 +401,8 @@ void RS485_RemoteControlProcesing(void)
         if (tx_command_cnt >= RS485_TX_FRAME_MAX_NUM) {
             tx_command_cnt = 0U;
             rs485_command = RS485_COMMAND_NONE;
+            status_RB = MOVE_UP;
+            wait_status_start_sequence = rs485_status_sequence;
             interval_counter = (uint32_t)settings.rs485_command_interval_s * 1000U;
             test_state = RS485_TEST_WAIT_AFTER_UP;
         }
@@ -337,6 +422,8 @@ void RS485_RemoteControlProcesing(void)
         if (tx_command_cnt >= RS485_TX_FRAME_MAX_NUM) {
             tx_command_cnt = 0U;
             rs485_command = RS485_COMMAND_NONE;
+            status_RB = MOVE_DOWN;
+            wait_status_start_sequence = rs485_status_sequence;
             interval_counter = (uint32_t)settings.rs485_command_interval_s * 1000U;
             test_state = RS485_TEST_WAIT_AFTER_DOWN;
         }
